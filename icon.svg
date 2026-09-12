@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Main Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4F46E5" />
+      <stop offset="50%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#8B5CF6" />
+    </linearGradient>
+
+    <!-- Glass Glow -->
+    <linearGradient id="glassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.05" />
+    </linearGradient>
+
+    <!-- Card Background Gradient -->
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#F8FAFC" />
+    </linearGradient>
+
+    <!-- Header Gradient -->
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#2563EB" />
+    </linearGradient>
+
+    <!-- Gold Accent Gradient -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FBBF24" />
+      <stop offset="100%" stop-color="#F59E0B" />
+    </linearGradient>
+
+    <!-- Drop Shadows -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#0F172A" flood-opacity="0.3" />
+    </filter>
+    
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Base Squircle Background -->
+  <rect x="16" y="16" width="480" height="480" rx="104" ry="104" fill="url(#bgGrad)" />
+
+  <!-- Inner Glass Ring -->
+  <rect x="24" y="24" width="464" height="464" rx="96" ry="96" fill="none" stroke="url(#glassGrad)" stroke-width="4" />
+
+  <!-- Decorative Background Glow Circles -->
+  <circle cx="410" cy="90" r="130" fill="#FFFFFF" fill-opacity="0.07" />
+  <circle cx="90" cy="420" r="150" fill="#000000" fill-opacity="0.08" />
+
+  <!-- Main Timetable Card (Shadowed) -->
+  <g filter="url(#shadow)">
+    <!-- Main Card Body -->
+    <rect x="80" y="130" width="352" height="286" rx="24" ry="24" fill="url(#cardGrad)" />
+    
+    <!-- Card Header Bar -->
+    <path d="M80 154 C80 140.745 90.745 130 104 130 L408 130 C421.255 130 432 140.745 432 154 L432 188 L80 188 Z" fill="url(#headerGrad)" />
+    
+    <!-- Window Control Dots -->
+    <circle cx="112" cy="159" r="6" fill="#EF4444" opacity="0.9" />
+    <circle cx="132" cy="159" r="6" fill="#F59E0B" opacity="0.9" />
+    <circle cx="152" cy="159" r="6" fill="#10B981" opacity="0.9" />
+    
+    <!-- Header Icon Pill -->
+    <rect x="364" y="149" width="44" height="20" rx="6" fill="#FFFFFF" fill-opacity="0.3" />
+
+    <!-- Grid Lines -->
+    <line x1="168" y1="188" x2="168" y2="416" stroke="#E2E8F0" stroke-width="3" stroke-dasharray="4 4" />
+    <line x1="256" y1="188" x2="256" y2="416" stroke="#E2E8F0" stroke-width="3" stroke-dasharray="4 4" />
+    <line x1="344" y1="188" x2="344" y2="416" stroke="#E2E8F0" stroke-width="3" stroke-dasharray="4 4" />
+
+    <line x1="80" y1="244" x2="432" y2="244" stroke="#F1F5F9" stroke-width="3" />
+    <line x1="80" y1="300" x2="432" y2="300" stroke="#F1F5F9" stroke-width="3" />
+    <line x1="80" y1="356" x2="432" y2="356" stroke="#F1F5F9" stroke-width="3" />
+
+    <!-- Schedule Class Blocks -->
+    <rect x="96" y="202" width="56" height="28" rx="8" fill="#6366F1" />
+    <rect x="108" y="212" width="32" height="8" rx="4" fill="#FFFFFF" fill-opacity="0.8" />
+
+    <rect x="184" y="202" width="56" height="28" rx="8" fill="#10B981" />
+    <rect x="196" y="212" width="32" height="8" rx="4" fill="#FFFFFF" fill-opacity="0.8" />
+
+    <rect x="272" y="258" width="56" height="28" rx="8" fill="#F59E0B" />
+    <rect x="284" y="268" width="32" height="8" rx="4" fill="#FFFFFF" fill-opacity="0.8" />
+
+    <rect x="360" y="202" width="56" height="28" rx="8" fill="#8B5CF6" />
+    <rect x="372" y="212" width="32" height="8" rx="4" fill="#FFFFFF" fill-opacity="0.8" />
+
+    <rect x="184" y="314" width="56" height="28" rx="8" fill="#F43F5E" />
+    <rect x="196" y="324" width="32" height="8" rx="4" fill="#FFFFFF" fill-opacity="0.8" />
+
+    <rect x="360" y="314" width="56" height="28" rx="8" fill="#0EA5E9" />
+    <rect x="372" y="324" width="32" height="8" rx="4" fill="#FFFFFF" fill-opacity="0.8" />
+    
+    <rect x="96" y="370" width="56" height="28" rx="8" fill="#14B8A6" />
+    <rect x="108" y="380" width="32" height="8" rx="4" fill="#FFFFFF" fill-opacity="0.8" />
+  </g>
+
+  <!-- Graduation Mortarboard Cap Overlay -->
+  <g filter="url(#shadow)">
+    <!-- Cap Diamond (Top) -->
+    <polygon points="256,56 384,108 256,160 128,108" fill="#1E293B" stroke="#334155" stroke-width="3" />
+    <!-- Cap Top Highlight -->
+    <polygon points="256,66 364,108 256,150 148,108" fill="#334155" fill-opacity="0.4" />
+
+    <!-- Cap Skull Base -->
+    <path d="M184 130 L184 165 C184 186 216 202 256 202 C296 202 328 186 328 165 L328 130 Z" fill="#0F172A" />
+
+    <!-- Tassel Button -->
+    <circle cx="256" cy="108" r="10" fill="url(#goldGrad)" />
+
+    <!-- Tassel String & Ribbon -->
+    <path d="M256 112 C230 128 204 144 198 170 C196 180 196 195 198 206" fill="none" stroke="url(#goldGrad)" stroke-width="5" stroke-linecap="round" />
+    <!-- Tassel Fringe -->
+    <polygon points="192,206 204,206 201,226 195,226" fill="url(#goldGrad)" />
+  </g>
+
+  <!-- Sparkling Star Accent -->
+  <g transform="translate(400, 75)" filter="url(#glow)">
+    <path d="M0 -22 L6 -6 L22 0 L6 6 L0 22 L-6 6 L-22 0 L-6 -6 Z" fill="url(#goldGrad)" />
+  </g>
+</svg>

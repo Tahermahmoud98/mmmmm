@@ -1,0 +1,18 @@
+{
+  "name": "سیسته‌مێ پێشکەفتی یێ خشتێ قوتابخانێ",
+  "short_name": "خشتێ قوتابخانێ",
+  "description": "سیسته‌مێ پێشکەفتی یێ رێكخستنا خشتێ قوتابخانێ یێ حەفتیانە و دابەشکرنا وانان",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f8f9fa",
+  "theme_color": "#4e73df",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "512x512 192x192 any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+    <!-- Security Headers & Anti-Hacking Meta Tags -->
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; connect-src 'self' https://extendsclass.com https://keyvalue.immanuel.co https:; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Permissions-Policy"
+        content="geolocation=(), camera=(), microphone=(), payment=(), usb=(), accelerometer=(), gyroscope=()">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+
+    <title>سیسته‌مێ پێشکەفتی یێ خشتێ قوتابخانێ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="apple-touch-icon" href="icon.svg">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+    <link rel="stylesheet" href="style.css?v=303">
+</head>
+
+<body data-bs-theme="light">
+
+    <div class="container-fluid main-container">
+        <!-- The rest of your application code is here, unchanged -->
+        <div class="card p-2 mb-3 text-center border-0 shadow-sm rounded-4">
+            <h5 class="card-title mb-2 text-primary fw-bold" data-i18n="sub_title"><i
+                    class="fas fa-table me-2"></i>سیسته‌مێ رێكخستنا خشتان</h5>
+            <div class="d-flex flex-wrap align-items-center justify-content-center gap-2 bg-body-tertiary p-2 rounded-pill shadow-sm border mx-auto"
+                style="max-width: 600px;">
+                <!-- Language Globe Icon Dropdown -->
+                <div class="dropdown">
+                    <button class="btn btn-outline-primary btn-sm rounded-circle p-0" type="button"
+                        data-bs-toggle="dropdown" title="Language / زمان"
+                        style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-globe fs-6"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4">
+                        <li><a class="dropdown-item" href="#" onclick="changeLanguage('ku_badini')">کوردی (بادینی)</a>
+                        </li>
+                        <li><a class="dropdown-item" href="#" onclick="changeLanguage('ku_sorani')">کوردی (سۆرانی)</a>
+                        </li>
+                        <li><a class="dropdown-item" href="#" onclick="changeLanguage('ar')">العربية</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="changeLanguage('en')">English</a></li>
+                    </ul>
+                </div>
+                <div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" role="switch"
+                        id="themeSwitcher" title="گوهورینا دیمەنی"><label class="form-check-label"
+                        for="themeSwitcher"><i class="fas fa-moon"></i></label></div>
+                <div class="vr mx-1 d-none d-sm-block"></div>
+                <div class="d-flex align-items-center gap-1">
+                    <label class="form-label mb-0 fw-bold small text-nowrap me-1" data-i18n="active_schedule">خشتێ چالاك:</label>
+                    <div class="dropdown d-inline-block" id="scheduleDropdownContainer">
+                        <button class="btn btn-sm dropdown-toggle fw-bold px-3 py-1.5 rounded-pill shadow-sm" type="button"
+                            id="scheduleDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false"
+                            style="background: #ffffff; color: #1e293b; border: 1.5px solid #cbd5e1; min-width: 150px; text-align: right; display: inline-flex; align-items: center; justify-content: space-between; gap: 6px;">
+                            <span><i class="fas fa-calendar-alt text-primary me-1"></i> <span id="activeScheduleLabel">خشتێ سه‌ره‌كی</span></span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2" id="scheduleDropdownMenu" style="min-width: 240px; z-index: 1060;">
+                        </ul>
+                    </div>
+                    <button class="btn btn-outline-secondary btn-sm rounded-circle p-0 ms-1"
+                        onclick="renameActiveSchedule()" data-i18n-title="rename_schedule"
+                        title="گوهورینا ناڤێ خشتێ چالاك"
+                        style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i
+                            class="fas fa-pencil-alt"></i></button>
+                    <button class="btn btn-outline-danger btn-sm rounded-circle p-0 ms-1"
+                        onclick="deleteActiveSchedule()" data-i18n-title="delete_schedule" title="ژێبرنا خشتێ چالاك"
+                        style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i
+                            class="fas fa-trash-alt"></i></button>
+                </div>
+            </div>
+            <hr>
+            <ul class="nav nav-tabs mb-4" id="mainTabs" role="tablist">
+                <!-- 1. دابەشکرنا وانان -->
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="distribution-tab" data-bs-toggle="tab"
+                        data-bs-target="#distribution-tab-pane" type="button" role="tab" data-i18n="tab_distribution"><i
+                            class="fas fa-chalkboard-teacher me-2"></i>دابەشکرنا وانان</button>
+                </li>
+                <!-- 2. خشتێ حەفتیانە -->
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link text-primary fw-bold" id="timetable-tab" data-bs-toggle="tab"
+                        data-bs-target="#timetable-tab-pane" type="button" role="tab" onclick="initTimetableTab()"
+                        data-i18n="tab_timetable"><i class="fas fa-calendar-alt me-2"></i>خشتێ حەفتیانە</button>
+                </li>
+                <!-- 3. ماموستایێ جهگر -->
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold" id="substitute-tab" data-bs-toggle="tab"
+                        data-bs-target="#substitute-tab-pane" type="button" role="tab" onclick="initSubstituteTab()"
+                        data-i18n="tab_substitute"><i class="fas fa-user-clock me-2 text-warning"></i>ماموستایێ جهگر</button>
+                </li>
+                <!-- 4. خشتێ چاڤدێریێ -->
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="supervision-tab" data-bs-toggle="tab" data-bs-target="#supervision-tab-pane"
+                        type="button" role="tab" onclick="initSupervisionTab()" data-i18n="tab_supervision"><i
+                            class="fas fa-user-shield me-2 text-warning"></i>خشتێ چاڤدێریێ</button>
+                </li>
+                <!-- 5. ڕێبەرێن پۆلان -->
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="class-mentors-tab" data-bs-toggle="tab" data-bs-target="#class-mentors-tab-pane"
+                        type="button" role="tab" onclick="initClassMentorsTab()" data-i18n="tab_class_mentors"><i
+                            class="fas fa-user-graduate me-2 text-info"></i>ڕێبەرێن پۆلان</button>
+                </li>
+                <!-- 6. نصاب وانان -->
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="nisab-tab" data-bs-toggle="tab" data-bs-target="#nisab-tab-pane"
+                        type="button" role="tab" data-i18n="tab_nisab"><i class="fas fa-user-clock me-2"></i>نصاب
+                        وانان</button>
+                </li>
+                <!-- 7. فۆڕما ڕێکخستنا میلاکی -->
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="milak-tab" data-bs-toggle="tab" data-bs-target="#milak-tab-pane"
+                        type="button" role="tab" onclick="initMilakTab()" data-i18n="tab_milak"><i
+                            class="fas fa-file-invoice me-2"></i>فۆڕما ڕێکخستنا میلاکی</button>
+                </li>
+                <!-- 8. ئامار و داتا -->
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="statistics-tab" data-bs-toggle="tab"
+                        data-bs-target="#statistics-tab-pane" type="button" role="tab" data-i18n="tab_statistics"><i
+                            class="fas fa-chart-bar me-2"></i>ئامار و داتا</button>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body p-2 p-md-3">
+            <div class="tab-content" id="myTabContent">
+                <!-- Distribution Tab -->
+                <div class="tab-pane fade show active" id="distribution-tab-pane" role="tabpanel">
+                    <div class="d-flex flex-wrap gap-2 justify-content-between my-3 no-print align-items-center">
+                        <div class="control-panel d-flex flex-wrap justify-content-center gap-2 w-100">
+                            <button class="btn btn-primary btn-sm" onclick="openTeacherModal()"
+                                data-i18n="btn_teacher"><i class="fas fa-plus"></i> ماموستا</button>
+
+                            <button class="btn btn-warning btn-sm fw-bold shadow-xs text-dark" onclick="applyNisab()"
+                                id="btnAutoDistributeNisabMain" data-i18n="btn_auto_distribute_nisab" data-i18n-title="title_auto_distribute_nisab" title="توزيع تلقائي للحصص وفق النصاب والاختصاص"><i class="fas fa-magic me-1"></i>دابەشکرنا نصابی</button>
+
+                            <!-- School Stage Selector -->
+                            <div class="btn-group">
+                                <button type="button" id="stageSelectorBtn"
+                                    class="btn btn-sm dropdown-toggle fw-bold text-white" data-bs-toggle="dropdown"
+                                    style="background-color: #6366f1; border: 1px solid rgba(255,255,255,0.2);">
+                                    <i class="fas fa-graduation-cap me-1"></i> سه‌ره‌تایی (ابتدائي) ١-٦
+                                </button>
+                                <ul class="dropdown-menu shadow border-0 rounded-3">
+                                    <li><a class="dropdown-item fw-bold py-2" href="#"
+                                            onclick="saveMilakField('schoolType', 'سه‌ره‌تایی 1-6')">سه‌ره‌تایی
+                                            (ابتدائي) ١-٦</a></li>
+                                    <li><a class="dropdown-item fw-bold py-2" href="#"
+                                            onclick="saveMilakField('schoolType', 'ناڤه‌ندی 7-9')">ناڤه‌ندی (متوسط)
+                                            ٧-٩</a></li>
+                                    <li><a class="dropdown-item fw-bold py-2" href="#"
+                                            onclick="saveMilakField('schoolType', 'بنەڕەتی 1-9')">بنەڕەتی (أساسي)
+                                            ١-٩</a></li>
+                                    <li>
+                                        <hr class="dropdown-divider my-1">
+                                    </li>
+                                    <li><a class="dropdown-item fw-bold py-2" href="#"
+                                            onclick="saveMilakField('schoolType', 'ئامادەیی زانستی 10-12')">ئامادەیی زانستی
+                                            (إعدادي علمي) ١٠-١٢</a></li>
+                                    <li><a class="dropdown-item fw-bold py-2" href="#"
+                                            onclick="saveMilakField('schoolType', 'ئامادەیی وێژەیی 10-12')">ئامادەیی وێژەیی
+                                            (إعدادي أدبي) ١٠-١٢</a></li>
+                                    <li><a class="dropdown-item fw-bold py-2 text-primary" href="#"
+                                            onclick="saveMilakField('schoolType', 'ئامادەیی زانستی و وێژەیی 10-12')">ئامادەیی گشتی
+                                            (علمي و أدبي پێکڤە) ١٠-١٢</a></li>
+                                </ul>
+                            </div>
+
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-info btn-sm dropdown-toggle"
+                                    data-bs-toggle="dropdown" data-i18n="btn_class"><i class="fas fa-columns"></i>
+                                    پول</button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="addColumn()"
+                                            data-i18n="add_single_column"><i
+                                                class="fas fa-plus fa-fw me-2 text-primary"></i> زیادکرنا پوله‌كێ</a>
+                                    </li>
+                                    <li><a class="dropdown-item" href="#" onclick="addMultipleColumns()"
+                                            data-i18n="add_multiple_columns"><i
+                                                class="fas fa-layer-group fa-fw me-2 text-success"></i> زیادکرنا چه‌ند
+                                            پولان</a></li>
+                                </ul>
+                            </div>
+
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                                    data-bs-toggle="dropdown" aria-expanded="false" data-i18n="btn_sort"><i
+                                        class="fas fa-sort me-1"></i> رێکخستن</button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item fw-bold text-primary" href="#"
+                                            onclick="openReorderTeachersModal()"><i
+                                                class="fas fa-arrows-alt-v fa-fw me-2"></i> رێزبەندیا دستی (تعديل
+                                            المكان)</a></li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li><a class="dropdown-item" href="#" onclick="sortDistributionTable('name')"
+                                            data-i18n="sort_name"><i class="fas fa-sort-alpha-down fa-fw me-2"></i>
+                                            رێکخستن بە ناڤ</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="sortDistributionTable('total')"
+                                            data-i18n="sort_total"><i class="fas fa-sort-amount-down fa-fw me-2"></i>
+                                            رێکخستن بە کۆی</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="sortDistributionTable('certificate')"
+                                            data-i18n="sort_certificate"><i class="fas fa-id-card fa-fw me-2"></i>
+                                            رێکخستن بە بروانامه</a></li>
+                                    <li><a class="dropdown-item" href="#"
+                                            onclick="sortDistributionTable('specialization')"
+                                            data-i18n="sort_specialization"><i class="fas fa-book fa-fw me-2"></i>
+                                            رێکخستن بە بسپور</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="sortDistributionTable('jobTitle')"
+                                            data-i18n="sort_job"><i class="fas fa-briefcase fa-fw me-2"></i> رێکخستن بە
+                                            نیشانا کاری</a></li>
+                                </ul>
+                            </div>
+
+                            <button class="btn btn-success btn-sm" onclick="toggleTableView()"
+                                data-i18n="btn_table_view" title="گوهورینا ديمەنێ خشتەی"><i class="fas fa-eye"></i>
+                                ديمەنێ خشتەی</button>
+                            <button class="btn btn-warning btn-sm" onclick="createSchedule()"
+                                data-i18n="btn_new_schedule"><i class="fas fa-table"></i> خشتێ نوی</button>
+
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-info btn-sm dropdown-toggle"
+                                    data-bs-toggle="dropdown" data-i18n="btn_cloud"><i class="fas fa-cloud"></i> هیلان و
+                                    هەور</button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <h6 class="dropdown-header" data-i18n="header_local">ل سەر كومپیوتەری</h6>
+                                    </li>
+                                    <li><a class="dropdown-item" href="#" onclick="handleSaveLoad('save')"
+                                            data-i18n="save_json"><i
+                                                class="fas fa-file-download fa-fw me-2 text-success"></i> هیلان وه‌ك
+                                            JSON</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="handleSaveLoad('load')"
+                                            data-i18n="load_json"><i
+                                                class="fas fa-file-upload fa-fw me-2 text-warning"></i> ڤه‌گه‌راندن ژ
+                                            JSON</a></li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li>
+                                        <h6 class="dropdown-header" data-i18n="header_cloud">ل سەر هەورێ (Cloud)</h6>
+                                    </li>
+                                    <li><a class="dropdown-item" href="#" onclick="saveToCloud()"
+                                            data-i18n="save_cloud"><i
+                                                class="fas fa-cloud-upload-alt fa-fw me-2 text-primary"></i> هەڵگرتن لە
+                                            هەور</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="loadFromCloud()"
+                                            data-i18n="load_cloud"><i
+                                                class="fas fa-cloud-download-alt fa-fw me-2 text-info"></i> ڤەگەڕاندن ژ
+                                            هەور</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="resetCloudSync()"
+                                            data-i18n="reset_cloud"><i class="fas fa-unlink fa-fw me-2 text-danger"></i>
+                                            ده‌ستپێكرنا كۆدەکێ نوی</a></li>
+                                </ul>
+                            </div>
+
+                            <button class="btn btn-success btn-sm" onclick="exportToExcel()" data-i18n="btn_excel"
+                                title="هنارتن بۆ ئەكسێل"><i class="fas fa-file-excel"></i> ئەكسێل</button>
+
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-info btn-sm dropdown-toggle"
+                                    data-bs-toggle="dropdown" data-i18n="btn_html"><i class="fas fa-file-code"></i>
+                                    HTML</button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="downloadCurrentDistributionHTML()"
+                                            data-i18n="download_current_dist"><i
+                                                class="fas fa-table fa-fw me-2 text-primary"></i> خشتێ دابەشکرنێ</a>
+                                    </li>
+                                    <li><a class="dropdown-item" href="#"
+                                            onclick="downloadComprehensiveDistributionHTML()"
+                                            data-i18n="download_comp_dist"><i
+                                                class="fas fa-user-friends fa-fw me-2 text-success"></i> راپۆرتا
+                                            ماموستایان</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="downloadSimpleDistributionHTML()"
+                                            data-i18n="download_simple_dist"><i
+                                                class="fas fa-th-list fa-fw me-2 text-secondary"></i> دابەشکرنا سادە</a>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-primary btn-sm dropdown-toggle"
+                                    data-bs-toggle="dropdown" data-i18n="btn_print"><i class="fas fa-print"></i>
+                                    چاپكرن</button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="printAllTables()"
+                                            data-i18n="print_all"><i class="fas fa-print fa-fw me-2"></i> چاپكرنا هەمی
+                                            خشتان</a></li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li><a class="dropdown-item" href="#" onclick="printDistributionTable()"
+                                            data-i18n="print_current_dist"><i class="fas fa-table fa-fw me-2"></i>
+                                            چاپكرنا دابەشکرنێ ب تنێ</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="printComprehensiveDistribution()"
+                                            data-i18n="print_comp_dist"><i class="fas fa-user-friends fa-fw me-2"></i>
+                                            چاپكرنا راپۆرتا ماموستایان</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="printDistributionSimple()"
+                                            data-i18n="print_simple_dist"><i class="fas fa-th-list fa-fw me-2"></i>
+                                            چاپكرن ب سادەیی</a></li>
+                                </ul>
+                            </div>
+
+                            <button class="btn btn-primary btn-sm" onclick="openSettingsModal()"
+                                data-i18n="btn_settings"><i class="fas fa-cog"></i> رێكخستن</button>
+
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-danger btn-sm dropdown-toggle"
+                                    data-bs-toggle="dropdown" data-i18n="btn_clear_data"><i class="fas fa-eraser"></i>
+                                    ژێبرن</button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="clearAllAssignments()"><i
+                                                class="fas fa-eraser fa-fw me-2 text-warning"></i> ڤالاکرنا دابەشکرنا
+                                            بەشان</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="clearAllTeachers()"><i
+                                                class="fas fa-user-slash fa-fw me-2 text-warning"></i> ژێبرنا هەمی
+                                            ماموستایان</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="clearAllColumns()"><i
+                                                class="fas fa-table-cells-large fa-fw me-2 text-warning"></i> ژێبرنا
+                                            هەمی پولان</a></li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li><a class="dropdown-item" href="#" onclick="clearCurrentScheduleData()"><i
+                                                class="fas fa-trash-alt fa-fw me-2 text-danger"></i> پاقژکرنا ڤی خشتەی ب
+                                            تەمامی</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="deleteAllData()"><i
+                                                class="fas fa-exclamation-triangle fa-fw me-2 text-danger"></i> ژێبرنا
+                                            هەمی داتایێن بەرنامەی</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="search-panel position-relative shadow-sm w-100 mt-2">
+                            <i class="fas fa-search position-absolute top-50 translate-middle-y text-muted"
+                                style="right: 12px; left: auto; z-index: 5;"></i>
+                            <input type="text" id="searchInput" class="form-control form-control-sm"
+                                style="padding-right: 32px; padding-left: 10px;"
+                                data-i18n-placeholder="search_placeholder" placeholder="ل ناڤێ ماموستای بگه‌ره‌...">
+                        </div>
+                    </div>
+                    <div class="print-area">
+                        <div id="tableContainer" class="table-responsive"></div>
+                        <div id="additionalTablesContainer" class="mt-4"></div>
+                    </div>
+                </div>
+                <!-- Nisab Tab -->
+                <div class="tab-pane fade" id="nisab-tab-pane" role="tabpanel">
+                    <!-- Nisab content will be rendered here by JS -->
+                </div>
+                <!-- Statistics Tab -->
+                <div class="tab-pane fade" id="statistics-tab-pane" role="tabpanel">
+                    <!-- Statistics content will be rendered here by JS -->
+                </div>
+                <!-- Milak Form Tab -->
+                <div class="tab-pane fade" id="milak-tab-pane" role="tabpanel">
+                    <!-- Milak content will be rendered here by JS -->
+                </div>
+                <!-- Supervision Schedule Tab -->
+                <div class="tab-pane fade" id="supervision-tab-pane" role="tabpanel">
+                    <!-- Supervision content will be rendered here by JS -->
+                </div>
+                <!-- Class Mentors Tab -->
+                <div class="tab-pane fade" id="class-mentors-tab-pane" role="tabpanel">
+                    <!-- Class Mentors content will be rendered here by JS -->
+                </div>
+                <!-- Timetable Tab -->
+                <div class="tab-pane fade" id="timetable-tab-pane" role="tabpanel">
+                    <div class="timetable-toolbar-wrapper card border-0 shadow-sm rounded-4 p-2.5 mb-3 bg-white">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2.5 w-100">
+                            <!-- Navigation & Selector Group -->
+                            <div class="d-flex align-items-center gap-2 flex-wrap timetable-nav-group">
+                                <div class="tt-view-btn-group shadow-xs" role="group">
+                                    <input type="radio" class="btn-check" name="ttViewMode" id="btnViewClass" value="class"
+                                        checked onchange="changeTimetableView()">
+                                    <label class="btn btn-outline-primary fw-bold" for="btnViewClass"
+                                        data-i18n="btn_view_class" data-i18n-title="title_class_tt" title="خشتێ پولا"><i
+                                            class="fas fa-chalkboard me-1"></i>خشتێ پولا</label>
+
+                                    <input type="radio" class="btn-check" name="ttViewMode" id="btnViewTeacher"
+                                        value="teacher" onchange="changeTimetableView()">
+                                    <label class="btn btn-outline-primary fw-bold" for="btnViewTeacher"
+                                        data-i18n="btn_view_teacher" data-i18n-title="title_teacher_tt" title="خشتێ ماموستا"><i
+                                            class="fas fa-user-tie me-1"></i>خشتێ ماموستا</label>
+
+                                    <input type="radio" class="btn-check" name="ttViewMode" id="btnViewMaster"
+                                        value="master" onchange="changeTimetableView()">
+                                    <label class="btn btn-outline-primary fw-bold" for="btnViewMaster"
+                                        data-i18n="btn_view_master_class" data-i18n-title="title_master_class_tt" title="ماستر پولان"><i
+                                            class="fas fa-border-all me-1"></i>ماستر پولان</label>
+
+                                    <input type="radio" class="btn-check" name="ttViewMode" id="btnViewMasterTeacher"
+                                        value="master_teacher" onchange="changeTimetableView()">
+                                    <label class="btn btn-outline-primary fw-bold" for="btnViewMasterTeacher"
+                                        data-i18n="btn_view_master_teacher" data-i18n-title="title_master_teacher_tt" title="ماستر ماموستایان"><i
+                                            class="fas fa-users me-1"></i>ماستر ماموستایان</label>
+                                </div>
+
+                                <div class="tt-select-wrapper d-inline-flex align-items-center">
+                                    <select id="timetableClassSelect" class="form-select form-select-sm rounded-pill fw-bold"
+                                        style="min-width: 140px; max-width: 220px;" onchange="renderTimetableGrid()"></select>
+                                    <select id="timetableTeacherSelect" class="form-select form-select-sm rounded-pill fw-bold d-none"
+                                        style="min-width: 140px; max-width: 220px;" onchange="renderTimetableGrid()"></select>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons Tray -->
+                            <div class="d-flex gap-1.5 flex-wrap align-items-center tt-actions-tray">
+                                <button id="btnAutoDistribute" class="btn btn-warning btn-sm rounded-pill fw-bold px-3 text-dark shadow-xs"
+                                    onclick="autoDistributeTimetable()" data-i18n="btn_auto_distribute"><i
+                                        class="fas fa-magic me-1"></i>ئۆتۆماتیکی</button>
+                                <button id="btnSubjectRestrictions" class="btn btn-dark btn-sm rounded-pill fw-bold text-white shadow-xs"
+                                    onclick="openSubjectRestrictionsModal()" data-i18n="btn_subject_restrictions"><i
+                                        class="fas fa-lock me-1 text-warning"></i>قفل وقيود المواد</button>
+                                <button id="btnManualEditTimetable" class="btn btn-secondary btn-sm rounded-pill fw-bold shadow-xs"
+                                    onclick="openManualTimetableEditorModal()" data-i18n="btn_manual_edit_tt"><i
+                                        class="fas fa-edit me-1"></i>تعديل يدوي</button>
+                                <button id="btnValidateSchedule" class="btn btn-info btn-sm rounded-pill fw-bold text-white shadow-xs"
+                                    onclick="showScheduleValidationModal()" data-i18n="btn_validate_schedule"><i
+                                        class="fas fa-clipboard-check me-1"></i>پشکنینا خشتەی</button>
+                                <button id="btnClearTimetable" class="btn btn-outline-danger btn-sm rounded-pill fw-bold px-2.5"
+                                    onclick="clearClassTimetable()" data-i18n="btn_clear_tt"><i
+                                        class="fas fa-trash-alt me-1"></i>ڤالا بكه</button>
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-success btn-sm rounded-pill dropdown-toggle fw-bold px-2.5 shadow-xs"
+                                        data-bs-toggle="dropdown" data-i18n="btn_html"><i
+                                            class="fas fa-file-code me-1"></i>HTML</button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
+                                        <li><a class="dropdown-item py-1.5" href="#" onclick="downloadCurrentTimetableHTML()"
+                                                data-i18n="download_current_tt"><i
+                                                    class="fas fa-eye fa-fw me-2 text-primary"></i>دیمەنێ نها</a></li>
+                                        <li>
+                                            <hr class="dropdown-divider my-1">
+                                        </li>
+                                        <li><a class="dropdown-item py-1.5" href="#" onclick="promptMasterHtmlDownload('class')"
+                                                data-i18n="download_master_class_tt"><i
+                                                    class="fas fa-border-all fa-fw me-2 text-danger"></i>خشتێ گشتی پولان</a>
+                                        </li>
+                                        <li><a class="dropdown-item py-1.5" href="#" onclick="promptMasterHtmlDownload('teacher')"
+                                                data-i18n="download_master_teacher_tt"><i
+                                                    class="fas fa-users fa-fw me-2 text-warning"></i>خشتێ گشتی
+                                                ماموستایان</a></li>
+                                        <li>
+                                            <hr class="dropdown-divider my-1">
+                                        </li>
+                                        <li><a class="dropdown-item py-1.5" href="#" onclick="downloadSubstituteHTML('current')"><i
+                                                    class="fas fa-user-clock fa-fw me-2 text-info"></i>خشتێ جهگران (HTML
+                                                البدلاء - العرض الحالي)</a></li>
+                                    </ul>
+                                </div>
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-primary btn-sm rounded-pill dropdown-toggle fw-bold px-2.5 shadow-xs"
+                                        data-bs-toggle="dropdown" data-i18n="btn_print"><i
+                                            class="fas fa-print me-1"></i>چاپکرن</button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
+                                        <li><a class="dropdown-item py-1.5" href="#" onclick="printCurrentTimetableView()"
+                                                data-i18n="print_current_tt"><i class="fas fa-eye fa-fw me-2"></i>چاپکرنا
+                                                دیمەنێ نها (الحالي)</a></li>
+                                        <li>
+                                            <hr class="dropdown-divider my-1">
+                                        </li>
+                                        <li><a class="dropdown-item py-1.5" href="#" onclick="promptPrintOptions('class')"
+                                                data-i18n="print_all_class_tt"><i
+                                                    class="fas fa-layer-group fa-fw me-2 text-success"></i>هەمی خشتەیێن
+                                                پولان (للصفوف)</a></li>
+                                        <li><a class="dropdown-item py-1.5" href="#" onclick="promptPrintOptions('teacher')"
+                                                data-i18n="print_all_teacher_tt"><i
+                                                    class="fas fa-user-tie fa-fw me-2 text-primary"></i>هەمی خشتەیێن
+                                                ماموستایان (فرداً فرداً)</a></li>
+                                        <li><a class="dropdown-item py-1.5" href="#" onclick="promptMasterPrintOptions('teacher')"
+                                                data-i18n="print_master_teacher_tt"><i
+                                                    class="fas fa-users fa-fw me-2 text-warning"></i>خشتێ گشتی ماموستایان
+                                                (أفقي/عامودي)</a></li>
+                                        <li><a class="dropdown-item py-1.5" href="#" onclick="promptMasterPrintOptions('class')"
+                                                data-i18n="print_master_class_tt"><i
+                                                    class="fas fa-border-all fa-fw me-2 text-danger"></i>خشتێ گشتی پولان
+                                                (أفقي/عامودي)</a></li>
+                                        <li>
+                                            <hr class="dropdown-divider my-1">
+                                        </li>
+                                        <li><a class="dropdown-item py-1.5" href="#"
+                                                onclick="printDailySubstitutionReport('current')"><i
+                                                    class="fas fa-user-clock fa-fw me-2 text-info"></i>خشتێ جهگران (طباعة
+                                                البدلاء - العرض الحالي)</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-9" id="gridCol">
+                            <div class="table-responsive" style="min-height: 450px;" id="timetableGridContainer">
+                                <!-- Grid generated by JS -->
+                            </div>
+                        </div>
+                        <div class="col-md-3" id="unassignedCol">
+                            <div class="card shadow-sm h-100 border-warning">
+                                <div class="card-header bg-warning text-dark fw-bold text-center">
+                                    <i class="fas fa-boxes me-2"></i><span data-i18n="unassigned_title">وانەیێن بێ
+                                        جهـ</span>
+                                    <div class="small fw-normal mt-1" data-i18n="unassigned_hint">(راكێشە بۆ دناڤ خشتەی
+                                        دا)</div>
+                                </div>
+                                <div class="card-body bg-light sortable-list" id="unassignedSubjectsList"
+                                    style="min-height: 400px; max-height: 600px; overflow-y: auto;">
+                                    <!-- Draggable subjects generated by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Substitute Tab -->
+                <div class="tab-pane fade" id="substitute-tab-pane" role="tabpanel">
+                    <div class="card border-0 shadow-sm rounded-4 p-2.5 mb-3 bg-white">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2.5 w-100">
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <span class="badge bg-warning-subtle text-dark border border-warning-subtle rounded-pill px-3 py-2 fw-bold">
+                                    <i class="fas fa-user-clock me-1 text-warning"></i><span data-i18n="tab_substitute">ماموستایێ جهگر</span>
+                                </span>
+                                <div class="d-inline-flex align-items-center gap-1.5">
+                                    <select id="substituteTeacherSelect" class="form-select form-select-sm rounded-pill fw-bold"
+                                        style="min-width: 170px; max-width: 250px;" onchange="renderSubstituteTab()">
+                                    </select>
+                                    <select id="substituteDaySelect" class="form-select form-select-sm rounded-pill fw-bold"
+                                        style="min-width: 130px; max-width: 180px;" onchange="renderSubstituteTab()">
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="substituteMainContainer"></div>
+                </div>
+            </div>
+        </div>
+        <footer class="bg-light border-top py-3 mt-4">
+            <div class="container-fluid text-center small text-muted">
+                <div data-i18n="footer_rights">هه‌می ماف پاراستینه‌</div>
+                <div data-i18n="footer_dev">ئه‌ڤ وێبسایتە هاتیه دروستکرن ژ لای ماموستا: طاهر محمود محمد</div>
+                <div class="mt-2"><span data-i18n="footer_contact">تێبینی، ڕه‌خنه‌ یان پەیوەندی بکە:</span>
+                    <strong>07503727069</strong></div>
+                <div class="mt-2">
+                    <a href="https://wa.me/9647503727069" target="_blank" class="text-success text-decoration-none mx-2"
+                        title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                    <a href="https://t.me/+9647503727069" target="_blank" class="text-info text-decoration-none mx-2"
+                        title="Telegram"><i class="fab fa-telegram"></i></a>
+                    <a href="viber://chat?number=%2B9647503727069" class="text-purple text-decoration-none mx-2"
+                        title="Viber"><i class="fab fa-viber"></i></a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Teacher Modal -->
+    <div class="modal fade" id="teacherModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-bottom-0 pb-3 pt-4 px-4 bg-white">
+                    <h5 class="modal-title fw-bold text-primary" id="teacherModalTitle"><i
+                            class="fas fa-chalkboard-teacher me-2"></i>زانیاریێن ماموستای</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <form id="teacherForm" class="h-100"><input type="hidden" id="teacherId">
+                        <div class="row g-0 h-100">
+                            <!-- Right Pane (Teacher Info) -->
+                            <div class="col-xl-4 col-lg-5 p-4 bg-white border-end border-light-subtle">
+                                <h6 class="fw-bold mb-4 text-secondary-emphasis"><i
+                                        class="fas fa-id-card me-2 text-primary"></i>زانیاریێن کەسی</h6>
+                                <div class="row g-3">
+                                    <div class="col-12"><label class="form-label small fw-bold text-secondary mb-1"
+                                            data-i18n="teacher_name_label">ناڤێ ماموستای</label><input type="text"
+                                            class="form-control bg-light border border-secondary-subtle shadow-none rounded-3"
+                                            id="teacherName" required></div>
+                                    <div class="col-12"><label class="form-label small fw-bold text-secondary mb-1"
+                                            data-i18n="certificate_label">بروانامه</label>
+                                        <select id="teacherCertificateSelect"
+                                            class="form-select bg-light border border-secondary-subtle shadow-none rounded-3"
+                                            onchange="this.value==='یێن دی' || this.value==='أخرى' || this.value==='Other' ? this.nextElementSibling.style.display='block' : this.nextElementSibling.style.display='none'">
+                                        </select>
+                                        <input type="text"
+                                            class="form-control bg-light border border-secondary-subtle shadow-none rounded-3 mt-1"
+                                            id="teacherCertificateOther" style="display: none;" placeholder="...">
+                                    </div>
+                                    <div class="col-12"><label class="form-label small fw-bold text-secondary mb-1"
+                                            data-i18n="job_title_label">نیشانا کاری</label>
+                                        <select id="teacherJobTitleSelect"
+                                            class="form-select bg-light border border-secondary-subtle shadow-none rounded-3"
+                                            onchange="this.value==='یێن دی' || this.value==='أخرى' || this.value==='Other' ? this.nextElementSibling.style.display='block' : this.nextElementSibling.style.display='none'">
+                                        </select>
+                                        <input type="text"
+                                            class="form-control bg-light border border-secondary-subtle shadow-none rounded-3 mt-1"
+                                            id="teacherJobTitleOther" style="display: none;" placeholder="...">
+                                    </div>
+                                    <div class="col-12"><label class="form-label small fw-bold text-secondary mb-1"
+                                            data-i18n="specialization_label">بسپور</label>
+                                        <select id="teacherSpecializationSelect"
+                                            class="form-select bg-light border border-secondary-subtle shadow-none rounded-3"
+                                            onchange="this.value==='یێن دی' || this.value==='أخرى' || this.value==='Other' ? this.nextElementSibling.style.display='block' : this.nextElementSibling.style.display='none'">
+                                        </select>
+                                        <input type="text"
+                                            class="form-control bg-light border border-secondary-subtle shadow-none rounded-3 mt-1"
+                                            id="teacherSpecializationOther" style="display: none;" placeholder="...">
+                                    </div>
+                                    <div class="col-12"><label class="form-label small fw-bold text-secondary mb-1"
+                                            data-i18n="gender_label">ڕەگەز</label>
+                                        <select id="teacherGenderSelect"
+                                            class="form-select bg-light border border-secondary-subtle shadow-none rounded-3">
+                                            <option value="" data-i18n="select_option">اختر...</option>
+                                            <option value="نێر" data-i18n="gender_male">نێر (ذكر)</option>
+                                            <option value="مێ" data-i18n="gender_female">مێ (أنثى)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12"><label class="form-label small fw-bold text-secondary mb-1"
+                                            data-i18n="status_label">میلاك / وانەبێژ</label>
+                                        <select id="teacherStatusSelect"
+                                            class="form-select bg-light border border-secondary-subtle shadow-none rounded-3">
+                                            <option value="" data-i18n="select_option">اختر...</option>
+                                            <option value="ميلاك">میلاك</option>
+                                            <option value="گرێبەست">گرێبەست</option>
+                                            <option value="وانەبێژ">وانەبێژ</option>
+                                            <option value="خۆبەخش">خۆبەخش</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12"><label class="form-label small fw-bold text-secondary mb-1"
+                                            data-i18n="phone_label">مۆبایل</label>
+                                        <input type="text"
+                                            class="form-control bg-light border border-secondary-subtle shadow-none rounded-3"
+                                            id="teacherPhone" placeholder="0750...">
+                                    </div>
+                                    <div class="col-12 mt-4 p-3 bg-danger-subtle rounded-4 d-flex align-items-center justify-content-between transition-all border-0"
+                                        id="leaveToggleContainer">
+                                        <div>
+                                            <label class="form-check-label fw-bold text-danger mb-0"
+                                                for="teacherOnLeave"><i class="fas fa-user-clock me-2"></i>مۆڵەتدار
+                                                (مجاز)</label>
+                                            <div class="small text-danger opacity-75 mt-1" style="font-size: 0.75rem;">
+                                                زیادکرن بۆ خشتێ مۆڵەتداران</div>
+                                        </div>
+                                        <div class="form-check form-switch m-0" style="padding-left: 0;">
+                                            <input class="form-check-input shadow-sm" type="checkbox"
+                                                id="teacherOnLeave"
+                                                style="transform: scale(1.4); cursor: pointer; float: none; margin-left:0; margin-right: 15px;"
+                                                title="مۆڵەتدار">
+                                        </div>
+                                    </div>
+                                </div>
+                                <hr class="text-secondary opacity-10 my-4">
+                                <h6 class="fw-bold mb-3 text-secondary-emphasis" data-i18n="subjects_list_label"><i
+                                        class="fas fa-book-open me-2 text-primary"></i>لیستا بابه‌تان</h6>
+                                <div id="subjectsContainer" class="d-flex flex-column gap-2 mb-3"></div>
+                                <button type="button"
+                                    class="btn btn-light text-primary btn-sm w-100 rounded-pill fw-bold border-0 shadow-sm transition-all"
+                                    id="addSubjectBtn" data-i18n="add_subject_btn"><i class="fas fa-plus me-1"></i>
+                                    زیادکرنا بابه‌ت</button>
+                            </div>
+                            <!-- Left Pane (Classes Grid) -->
+                            <div class="col-xl-8 col-lg-7 p-4 bg-light">
+                                <div class="d-flex justify-content-center mb-4">
+                                    <ul class="nav nav-pills bg-white p-1 rounded-pill shadow-sm d-inline-flex border border-light-subtle"
+                                        id="teacherModalTabs" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link active fw-bold rounded-pill px-4 transition-all"
+                                                id="classes-tab" data-bs-toggle="pill"
+                                                data-bs-target="#classes-tab-pane" type="button" role="tab"
+                                                data-i18n="tab_classes_dist"><i
+                                                    class="fas fa-sitemap me-2"></i>دابه‌شکرنا لسه‌ر پولان</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button
+                                                class="nav-link fw-bold rounded-pill px-4 transition-all text-danger"
+                                                id="availability-tab" data-bs-toggle="pill"
+                                                data-bs-target="#availability-tab-pane" type="button" role="tab"
+                                                data-i18n="tab_availability"><i
+                                                    class="fas fa-calendar-times me-2"></i>قەدەغەکرنا وانان</button>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="tab-content" id="teacherModalTabContent">
+                                    <div class="tab-pane fade show active" id="classes-tab-pane" role="tabpanel"
+                                        tabindex="0">
+                                        <div class="d-flex justify-content-between align-items-center mb-3 px-1">
+                                            <h6 class="fw-bold m-0 text-secondary-emphasis"
+                                                data-i18n="tab_classes_dist">دابه‌شکرنا لسه‌ر پولان:</h6>
+                                            <button type="button"
+                                                class="btn btn-white btn-sm rounded-circle shadow-sm border border-light-subtle"
+                                                onclick="toggleModalLayout()" data-i18n-title="toggle_view_btn"
+                                                title="گوهورینا دیمه‌نێ دابه‌شکرنێ"
+                                                style="width: 32px; height: 32px;"><i
+                                                    class="fas fa-retweet text-primary"></i></button>
+                                        </div>
+                                        <div id="teacherClassesContainer" class="pb-2"></div>
+                                    </div>
+                                    <div class="tab-pane fade" id="availability-tab-pane" role="tabpanel" tabindex="0">
+                                        <div id="teacherAvailabilityGrid"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer border-top-0 bg-light rounded-bottom-4 pt-3 pb-4 px-4 shadow-sm"
+                    style="z-index: 10;">
+                    <button type="button"
+                        class="btn btn-white rounded-pill px-4 fw-bold shadow-sm border border-light-subtle"
+                        data-bs-dismiss="modal" data-i18n="btn_close">داخستن</button>
+                    <button type="submit" form="teacherForm" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm"
+                        data-i18n="btn_save"><i class="fas fa-save me-1"></i> پاشه‌كه‌وتكرن</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal fade" id="settingsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" data-i18n="settings_modal_title">رێكخستنێن گشتی</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="settingsForm">
+                        <div class="mb-3">
+                            <label for="globalSchoolName" class="form-label">ناڤێ قوتابخانێ</label>
+                            <input type="text" class="form-control" id="globalSchoolName"
+                                placeholder="ناڤێ قوتابخانێ بنڤیسە">
+                        </div>
+                        <div class="mb-3">
+                            <label for="principalName" class="form-label" data-i18n="principal_name_label">ناڤێ
+                                رێڤه‌به‌ری</label>
+                            <input type="text" class="form-control" id="principalName"
+                                data-i18n-placeholder="principal_placeholder" placeholder="ناڤێ رێڤه‌به‌ری بنڤیسە">
+                        </div>
+                        <hr>
+                        <h6 class="fw-bold text-primary" data-i18n="tt_settings_section">رێكخستنێن خشتێ حەفتیانە</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold" data-i18n="periods_per_day_label"
+                                    title="عدد الحصص في اليوم">هەژمارا وانەیان د رۆژێدا</label>
+                                <input type="number" class="form-control" id="settingPeriodsPerDay" min="1" max="10"
+                                    value="7">
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-bold" data-i18n="work_days_label"
+                                    title="أيام الدوام للجدول">رۆژێن دەوامێ</label>
+                                <div id="settingWorkDaysContainer" class="d-flex flex-wrap gap-2 mt-1">
+                                    <!-- checkboxes generated by JS -->
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+                        <h6 class="fw-bold" data-i18n="extra_tables_section">رێكخستنا خشتێن زێده‌</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="studentTableRows" class="form-label" data-i18n="student_rows_label">هژمارا
+                                    رێزێن خشتێ ئامارا قوتابیان</label>
+                                <input type="number" class="form-control" id="studentTableRows" min="1" max="15"
+                                    value="6">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="leaveTableRows" class="form-label" data-i18n="leave_rows_label">هژمارا رێزێن
+                                    خشتێ مۆله‌تێن ماموستایان</label>
+                                <input type="number" class="form-control" id="leaveTableRows" min="1" max="15"
+                                    value="4">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                        data-i18n="btn_close">داخستن</button>
+                    <button type="button" class="btn btn-primary" onclick="saveSettings()"
+                        data-i18n="btn_save">پاشه‌كه‌وتكرن</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Class Summary Modal -->
+    <div class="modal fade" id="classSummaryModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="classSummaryModalTitle" data-i18n="class_summary_title">پوختەیا پولێ
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="classSummaryModalBody">
+                    <!-- Class summary content will be generated here -->
+                </div>
+                <div class="modal-footer border-top-0 p-3 w-100">
+                    <div class="row w-100 g-2 m-0">
+                        <div class="col-6 px-1">
+                            <button type="button" class="btn btn-light border w-100 py-2 fw-bold text-success"
+                                onclick="exportClassSummaryToExcel()">
+                                <i class="fas fa-file-excel me-2"></i>Excel
+                            </button>
+                        </div>
+                        <div class="col-6 px-1">
+                            <button type="button" class="btn btn-light border w-100 py-2 fw-bold text-info"
+                                onclick="downloadClassSummaryHTML()">
+                                <i class="fas fa-file-code me-2"></i>HTML
+                            </button>
+                        </div>
+                        <div class="col-6 px-1">
+                            <button type="button" class="btn btn-light border w-100 py-2 fw-bold text-primary"
+                                onclick="printClassSummary()">
+                                <i class="fas fa-print me-2"></i>چاپكرن
+                            </button>
+                        </div>
+                        <div class="col-6 px-1">
+                            <button type="button" class="btn btn-light border w-100 py-2 fw-bold text-danger"
+                                onclick="deleteClassFromSummaryModal()">
+                                <i class="fas fa-trash-alt me-2"></i>سڕینەوە
+                            </button>
+                        </div>
+                        <div class="col-12 px-1 mt-2">
+                            <button type="button" class="btn btn-secondary w-100 py-2 fw-bold shadow-sm"
+                                data-bs-dismiss="modal" data-i18n="btn_close">داخستن</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subject Restrictions Modal (قفل وقيود المواد) -->
+    <div class="modal fade" id="subjectRestrictionsModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-dark text-white border-bottom-0 py-3 px-4">
+                    <h5 class="modal-title fw-bold" id="subjectRestrictionsModalTitle">
+                        <i class="fas fa-lock text-warning me-2"></i><span data-i18n="subject_restrictions_title">قفل
+                            وقيود المواد في الجدول</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-3 p-md-4 bg-light">
+                    <div class="alert alert-info border-0 shadow-sm d-flex align-items-center gap-2 mb-3 rounded-3">
+                        <i class="fas fa-info-circle fa-lg text-primary"></i>
+                        <div class="small" data-i18n="subject_restrictions_desc">
+                            دیاریکرنا وانەیێن قەدەغەکری یان مجاز بۆ هەر بابەتەکێ (بۆ نموونە: قەدەغەکرنا بابەتی ل وانەیا
+                            شەشێ یان حەفتێ، یان قوفڵکرنا وانەیان د خشتەی دا)
+                        </div>
+                    </div>
+                    <div id="subjectRestrictionsContainer">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 bg-white py-3 px-4 rounded-bottom-4 shadow-sm">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4 fw-bold shadow-sm"
+                        data-bs-dismiss="modal" data-i18n="btn_close">داخستن</button>
+                    <button type="button" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm"
+                        onclick="saveSubjectRestrictions()" data-i18n="btn_save">
+                        <i class="fas fa-save me-1"></i> پاشه‌كه‌وتكرن
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Timetable Editor Modal (تعديل يدوي للجدول) -->
+    <div class="modal fade" id="manualTimetableEditorModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-primary text-white border-bottom-0 py-3 px-4">
+                    <h5 class="modal-title fw-bold" id="manualEditorModalTitle">
+                        <i class="fas fa-edit me-2"></i><span data-i18n="btn_manual_edit_tt">دەستکاریکرنا دستی یا
+                            خشتەی</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-3 p-md-4 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="fw-bold small mb-0 text-secondary" data-i18n="col_class">پۆل:</label>
+                            <select id="manualEditorClassSelect"
+                                class="form-select form-select-sm fw-bold border-primary shadow-sm"
+                                style="min-width: 140px;" onchange="renderManualEditorGrid()"></select>
+                        </div>
+                        <div class="small text-muted">
+                            <i class="fas fa-hand-pointer text-primary me-1"></i>کلیک ل سەر هەر خانەیەکێ بکە بۆ (قفلکرن
+                            🔒، گوهورین 🔄، یان دیاریکرنا بابەتێ نوێ)
+                        </div>
+                    </div>
+                    <div id="manualEditorGridContainer"
+                        class="table-responsive bg-white p-2 rounded-3 border shadow-sm">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 bg-white py-3 px-4 rounded-bottom-4 shadow-sm">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4 fw-bold shadow-sm"
+                        data-bs-dismiss="modal" data-i18n="btn_close">داخستن</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="excel_template.js"></script>
+
+    <script src="app.js?v=303"></script>
+</body>
+
+</html>
