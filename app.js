@@ -3039,26 +3039,72 @@ function downloadHTMLFile(title, contentHTML, options = {}) {
 function printWithContent(title, contentHTML, options = {}) {
     const docHTML = buildStyledHtmlDocument(title, contentHTML, options);
 
-    // Remove any previous print iframe to keep DOM clean
-    const existingIframe = document.getElementById('print_frame_fallback');
-    if (existingIframe) {
-        try {
-            existingIframe.remove();
-        } catch (e) { }
-    }
+    // 1. Close any active SweetAlert or modal to prevent stuck backdrops/focus traps
+    try {
+        if (typeof Swal !== 'undefined' && Swal.isVisible()) {
+            Swal.close();
+        }
+    } catch (e) { }
 
-    const iframe = document.createElement('iframe');
-    iframe.id = 'print_frame_fallback';
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '10px';
-    iframe.style.height = '10px';
-    iframe.style.opacity = '0';
-    iframe.style.border = '0';
-    iframe.style.pointerEvents = 'none';
-    iframe.style.zIndex = '-9999';
-    document.body.appendChild(iframe);
+    // 2. Comprehensive page restoration function to prevent any freezing after print dialog closes
+    const restorePageInteraction = () => {
+        try {
+            // Restore pointer events across the whole document
+            document.body.style.removeProperty('pointer-events');
+            document.documentElement.style.removeProperty('pointer-events');
+
+            // Remove any stuck modal backdrops or SweetAlert containers
+            document.querySelectorAll('.modal-backdrop').forEach(bd => {
+                try { bd.remove(); } catch (e) { }
+            });
+            document.querySelectorAll('.swal2-container').forEach(sc => {
+                try {
+                    if (!sc.classList.contains('swal2-top-end')) {
+                        sc.remove();
+                    }
+                } catch (e) { }
+            });
+
+            // Clean modal and swal body classes
+            document.body.classList.remove('modal-open', 'swal2-shown', 'swal2-height-auto');
+            document.documentElement.classList.remove('swal2-shown', 'swal2-height-auto');
+
+            // Clear any lingering aria-hidden attributes
+            document.querySelectorAll('[aria-hidden="true"]').forEach(el => {
+                if (el.id !== 'print_frame_fallback') {
+                    el.removeAttribute('aria-hidden');
+                }
+            });
+
+            // Force focus back to main window and blur any stuck active elements
+            window.focus();
+            if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                document.activeElement.blur();
+            }
+            if (document.body && typeof document.body.focus === 'function') {
+                document.body.focus();
+            }
+        } catch (e) {
+            console.error('Print interaction restore error:', e);
+        }
+    };
+
+    // 3. Create or reuse persistent hidden iframe to avoid Chromium's DOM-destruction print bug
+    let iframe = document.getElementById('print_frame_fallback');
+    if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'print_frame_fallback';
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '1px';
+        iframe.style.height = '1px';
+        iframe.style.opacity = '0.01';
+        iframe.style.border = '0';
+        iframe.style.pointerEvents = 'none';
+        iframe.style.zIndex = '-9999';
+        document.body.appendChild(iframe);
+    }
 
     try {
         const pri = iframe.contentWindow;
@@ -3067,19 +3113,22 @@ function printWithContent(title, contentHTML, options = {}) {
         doc.write(docHTML);
         doc.close();
 
-        const cleanupAndRefocus = () => {
-            try {
-                window.focus();
-                if (iframe && iframe.parentNode) {
-                    iframe.parentNode.removeChild(iframe);
-                }
-            } catch (err) { }
-        };
-
+        // Listen for afterprint on both iframe and top window
         if (pri) {
-            pri.addEventListener('afterprint', cleanupAndRefocus);
+            pri.addEventListener('afterprint', restorePageInteraction, { once: true });
         }
+        window.addEventListener('afterprint', restorePageInteraction, { once: true });
 
+        // Fallback: whenever user returns to window (focus or mousemove), restore page
+        const onReturnToWindow = () => {
+            window.removeEventListener('focus', onReturnToWindow);
+            window.removeEventListener('mousemove', onReturnToWindow);
+            setTimeout(restorePageInteraction, 100);
+        };
+        window.addEventListener('focus', onReturnToWindow, { once: true });
+        window.addEventListener('mousemove', onReturnToWindow, { once: true });
+
+        // Trigger print after allowing styles and layout to settle
         setTimeout(() => {
             try {
                 if (pri) {
@@ -3088,13 +3137,9 @@ function printWithContent(title, contentHTML, options = {}) {
                 }
             } catch (e) {
                 console.error('Print trigger error:', e);
-            } finally {
-                // Refocus main window
-                setTimeout(() => {
-                    try { window.focus(); } catch (e) { }
-                }, 800);
+                restorePageInteraction();
             }
-        }, 250);
+        }, 350);
     } catch (err) {
         console.error('Error during in-page printing execution:', err);
         try {
@@ -3106,15 +3151,16 @@ function printWithContent(title, contentHTML, options = {}) {
                 printWindow.focus();
                 printWindow.addEventListener('afterprint', () => {
                     try { printWindow.close(); } catch (e) { }
-                    window.focus();
-                });
+                    restorePageInteraction();
+                }, { once: true });
                 setTimeout(() => {
                     printWindow.print();
-                }, 300);
+                }, 350);
             }
         } catch (popupErr) {
             console.error('Window open fallback failed:', popupErr);
         }
+        restorePageInteraction();
     }
 }
 
@@ -6542,6 +6588,68 @@ function getTeacherDisplayName(fullName) {
     return grandfatherLetter ? `${firstName} ${fatherLetter} ${grandfatherLetter}` : (fatherLetter ? `${firstName} ${fatherLetter}` : firstName);
 }
 
+function getTeacherFirstNameOnly(fullName) {
+    if (!fullName) return '';
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length <= 1) return fullName;
+    if (parts[0] === 'عبد' && parts[1]) {
+        return `${parts[0]} ${parts[1]}`;
+    }
+    return parts[0];
+}
+
+function formatMasterCellContent(subjectText, teacherText) {
+    if (!subjectText) return '';
+    let subj = String(subjectText).trim();
+    if (subj === 'تربية إسلامية' || subj === 'تربية اسلامية') {
+        subj = 'إسلامية';
+    }
+    
+    let subjFontSize = '6.5pt';
+    let letterSpacing = 'normal';
+    if (subj.length >= 9) {
+        subjFontSize = '5.1pt';
+        letterSpacing = '-0.4px';
+    } else if (subj.length >= 7) {
+        subjFontSize = '5.6pt';
+        letterSpacing = '-0.25px';
+    } else if (subj.length >= 5) {
+        subjFontSize = '6.1pt';
+    }
+
+    const teacherFirst = getTeacherFirstNameOnly(teacherText);
+    let teachFontSize = '5.8pt';
+    if (teacherFirst.length >= 7) {
+        teachFontSize = '5.2pt';
+    }
+
+    return `
+        <div style="font-weight: 900; color: #000 !important; font-size: ${subjFontSize}; letter-spacing: ${letterSpacing}; line-height: 1.15; overflow: hidden; text-overflow: clip; white-space: nowrap; margin-bottom: 2px;">${subj}</div>
+        <div style="font-weight: 700; color: #1e293b !important; font-size: ${teachFontSize}; line-height: 1.05; overflow: hidden; text-overflow: clip; white-space: nowrap;">${teacherFirst}</div>
+    `;
+}
+
+function formatMasterTeacherCellContent(className, subjectText) {
+    if (!className) return '';
+    let subj = String(subjectText || '').trim();
+    if (subj === 'تربية إسلامية' || subj === 'تربية اسلامية') {
+        subj = 'إسلامية';
+    }
+    let subjFontSize = '6.2pt';
+    let letterSpacing = 'normal';
+    if (subj.length >= 9) {
+        subjFontSize = '5.0pt';
+        letterSpacing = '-0.3px';
+    } else if (subj.length >= 7) {
+        subjFontSize = '5.5pt';
+    }
+    return `
+        <div style="font-weight: 900; color: #dc2626 !important; font-size: 6.8pt; line-height: 1.15; overflow: hidden; text-overflow: clip; white-space: nowrap; margin-bottom: 2px;">${className}</div>
+        <div style="font-weight: 700; color: #000 !important; font-size: ${subjFontSize}; letter-spacing: ${letterSpacing}; line-height: 1.05; overflow: hidden; text-overflow: clip; white-space: nowrap;">${subj}</div>
+    `;
+}
+
+
 // --- Subject Restrictions & Slot Locking System ---
 
 let activeSubjectRestrictionName = null;
@@ -8611,6 +8719,14 @@ function renderSubstituteTab() {
 }
 window.renderSubstituteTab = renderSubstituteTab;
 
+window.selectAbsentTeacherQuick = function(tName) {
+    const subTeacherSelect = document.getElementById('substituteTeacherSelect');
+    if (subTeacherSelect) {
+        subTeacherSelect.value = tName;
+    }
+    renderSubstituteTab();
+};
+
 function renderSubstituteFinder(schedule, container, days, periodsCount) {
     if (!schedule || !container) return;
 
@@ -8753,18 +8869,59 @@ function renderSubstituteFinder(schedule, container, days, periodsCount) {
         else teacherBadgeDisplay = isAr ? 'جدول المعلمين والبدلاء' : 'ماستەری مامۆستایان';
     }
 
+    // Pre-generate select options for teacher and day dropdowns
+    const allTeachersText = (typeof t === 'function' ? t('all_teachers') : 'هەمی مامۆستا') || 'هەمی مامۆستا';
+    const teacherOptionsHtml = `<option value="all_teachers" ${absentTeacherName === 'all_teachers' || !absentTeacherName ? 'selected' : ''}>${allTeachersText}</option>` +
+        (schedule.teachers || []).map(tItem => `<option value="${tItem.name}" ${tItem.name === absentTeacherName ? 'selected' : ''}>${tItem.name} (${translateSubjectName(tItem.specialization || '')})</option>`).join('');
+
+    const allDaysText = (typeof t === 'function' ? t('all_days_option') : 'هەمی ڕۆژێن حەفتیێ') || 'هەمی ڕۆژێن حەفتیێ';
+    const dayOptionsHtml = `<option value="all" ${selectedDayVal === 'all' ? 'selected' : ''}>${allDaysText}</option>` +
+        days.map((dName, dIdx) => `<option value="${dIdx}" ${String(dIdx) === String(selectedDayVal) ? 'selected' : ''}>${dName}</option>`).join('');
+
     // Build the Top Sub-View Bar
     const subViewBarHtml = `
         <div class="substitute-header-card mb-3">
-            <!-- Tier 1: Teacher Title Info & Action Buttons -->
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2.5 pb-2.5 border-bottom substitute-header-top">
-                <div class="d-flex align-items-center gap-2.5">
+            <!-- Tier 1: View Navigation Tabs & Filters -->
+            <div class="substitute-toolbar-tier1 d-flex justify-content-between align-items-center flex-wrap gap-2 pb-2 mb-2 border-bottom">
+                <!-- Segmented View Tabs -->
+                <div class="substitute-segmented-nav shadow-xs" role="group">
+                    <button type="button" class="substitute-segmented-tab ${substituteSubViewMode === 'weekly_master' ? 'active' : ''}" onclick="switchSubstituteSubView('weekly_master')">
+                        <i class="fas fa-users-rectangle ${substituteSubViewMode === 'weekly_master' ? 'text-warning' : 'text-primary'} me-1"></i>
+                        <span>${isAr ? 'جدول المعلمين' : 'خشتێ مامۆستایان'}</span>
+                    </button>
+                    <button type="button" class="substitute-segmented-tab ${substituteSubViewMode === 'weekly_master_classes' ? 'active' : ''}" onclick="switchSubstituteSubView('weekly_master_classes')">
+                        <i class="fas fa-chalkboard ${substituteSubViewMode === 'weekly_master_classes' ? 'text-warning' : 'text-success'} me-1"></i>
+                        <span>${isAr ? 'جدول الفصول' : 'خشتێ پۆلان'}</span>
+                    </button>
+                    <button type="button" class="substitute-segmented-tab ${substituteSubViewMode === 'grid' ? 'active' : ''}" onclick="switchSubstituteSubView('grid')">
+                        <i class="fas fa-table-cells ${substituteSubViewMode === 'grid' ? 'text-warning' : 'text-primary'} me-1"></i>
+                        <span>${isAr ? 'المصفوفة' : 'خشتێ مۆڵەتان'}</span>
+                    </button>
+                </div>
+
+                <!-- Filters: Teacher & Day Selects -->
+                <div class="substitute-filters-group d-inline-flex align-items-center gap-1.5 flex-wrap">
+                    <select id="substituteTeacherSelect" class="form-select form-select-sm rounded-pill fw-bold substitute-select"
+                        style="min-width: 160px; max-width: 240px;" onchange="renderSubstituteTab()">
+                        ${teacherOptionsHtml}
+                    </select>
+                    <select id="substituteDaySelect" class="form-select form-select-sm rounded-pill fw-bold substitute-select"
+                        style="min-width: 130px; max-width: 190px;" onchange="renderSubstituteTab()">
+                        ${dayOptionsHtml}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Tier 2: Status Badges & Action Buttons Toolbar -->
+            <div class="substitute-toolbar-tier2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <!-- Status Badges Info -->
+                <div class="d-flex align-items-center gap-2 flex-wrap substitute-status-info">
                     <span class="substitute-avatar-icon shadow-xs">
                         <i class="fas fa-user-clock fs-5"></i>
                     </span>
                     <div>
                         <div class="d-flex align-items-center gap-2 flex-wrap">
-                            <h5 class="mb-0 fw-bold text-dark fs-6">${isAr ? 'الجدول:' : 'خشتە:'}</h5>
+                            <h6 class="mb-0 fw-bold text-dark">${isAr ? 'الجدول:' : 'خشتە:'}</h6>
                             <span class="badge ${!isAllTeachers ? 'bg-danger text-white' : 'bg-primary text-white'} px-2.5 py-1 fs-6 shadow-xs rounded-pill">
                                 ${teacherBadgeDisplay}
                             </span>
@@ -8791,7 +8948,7 @@ function renderSubstituteFinder(schedule, container, days, periodsCount) {
                 </div>
 
                 <!-- Action Buttons Toolbar -->
-                <div class="substitute-actions-toolbar">
+                <div class="substitute-actions-toolbar d-flex align-items-center gap-1.5 flex-wrap">
                     <button type="button" class="btn btn-warning btn-sm rounded-pill fw-bold shadow-xs text-dark substitute-btn-action substitute-btn-auto" onclick="autoAssignAllSubstitutes()" title="${autoBtnTitle}">
                         <i class="fas fa-magic me-1"></i><span>${isAr ? 'توزيع تلقائي' : 'دابەشکرنا زیرەك'}</span>
                     </button>
@@ -8811,22 +8968,6 @@ function renderSubstituteFinder(schedule, container, days, periodsCount) {
                         <i class="fas fa-trash-alt me-1"></i><span>${isAr ? 'تفريغ' : 'ڤالاکرن'}</span>
                     </button>
                 </div>
-            </div>
-
-            <!-- Tier 2: Responsive Segmented Navigation Tabs -->
-            <div class="substitute-segmented-nav mt-2.5">
-                <button type="button" class="substitute-segmented-tab ${substituteSubViewMode === 'weekly_master' ? 'active' : ''}" onclick="switchSubstituteSubView('weekly_master')">
-                    <i class="fas fa-users-rectangle ${substituteSubViewMode === 'weekly_master' ? 'text-warning' : 'text-primary'}"></i>
-                    <span>${isAr ? 'جدول المعلمين' : 'خشتێ مامۆستایان'}</span>
-                </button>
-                <button type="button" class="substitute-segmented-tab ${substituteSubViewMode === 'weekly_master_classes' ? 'active' : ''}" onclick="switchSubstituteSubView('weekly_master_classes')">
-                    <i class="fas fa-chalkboard ${substituteSubViewMode === 'weekly_master_classes' ? 'text-warning' : 'text-success'}"></i>
-                    <span>${isAr ? 'جدول الفصول' : 'خشتێ پۆلان'}</span>
-                </button>
-                <button type="button" class="substitute-segmented-tab ${substituteSubViewMode === 'grid' ? 'active' : ''}" onclick="switchSubstituteSubView('grid')">
-                    <i class="fas fa-table-cells ${substituteSubViewMode === 'grid' ? 'text-warning' : 'text-primary'}"></i>
-                    <span>${isAr ? 'المصفوفة' : 'خشتێ مۆڵەتان'}</span>
-                </button>
             </div>
         </div>
     `;
@@ -8894,17 +9035,18 @@ function renderSubstituteFinder(schedule, container, days, periodsCount) {
                         const assignedSub = schedule.substitutions ? schedule.substitutions[assignKey] : '';
 
                         if (assignedSub) {
-                            const subDisplayName = getSmartTeacherDisplayName(assignedSub, schedule.teachers);
+                            const subDisplayName = (getSmartTeacherDisplayName(assignedSub, schedule.teachers) || assignedSub).trim().split(/\s+/)[0];
                             h += `<td class="${borderClass} timetable-cell" style="background-color: #dcfce7 !important; border: 1px solid #16a34a; overflow:hidden; vertical-align: middle; padding: 2px 1px; height: 40px; cursor: pointer; position: relative;" onclick="openSubstitutePickerModal(${d}, ${p}, '${foundClass.replace(/'/g, "\\'")}', '${foundSubject.replace(/'/g, "\\'")}', '${tName.replace(/'/g, "\\'")}')" title="البديل: ${assignedSub} (${foundClass} / ${foundSubject})">` +
                                 `<a href="javascript:void(0)" onclick="event.stopPropagation(); removeSubstituteAssignment('${tName.replace(/'/g, "\\'")}', ${d}, ${p}, '${foundClass.replace(/'/g, "\\'")}')" title="إلغاء البديل" style="position: absolute; top: 1px; left: 2px; font-size: 0.65rem; color: #dc2626; text-decoration: none; font-weight: bold; z-index: 3;">✕</a>` +
                                 getSvgFormattedText('✓ ' + subDisplayName, true, 'text-success fw-bold', 11) +
-                                getSvgFormattedText(foundClass + ' (' + getDisplaySubjectName(foundSubject, true) + ')', false, 'text-muted', 9) +
+                                getSvgFormattedText(foundClass, false, 'text-muted fw-bold', 9.5) +
                                 `</td>`;
                         } else {
                             const isTeacherAbsentHere = isTeacherOnLeave(tName, d, schedule) || isSelectedAbsent;
+                            const teacherFirstName = (getSmartTeacherDisplayName(tName, schedule.teachers) || tName).trim().split(/\s+/)[0];
                             h += `<td class="${borderClass} timetable-cell ${isTeacherAbsentHere ? 'bg-danger-subtle' : 'bg-white'}" style="${isTeacherAbsentHere ? 'border: 1.5px dashed #dc2626; background-color: #fee2e2 !important;' : ''} overflow:hidden; vertical-align: middle; padding: 2px 1px; height: 40px; cursor: pointer;" onclick="openSubstitutePickerModal(${d}, ${p}, '${foundClass.replace(/'/g, "\\'")}', '${foundSubject.replace(/'/g, "\\'")}', '${tName.replace(/'/g, "\\'")}')" title="${isTeacherAbsentHere ? 'شاغر / بحاجة لبديل - انقر للتعيين' : 'انقر لتعيين بديل'} (${foundSubject} - ${foundClass})">` +
                                 (isTeacherAbsentHere ? `<div class="badge bg-danger mb-0.5" style="font-size:0.6rem; padding: 1px 3px;">شاغر</div>` : '') +
-                                getSvgFormattedText(getDisplaySubjectName(foundSubject, true), true, isTeacherAbsentHere ? 'text-danger' : 'text-primary', 11) +
+                                getSvgFormattedText(teacherFirstName, true, isTeacherAbsentHere ? 'text-danger' : 'text-primary', 11) +
                                 getSvgFormattedText(foundClass, false, isTeacherAbsentHere ? 'text-danger fw-bold' : 'text-muted', 9.5) +
                                 `</td>`;
                         }
@@ -8915,17 +9057,24 @@ function renderSubstituteFinder(schedule, container, days, periodsCount) {
                     } else {
                         // Check if teacher is assigned as a substitute in this slot
                         let subClassAssigned = '';
+                        let absentTeacherCovered = '';
                         for (const [subKey, subTeacher] of Object.entries(schedule.substitutions || {})) {
                             if (subTeacher === tName) {
                                 const parts = subKey.split('__');
                                 if (parts.length >= 4 && parseInt(parts[1], 10) === d && parseInt(parts[2], 10) === p) {
+                                    absentTeacherCovered = parts[0];
                                     subClassAssigned = parts[3];
                                     break;
                                 }
                             }
                         }
                         if (subClassAssigned) {
-                            h += `<td class="${borderClass} bg-success-subtle text-success small fw-bold" style="border: 1px solid #16a34a; overflow:hidden; vertical-align: middle; padding: 2px 1px; height: 40px; font-size: 0.72rem;">✓ جهگر (${subClassAssigned})</td>`;
+                            const subCoveredFirst = absentTeacherCovered ? absentTeacherCovered.trim().split(/\s+/)[0] : '';
+                            const subLabel = subCoveredFirst ? ('✓ ' + subCoveredFirst) : (isAr ? '✓ بديل' : '✓ جهگر');
+                            h += `<td class="${borderClass} bg-success-subtle text-success small fw-bold" style="border: 1px solid #16a34a; overflow:hidden; vertical-align: middle; padding: 2px 1px; height: 40px;" title="${isAr ? 'بديل عن' : 'جهگر بۆ'} ${absentTeacherCovered || ''} (${subClassAssigned})">` +
+                                getSvgFormattedText(subLabel, true, 'text-success fw-bold', 11) +
+                                getSvgFormattedText(subClassAssigned, false, 'text-success fw-bold', 9.5) +
+                                `</td>`;
                         } else {
                             h += `<td class="${borderClass} bg-white text-muted opacity-50" style="overflow:hidden; vertical-align: middle; padding: 2px 1px; height: 40px;"></td>`;
                         }
@@ -9694,18 +9843,20 @@ function buildSubstitutePrintableHtml(arg1, arg2, arg3, arg4) {
                     const assignedSub = schedule.substitutions?.[assignKey] || '';
 
                     if (assignedSub) {
-                        const subDisplayName = getSmartTeacherDisplayName(assignedSub, allTeachers);
+                        const subDisplayName = (getSmartTeacherDisplayName(assignedSub, allTeachers) || assignedSub).trim().split(/\s+/)[0];
                         rowCells += `
-                            <td class="${borderClass}" style="height: ${targetRowHeight}px; min-height: ${targetRowHeight}px; width: ${teacherPeriodColWidthPct}%; max-width: ${teacherPeriodColWidthPct}%; min-width: 0 !important; padding: ${cellPadding} !important; overflow:hidden; border: 1px solid #000 !important; vertical-align: middle;">
+                            <td class="${borderClass}" style="height: ${targetRowHeight}px; min-height: ${targetRowHeight}px; width: ${teacherPeriodColWidthPct}%; max-width: ${teacherPeriodColWidthPct}%; min-width: 0 !important; padding: ${cellPadding} !important; overflow:hidden; border: 1px solid #000 !important; vertical-align: middle; background-color: #dcfce7 !important;">
                                 <div class="fw-bold text-success" style="font-size: ${cellMainFontSize}pt; line-height:1.1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="البديل: ${assignedSub}">✓ ${subDisplayName}</div>
-                                <div class="text-muted" style="font-size: ${cellSubFontSize}pt; line-height:1.05; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${foundClass} - ${translateSubjectName(foundSubject)}</div>
+                                <div class="text-muted fw-bold" style="font-size: ${cellSubFontSize}pt; line-height:1.05; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${foundClass}</div>
                             </td>
                         `;
                     } else {
+                        const teacherFirstName = (getSmartTeacherDisplayName(tName, allTeachers) || tName).trim().split(/\s+/)[0];
+                        const isTeacherAbsentHere = isTeacherOnLeave(tName, d, schedule);
                         rowCells += `
-                            <td class="${borderClass}" style="height: ${targetRowHeight}px; min-height: ${targetRowHeight}px; width: ${teacherPeriodColWidthPct}%; max-width: ${teacherPeriodColWidthPct}%; min-width: 0 !important; padding: ${cellPadding} !important; overflow:hidden; border: 1px solid #000 !important; vertical-align: middle;">
-                                <div class="fw-bold text-danger" style="font-size: ${cellMainFontSize}pt; line-height:1.1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${foundClass}</div>
-                                <div class="text-muted" style="font-size: ${cellSubFontSize}pt; line-height:1.05; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${translateSubjectName(foundSubject)}</div>
+                            <td class="${borderClass}" style="height: ${targetRowHeight}px; min-height: ${targetRowHeight}px; width: ${teacherPeriodColWidthPct}%; max-width: ${teacherPeriodColWidthPct}%; min-width: 0 !important; padding: ${cellPadding} !important; overflow:hidden; border: 1px solid #000 !important; vertical-align: middle; ${isTeacherAbsentHere ? 'background-color: #fee2e2 !important;' : ''}">
+                                <div class="fw-bold ${isTeacherAbsentHere ? 'text-danger' : 'text-primary'}" style="font-size: ${cellMainFontSize}pt; line-height:1.1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${teacherFirstName}</div>
+                                <div class="${isTeacherAbsentHere ? 'text-danger' : 'text-muted'} fw-bold" style="font-size: ${cellSubFontSize}pt; line-height:1.05; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${foundClass}</div>
                             </td>
                         `;
                     }
@@ -9714,7 +9865,30 @@ function buildSubstitutePrintableHtml(arg1, arg2, arg3, arg4) {
                 } else if (isBlocked) {
                     rowCells += `<td class="${borderClass}" style="height: ${targetRowHeight}px; min-height: ${targetRowHeight}px; width: ${teacherPeriodColWidthPct}%; max-width: ${teacherPeriodColWidthPct}%; min-width: 0 !important; padding: ${cellPadding} !important; overflow:hidden; border: 1px solid #000 !important; vertical-align: middle;"><div class="text-danger small" style="font-size: ${cellSubFontSize}pt;">🔒</div></td>`;
                 } else {
-                    rowCells += `<td class="${borderClass}" style="height: ${targetRowHeight}px; min-height: ${targetRowHeight}px; width: ${teacherPeriodColWidthPct}%; max-width: ${teacherPeriodColWidthPct}%; min-width: 0 !important; padding: ${cellPadding} !important; overflow:hidden; border: 1px solid #000 !important; vertical-align: middle;"></td>`;
+                    let subClassAssigned = '';
+                    let absentTeacherCovered = '';
+                    for (const [subKey, subTeacher] of Object.entries(schedule.substitutions || {})) {
+                        if (subTeacher === tName) {
+                            const parts = subKey.split('__');
+                            if (parts.length >= 4 && parseInt(parts[1], 10) === d && parseInt(parts[2], 10) === p) {
+                                absentTeacherCovered = parts[0];
+                                subClassAssigned = parts[3];
+                                break;
+                            }
+                        }
+                    }
+                    if (subClassAssigned) {
+                        const subCoveredFirst = absentTeacherCovered ? absentTeacherCovered.trim().split(/\s+/)[0] : '';
+                        const subLabel = subCoveredFirst ? ('✓ ' + subCoveredFirst) : (isAr ? '✓ بديل' : '✓ جهگر');
+                        rowCells += `
+                            <td class="${borderClass}" style="height: ${targetRowHeight}px; min-height: ${targetRowHeight}px; width: ${teacherPeriodColWidthPct}%; max-width: ${teacherPeriodColWidthPct}%; min-width: 0 !important; padding: ${cellPadding} !important; overflow:hidden; border: 1px solid #000 !important; vertical-align: middle; background-color: #dcfce7 !important;">
+                                <div class="fw-bold text-success" style="font-size: ${cellMainFontSize}pt; line-height:1.1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${subLabel}</div>
+                                <div class="text-success fw-bold" style="font-size: ${cellSubFontSize}pt; line-height:1.05; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${subClassAssigned}</div>
+                            </td>
+                        `;
+                    } else {
+                        rowCells += `<td class="${borderClass}" style="height: ${targetRowHeight}px; min-height: ${targetRowHeight}px; width: ${teacherPeriodColWidthPct}%; max-width: ${teacherPeriodColWidthPct}%; min-width: 0 !important; padding: ${cellPadding} !important; overflow:hidden; border: 1px solid #000 !important; vertical-align: middle;"></td>`;
+                    }
                 }
             }
         });
@@ -10475,7 +10649,7 @@ function buildSubstituteWebUiHtml(schedule, absentTeacherName, selectedDayVal, r
 
                         if (assignedSub) {
                             totalAssignedSubCount++;
-                            const subDisplayName = getSmartTeacherDisplayName(assignedSub, schedule.teachers);
+                            const subDisplayName = (getSmartTeacherDisplayName(assignedSub, schedule.teachers) || assignedSub).trim().split(/\s+/)[0];
                             rowCells += `
                                 <td class="p-0.5 align-middle text-center" style="height: 46px; width: 58px; min-width: 58px; border: 1px solid #86efac; background-color: #f0fdf4;">
                                     <div class="p-0.5 d-flex flex-column justify-content-center align-items-center h-100" style="background: linear-gradient(145deg, #10b981, #059669); color: #ffffff !important; border-radius: 6px; box-shadow: 2px 2px 5px rgba(5, 150, 105, 0.25), inset 1px 1px 1px rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.3);">
@@ -10489,12 +10663,13 @@ function buildSubstituteWebUiHtml(schedule, absentTeacherName, selectedDayVal, r
                                 </td>
                             `;
                         } else {
+                            const teacherFirstName = (getSmartTeacherDisplayName(tName, schedule.teachers) || tName).trim().split(/\s+/)[0];
                             rowCells += `
                                 <td class="p-0.5 align-middle text-center" style="height: 46px; width: 58px; min-width: 58px; border: 1px solid #e2e8f0; background-color: #ffffff;">
                                     <div class="d-flex flex-column align-items-center justify-content-center h-100 p-0.5" style="background: linear-gradient(145deg, #ffffff, #f8fafc); border: 1px solid #e2e8f0; border-radius: 6px; box-shadow: 1px 1px 3px rgba(166, 180, 200, 0.25), inset 1px 1px 1px #ffffff;">
                                         <span class="shadow-sm mb-0.5" style="font-size: 0.56rem; padding: 0 4px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: #ffffff; border-radius: 4px; font-weight: 800; line-height: 1.2; white-space: nowrap;">${foundClass}</span>
-                                        <div class="fw-bold text-truncate" style="font-size: 0.56rem; max-width: 52px; color: #1e293b; line-height: 1.1; white-space: nowrap;" title="${translateSubjectName(foundSubject)}">
-                                            ${translateSubjectName(foundSubject)}
+                                        <div class="fw-bold text-truncate" style="font-size: 0.56rem; max-width: 52px; color: #1e293b; line-height: 1.1; white-space: nowrap;" title="${teacherFirstName}">
+                                            ${teacherFirstName}
                                         </div>
                                     </div>
                                 </td>
@@ -11007,19 +11182,19 @@ function renderTimetableGrid() {
     }
     else if (mode === 'master') {
         let h = `<h4 class="text-center mb-3 text-danger">${t('master_class_title')}</h4>`;
-        h += '<table class="table table-bordered text-center align-middle bg-white" style="font-size: 0.75rem; min-width: ' + (periodsCount * days.length * 40) + 'px;">' +
+        h += '<table class="table table-bordered text-center align-middle bg-white" style="font-size: 0.75rem; width: 100%; table-layout: fixed; min-width: ' + (periodsCount * days.length * 36 + 44) + 'px;">' +
             '<thead class="table-light">' +
             '<tr>' +
-            `<th rowspan="2" class="align-middle bg-secondary text-white" style="width: 80px; position: sticky; right: 0; z-index: 2; font-size: 1.2em;">${t('class_period')}</th>`;
-        for (let d = 0; d < days.length; d++) h += '<th colspan="' + periodsCount + '" class="border-start border-end border-dark bg-dark text-white">' + days[d] + '</th>';
+            `<th rowspan="2" class="align-middle bg-secondary text-white" style="width: 44px; min-width: 44px; max-width: 44px; position: sticky; right: 0; z-index: 2; font-size: 0.82rem; padding: 2px 2px; line-height: 1.15;">${t('col_class')}</th>`;
+        for (let d = 0; d < days.length; d++) h += '<th colspan="' + periodsCount + '" class="border-start border-end border-dark bg-dark text-white py-1" style="font-size: 0.88rem;">' + days[d] + '</th>';
         h += '</tr><tr>';
         for (let d = 0; d < days.length; d++) {
-            for (let p = 1; p <= periodsCount; p++) h += '<th class="' + (p === 1 ? 'border-start border-dark' : '') + ' ' + (p === periodsCount ? 'border-end border-dark' : '') + ' bg-secondary text-white">' + p + '</th>';
+            for (let p = 1; p <= periodsCount; p++) h += '<th class="' + (p === 1 ? 'border-start border-dark' : '') + ' ' + (p === periodsCount ? 'border-end border-dark' : '') + ' bg-secondary text-white py-1" style="font-size: 0.75rem;">' + p + '</th>';
         }
         h += '</tr></thead><tbody>';
 
         schedule.columns.forEach(className => {
-            h += '<tr><td class="fw-bold bg-light text-nowrap" style="position: sticky; right: 0; z-index: 1; font-size: 1.3em;">' + className + '</td>';
+            h += '<tr><td class="fw-bold bg-light text-nowrap align-middle" style="position: sticky; right: 0; z-index: 1; font-size: 0.88rem; width: 44px; min-width: 44px; max-width: 44px; padding: 2px 2px; text-align: center;">' + className + '</td>';
             for (let d = 0; d < days.length; d++) {
                 for (let p = 1; p <= periodsCount; p++) {
                     const item = schedule.timetables?.[className]?.[d]?.[p];
@@ -11269,40 +11444,178 @@ function clearClassTimetable() {
     });
 }
 
+function buildSingleClassTimetableHTML(className, perPage = 1) {
+    const schedule = allSchedules[activeScheduleName];
+    if (!schedule) return '';
+    const days = schedule.settings.workDays || ['ئێك شەمب', 'دوو شەمب', 'سێ شەمب', 'چوار شەمب', 'پێنج شەمب'];
+    const periodsCount = schedule.settings.periodsPerDay || 7;
+
+    let periodHeaders = '';
+    for (let p = 1; p <= periodsCount; p++) {
+        periodHeaders += `<th style="width: ${86 / periodsCount}%; border: 1.5px solid #000 !important; background: #e2e8f0 !important; color: #000 !important; font-weight: 800; font-size: ${perPage === 1 ? '11pt' : (perPage === 2 ? '9.5pt' : '8pt')}; padding: 4px 1px; height: 26px;">${p}</th>`;
+    }
+
+    let cellHeight = Math.min(130, Math.max(90, Math.floor(620 / Math.max(1, days.length)))) + 'px';
+    let subjFontSize = '15pt';
+    let teachFontSize = '12pt';
+    let titleFontSize = '16pt';
+    let dayFontSize = '13pt';
+
+    if (perPage === 4) {
+        cellHeight = Math.min(68, Math.max(48, Math.floor(305 / Math.max(1, days.length)))) + 'px';
+        subjFontSize = '8.5pt';
+        teachFontSize = '7.5pt';
+        titleFontSize = '11pt';
+        dayFontSize = '8.5pt';
+    } else if (perPage === 3) {
+        cellHeight = Math.min(60, Math.max(45, Math.floor(275 / Math.max(1, days.length)))) + 'px';
+        subjFontSize = '9.5pt';
+        teachFontSize = '8pt';
+        titleFontSize = '11.5pt';
+        dayFontSize = '9pt';
+    } else if (perPage === 2) {
+        cellHeight = Math.min(95, Math.max(70, Math.floor(430 / Math.max(1, days.length)))) + 'px';
+        subjFontSize = '12pt';
+        teachFontSize = '10pt';
+        titleFontSize = '13.5pt';
+        dayFontSize = '11pt';
+    }
+
+    const schoolName = schedule.settings?.globalSchoolName || schedule.milak?.schoolName || '';
+    let html = `<h3 class="text-center mb-1 pb-1" style="font-size: ${titleFontSize}; font-weight: 800; color: #000; border-bottom: 1.5px solid #000; margin: 0 0 4px 0;">${schoolName ? `${schoolName} - ` : ''}خشتێ حەفتیانە یێ پولا: ${className}</h3>`;
+    html += `<table class="table table-bordered text-center align-middle preserve-table-styles" style="table-layout: fixed; width: 100%; border: 1.5px solid #000 !important; border-collapse: collapse !important; margin: 0;">
+            <thead class="table-light"><tr><th style="width: 14%; border: 1.5px solid #000 !important; background: #e2e8f0 !important; color: #000 !important; font-weight: 800; font-size: ${perPage === 1 ? '11pt' : (perPage === 2 ? '9.5pt' : '8pt')}; padding: 4px 1px; height: 26px;">${t('day_period') || 'الروژ \\ حەسە'}</th>${periodHeaders}</tr></thead><tbody>`;
+    for (let d = 0; d < days.length; d++) {
+        html += `<tr><td style="width: 14%; border: 1.5px solid #000 !important; background: #f8fafc !important; color: #000 !important; font-weight: 800; font-size: ${dayFontSize}; padding: 2px 1px; vertical-align: middle; height: ${cellHeight};">${days[d]}</td>`;
+        for (let p = 1; p <= periodsCount; p++) {
+            const item = schedule.timetables?.[className]?.[d]?.[p];
+            const teacherFirst = item ? getTeacherFirstNameOnly(item.teacher) : '';
+            html += `<td style="border: 1px solid #000 !important; padding: 2px 1px; height: ${cellHeight}; min-height: ${cellHeight}; vertical-align: middle; text-align: center; overflow: hidden;">${item ? `<div style="font-weight: 800; color: #000 !important; font-size: ${subjFontSize}; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${translateSubjectName(item.subject)}</div><div style="font-weight: 700; color: #1e293b !important; font-size: ${teachFontSize}; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 4px;">${teacherFirst}</div>` : ''}</td>`;
+        }
+        html += `</tr>`;
+    }
+    html += `</tbody></table>`;
+    return html;
+}
+
+function buildSingleTeacherTimetableHTML(teacher, perPage = 1) {
+    const schedule = allSchedules[activeScheduleName];
+    if (!schedule || !teacher) return '';
+    const days = schedule.settings.workDays || ['ئێك شەمب', 'دوو شەمب', 'سێ شەمب', 'چوار شەمب', 'پێنج شەمب'];
+    const periodsCount = schedule.settings.periodsPerDay || 7;
+
+    let periodHeaders = '';
+    for (let p = 1; p <= periodsCount; p++) {
+        periodHeaders += `<th style="width: ${86 / periodsCount}%; border: 1.5px solid #000 !important; background: #e2e8f0 !important; color: #000 !important; font-weight: 800; font-size: ${perPage === 1 ? '11pt' : (perPage === 2 ? '9.5pt' : '8pt')}; padding: 4px 1px; height: 26px;">${p}</th>`;
+    }
+
+    let cellHeight = Math.min(130, Math.max(90, Math.floor(620 / Math.max(1, days.length)))) + 'px';
+    let classFontSize = '15pt';
+    let subjFontSize = '12pt';
+    let titleFontSize = '16pt';
+    let dayFontSize = '13pt';
+
+    if (perPage === 4) {
+        cellHeight = Math.min(68, Math.max(48, Math.floor(305 / Math.max(1, days.length)))) + 'px';
+        classFontSize = '8.5pt';
+        subjFontSize = '7.5pt';
+        titleFontSize = '11pt';
+        dayFontSize = '8.5pt';
+    } else if (perPage === 3) {
+        cellHeight = Math.min(60, Math.max(45, Math.floor(275 / Math.max(1, days.length)))) + 'px';
+        classFontSize = '9.5pt';
+        subjFontSize = '8pt';
+        titleFontSize = '11.5pt';
+        dayFontSize = '9pt';
+    } else if (perPage === 2) {
+        cellHeight = Math.min(95, Math.max(70, Math.floor(430 / Math.max(1, days.length)))) + 'px';
+        classFontSize = '12pt';
+        subjFontSize = '10pt';
+        titleFontSize = '13.5pt';
+        dayFontSize = '11pt';
+    }
+
+    const teacherName = typeof teacher === 'string' ? teacher : teacher.name;
+    const teacherObj = typeof teacher === 'object' ? teacher : (schedule.teachers.find(t => t.name === teacherName) || { name: teacherName });
+
+    const schoolName = schedule.settings?.globalSchoolName || schedule.milak?.schoolName || '';
+    let html = `<h3 class="text-center mb-1 pb-1" style="font-size: ${titleFontSize}; font-weight: 800; color: #000; border-bottom: 1.5px solid #000; margin: 0 0 4px 0;">${schoolName ? `${schoolName} - ` : ''}خشتێ حەفتیانە یێ ماموستا: ${teacherName}</h3>`;
+    html += `<table class="table table-bordered text-center align-middle preserve-table-styles" style="table-layout: fixed; width: 100%; border: 1.5px solid #000 !important; border-collapse: collapse !important; margin: 0;">
+            <thead class="table-light"><tr><th style="width: 14%; border: 1.5px solid #000 !important; background: #e2e8f0 !important; color: #000 !important; font-weight: 800; font-size: ${perPage === 1 ? '11pt' : (perPage === 2 ? '9.5pt' : '8pt')}; padding: 4px 1px; height: 26px;">${t('day_period') || 'الروژ \\ حەسە'}</th>${periodHeaders}</tr></thead><tbody>`;
+    for (let d = 0; d < days.length; d++) {
+        const isOffDay = teacherObj.offDays && teacherObj.offDays.includes(days[d]);
+        html += `<tr><td style="width: 14%; border: 1.5px solid #000 !important; background: #f8fafc !important; color: #000 !important; font-weight: 800; font-size: ${dayFontSize}; padding: 2px 1px; vertical-align: middle; height: ${cellHeight};">${days[d]}</td>`;
+
+        if (isOffDay) {
+            html += `<td colspan="${periodsCount}" style="border: 1px solid #000 !important; background: #475569 !important; color: #fff !important; font-weight: 800; font-size: ${perPage >= 3 ? '8.5pt' : '10.5pt'}; vertical-align: middle; letter-spacing: 1px; height: ${cellHeight};">بهێنڤەدان (يوم إجازة للمعلم)</td></tr>`;
+            continue;
+        }
+
+        for (let p = 1; p <= periodsCount; p++) {
+            let foundClass = '', foundSubject = '';
+            for (const cName of schedule.columns) {
+                const item = schedule.timetables?.[cName]?.[d]?.[p];
+                if (item && item.teacher === teacherName) {
+                    foundClass = cName;
+                    foundSubject = item.subject;
+                    break;
+                }
+            }
+            html += `<td style="border: 1px solid #000 !important; padding: 2px 1px; height: ${cellHeight}; min-height: ${cellHeight}; vertical-align: middle; text-align: center; overflow: hidden;">${foundClass ? `<div style="font-weight: 800; color: #dc2626 !important; font-size: ${classFontSize}; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${t('class_label') || 'پولا'} ${foundClass}</div><div style="font-weight: 700; color: #000 !important; font-size: ${subjFontSize}; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 4px;">${translateSubjectName(foundSubject)}</div>` : ''}</td>`;
+        }
+        html += `</tr>`;
+    }
+    html += `</tbody></table>`;
+    return html;
+}
+
 function printCurrentTimetableView() {
-    const mode = document.querySelector('input[name="ttViewMode"]:checked')?.value;
+    const mode = document.querySelector('input[name="ttViewMode"]:checked')?.value || 'class';
     if (mode === 'substitute') {
         printDailySubstitutionReport('current');
         return;
     }
-    const container = document.getElementById("timetableGridContainer");
-    if (!container) return;
-    const clone = container.cloneNode(true);
+    if (mode === 'master') {
+        printMasterTimetable('landscape');
+        return;
+    }
+    if (mode === 'master_teacher') {
+        printMasterTeacherTimetable('landscape');
+        return;
+    }
 
     const schedule = allSchedules[activeScheduleName] || {};
-    const schoolName = schedule.settings?.globalSchoolName || schedule.milak?.schoolName || '';
     const principalName = schedule.settings?.principalName || '';
-
-    const titleEl = clone.querySelector('h3, h4');
-    if (titleEl) {
-        if (schoolName) {
-            titleEl.innerHTML += ` - ${schoolName}`;
-        }
-        titleEl.style.setProperty('font-size', '8pt', 'important');
-        titleEl.style.setProperty('margin-bottom', '5px', 'important');
-    }
-
-    let footerHtml = '';
+    let sigHtml = '';
     if (principalName) {
-        footerHtml = `
-            <div style="margin-top: 15px; margin-bottom: 30px; text-align: left; font-size: 6.5pt; font-weight: bold; padding-left: 30px;">
-                <div>${t('signature_principal')}: ${principalName}</div>
-            </div>
-        `;
+        sigHtml = `<div style="display: block; width: 100%; margin-top: 8px; clear: both; page-break-inside: avoid;"><div style="float: left; text-align: center; width: 220px; direction: rtl; margin-left: 15px;"><p class="mb-0" style="font-size: 8.5pt; font-weight: bold; margin-bottom: 2px;">${t('signature_approved_by') || 'المصادقة'}</p><p class="fw-bold mb-0" style="font-size: 8.5pt; margin-bottom: 2px;">${t('signature_principal') || 'مدير المدرسة'}</p><p class="fw-bold mb-0" style="font-size: 8.5pt; margin-top: 2px; margin-bottom: 0;">${principalName}</p></div><div style="clear: both;"></div></div>`;
     }
 
-    printWithContent(activeScheduleName || t('tab_timetable'), `<div class="table-responsive">${clone.outerHTML}</div>${footerHtml}`);
+    if (mode === 'class') {
+        const classSelect = document.getElementById('timetableClassSelect');
+        const selectedClass = classSelect ? classSelect.value : '';
+        if (selectedClass === 'all_classes' || !selectedClass) {
+            printClassTimetables(1);
+            return;
+        }
+        const singleHtml = `<div style="padding: 4px; width: 100%;">${buildSingleClassTimetableHTML(selectedClass, 1)}${sigHtml}</div>`;
+        printWithContent(selectedClass, singleHtml, { orientation: 'landscape' });
+        return;
+    }
+
+    if (mode === 'teacher') {
+        const teacherSelect = document.getElementById('timetableTeacherSelect');
+        const selectedTeacher = teacherSelect ? teacherSelect.value : '';
+        if (selectedTeacher === 'all_teachers' || !selectedTeacher) {
+            printTeacherTimetables(1);
+            return;
+        }
+        const singleHtml = `<div style="padding: 4px; width: 100%;">${buildSingleTeacherTimetableHTML(selectedTeacher, 1)}${sigHtml}</div>`;
+        printWithContent(selectedTeacher, singleHtml, { orientation: 'landscape' });
+        return;
+    }
 }
+
 
 // --- Advanced Timetable Features (Auto-Distribute & Master Prints) ---
 function autoDistributeTimetableLegacy() {
@@ -12856,8 +13169,10 @@ function promptPrintOptions(mode) {
     }).then((result) => {
         if (result.isConfirmed) {
             const perPage = parseInt(result.value);
-            if (mode === 'class') printClassTimetables(perPage);
-            else if (mode === 'teacher') printTeacherTimetables(perPage);
+            setTimeout(() => {
+                if (mode === 'class') printClassTimetables(perPage);
+                else if (mode === 'teacher') printTeacherTimetables(perPage);
+            }, 300);
         }
     });
 }
@@ -12877,8 +13192,11 @@ function promptMasterPrintOptions(mode) {
         cancelButtonText: t('cancel')
     }).then((result) => {
         if (!result.isConfirmed) return;
-        if (mode === 'class') printMasterTimetable(result.value);
-        if (mode === 'teacher') printMasterTeacherTimetable(result.value);
+        const orientation = result.value || 'landscape';
+        setTimeout(() => {
+            if (mode === 'class') printMasterTimetable(orientation);
+            if (mode === 'teacher') printMasterTeacherTimetable(orientation);
+        }, 300);
     });
 }
 
@@ -12921,10 +13239,34 @@ function downloadSimpleDistributionHTML() {
 }
 
 function downloadCurrentTimetableHTML() {
-    const mode = document.querySelector('input[name="ttViewMode"]:checked')?.value;
+    const mode = document.querySelector('input[name="ttViewMode"]:checked')?.value || 'class';
     if (mode === 'substitute') {
         downloadSubstituteHTML('current');
         return;
+    }
+    if (mode === 'master') {
+        downloadMasterTimetableHTML('landscape');
+        return;
+    }
+    if (mode === 'master_teacher') {
+        downloadMasterTeacherTimetableHTML('landscape');
+        return;
+    }
+    if (mode === 'class') {
+        const classSelect = document.getElementById('timetableClassSelect');
+        const selectedClass = classSelect ? classSelect.value : '';
+        if (selectedClass && selectedClass !== 'all_classes') {
+            downloadHTMLFile(`timetable_${selectedClass}_${activeScheduleName}`, `<div class="table-responsive">${buildSingleClassTimetableHTML(selectedClass, 1)}</div>`, { filename: `timetable_${sanitizeDownloadFileName(selectedClass)}_${sanitizeDownloadFileName(activeScheduleName)}.html` });
+            return;
+        }
+    }
+    if (mode === 'teacher') {
+        const teacherSelect = document.getElementById('timetableTeacherSelect');
+        const selectedTeacher = teacherSelect ? teacherSelect.value : '';
+        if (selectedTeacher && selectedTeacher !== 'all_teachers') {
+            downloadHTMLFile(`timetable_${selectedTeacher}_${activeScheduleName}`, `<div class="table-responsive">${buildSingleTeacherTimetableHTML(selectedTeacher, 1)}</div>`, { filename: `timetable_${sanitizeDownloadFileName(selectedTeacher)}_${sanitizeDownloadFileName(activeScheduleName)}.html` });
+            return;
+        }
     }
     const container = document.getElementById("timetableGridContainer");
     if (!container || !container.innerHTML.trim()) { showToast('هیچ خشتەیەك نیە بۆ هەڵگرتن.', 'error'); return; }
@@ -12936,22 +13278,26 @@ function downloadCurrentTimetableHTML() {
 
 function printClassTimetables(perPage = 1) {
     const schedule = allSchedules[activeScheduleName];
-    let html = '';
-    const days = schedule.settings.workDays || ['ئێك شەمب', 'دوو شەمب', 'سێ شەمب', 'چوار شەمب', 'پێنج شەمب'];
-    const periodsCount = schedule.settings.periodsPerDay || 7;
-
-    let periodHeaders = '';
-    for (let p = 1; p <= periodsCount; p++) periodHeaders += `<th style="width: ${100 / periodsCount}%;">${p}</th>`;
+    if (!schedule || !schedule.columns || schedule.columns.length === 0) return;
 
     let containerStyle = '';
-    let itemStyle = 'margin-bottom: 20px; page-break-inside: avoid; width: 100%;';
+    let itemStyle = 'margin-bottom: 0; page-break-inside: avoid; width: 100%;';
+
     if (perPage === 4) {
-        containerStyle = 'display: flex; flex-wrap: wrap; justify-content: space-between;';
-        itemStyle = 'width: 48%; margin-bottom: 20px; font-size: 8pt; page-break-inside: avoid; overflow: hidden; height: auto;';
+        containerStyle = 'display: flex; flex-wrap: wrap; justify-content: space-between; align-content: space-between; width: 100%; box-sizing: border-box;';
+        itemStyle = 'width: 49%; margin-bottom: 8px; page-break-inside: avoid; overflow: hidden;';
     } else if (perPage === 3) {
-        itemStyle = 'width: 100%; margin-bottom: 15px; font-size: 8pt; page-break-inside: avoid; height: auto;';
+        containerStyle = 'display: flex; flex-direction: column; justify-content: space-between; width: 100%;';
+        itemStyle = 'width: 100%; margin-bottom: 10px; page-break-inside: avoid;';
     } else if (perPage === 2) {
-        itemStyle = 'width: 100%; margin-bottom: 20px; font-size: 9pt; page-break-inside: avoid; height: auto;';
+        containerStyle = 'display: flex; flex-direction: column; justify-content: space-between; width: 100%;';
+        itemStyle = 'width: 100%; margin-bottom: 16px; page-break-inside: avoid;';
+    }
+
+    const principalName = schedule.settings?.principalName || '';
+    let sigHtml = '';
+    if (principalName && perPage === 1) {
+        sigHtml = `<div style="display: block; width: 100%; margin-top: 8px; clear: both; page-break-inside: avoid;"><div style="float: left; text-align: center; width: 220px; direction: rtl; margin-left: 15px;"><p class="mb-0" style="font-size: 8.5pt; font-weight: bold; margin-bottom: 2px;">${t('signature_approved_by') || 'المصادقة'}</p><p class="fw-bold mb-0" style="font-size: 8.5pt; margin-bottom: 2px;">${t('signature_principal') || 'مدير المدرسة'}</p><p class="fw-bold mb-0" style="font-size: 8.5pt; margin-top: 2px; margin-bottom: 0;">${principalName}</p></div><div style="clear: both;"></div></div>`;
     }
 
     const chunks = [];
@@ -12959,49 +13305,34 @@ function printClassTimetables(perPage = 1) {
         chunks.push(schedule.columns.slice(i, i + perPage));
     }
 
+    let html = '';
     chunks.forEach((chunk, chunkIndex) => {
         const breakClass = chunkIndex > 0 ? 'page-break' : '';
-        html += `<div class="${breakClass}" style="padding: 10px; ${containerStyle}">`;
+        html += `<div class="${breakClass}" style="padding: 4px; ${containerStyle}">`;
         chunk.forEach(className => {
-            html += `<div style="${itemStyle}">`;
-            const schoolName = schedule.settings?.globalSchoolName || schedule.milak?.schoolName || '';
-            html += `<h2 class="text-center mb-2 border-bottom pb-1" style="font-size: ${perPage >= 3 ? '12pt' : (perPage === 2 ? '14pt' : '18pt')};">${schoolName ? `${schoolName} - ` : ''}خشتێ حەفتیانە یێ پولا: ${className}</h2>`;
-            html += `<table class="table table-bordered text-center align-middle shadow-sm" style="table-layout: fixed; width: 100%;">
-                    <thead class="table-light"><tr><th style="width:15%;">الروژ \\ حەسە</th>${periodHeaders}</tr></thead><tbody>`;
-            for (let d = 0; d < days.length; d++) {
-                html += `<tr><td class="fw-bold bg-light" style="padding: 2px;">${days[d]}</td>`;
-                for (let p = 1; p <= periodsCount; p++) {
-                    const item = schedule.timetables?.[className]?.[d]?.[p];
-                    const tdStyle = perPage >= 3 ? 'padding: 1px; height: 35px;' : (perPage === 2 ? 'height: 42px; padding: 2px;' : 'height: 60px;');
-                    html += `<td style="${tdStyle}">${item ? `<div class="fw-bold text-primary">${item.subject}</div><div class="text-muted small">${item.teacher}</div>` : ''}</td>`;
-                }
-                html += `</tr>`;
-            }
-            html += `</tbody></table></div>`;
+            html += `<div style="${itemStyle}">${buildSingleClassTimetableHTML(className, perPage)}${sigHtml}</div>`;
         });
         html += `</div>`;
     });
-    printWithContent('خشتەیێن هەمی پولان', html);
+    printWithContent('خشتەیێن هەمی پولان', html, { orientation: (perPage === 4 || perPage === 1) ? 'landscape' : 'portrait' });
 }
 
 function printTeacherTimetables(perPage = 1) {
     const schedule = allSchedules[activeScheduleName];
-    let html = '';
-    const days = schedule.settings.workDays || ['ئێك شەمب', 'دوو شەمب', 'سێ شەمب', 'چوار شەمب', 'پێنج شەمب'];
-    const periodsCount = schedule.settings.periodsPerDay || 7;
-
-    let periodHeaders = '';
-    for (let p = 1; p <= periodsCount; p++) periodHeaders += `<th style="width: ${100 / periodsCount}%;">${p}</th>`;
+    if (!schedule) return;
 
     let containerStyle = '';
-    let itemStyle = 'margin-bottom: 20px; page-break-inside: avoid; width: 100%;';
+    let itemStyle = 'margin-bottom: 0; page-break-inside: avoid; width: 100%;';
+
     if (perPage === 4) {
-        containerStyle = 'display: flex; flex-wrap: wrap; justify-content: space-between;';
-        itemStyle = 'width: 48%; margin-bottom: 20px; font-size: 8pt; page-break-inside: avoid; overflow: hidden; height: auto;';
+        containerStyle = 'display: flex; flex-wrap: wrap; justify-content: space-between; align-content: space-between; width: 100%; box-sizing: border-box;';
+        itemStyle = 'width: 49%; margin-bottom: 8px; page-break-inside: avoid; overflow: hidden;';
     } else if (perPage === 3) {
-        itemStyle = 'width: 100%; margin-bottom: 15px; font-size: 8pt; page-break-inside: avoid; height: auto;';
+        containerStyle = 'display: flex; flex-direction: column; justify-content: space-between; width: 100%;';
+        itemStyle = 'width: 100%; margin-bottom: 10px; page-break-inside: avoid;';
     } else if (perPage === 2) {
-        itemStyle = 'width: 100%; margin-bottom: 20px; font-size: 9pt; page-break-inside: avoid; height: auto;';
+        containerStyle = 'display: flex; flex-direction: column; justify-content: space-between; width: 100%;';
+        itemStyle = 'width: 100%; margin-bottom: 16px; page-break-inside: avoid;';
     }
 
     const validTeachers = schedule.teachers.filter(teacher => {
@@ -13011,49 +13342,27 @@ function printTeacherTimetables(perPage = 1) {
 
     if (validTeachers.length === 0) { showToast('هیچ ماموستایەك نینە خشتە هەبت', 'error'); return; }
 
+    const principalName = schedule.settings?.principalName || '';
+    let sigHtml = '';
+    if (principalName && perPage === 1) {
+        sigHtml = `<div style="display: block; width: 100%; margin-top: 8px; clear: both; page-break-inside: avoid;"><div style="float: left; text-align: center; width: 220px; direction: rtl; margin-left: 15px;"><p class="mb-0" style="font-size: 8.5pt; font-weight: bold; margin-bottom: 2px;">${t('signature_approved_by') || 'المصادقة'}</p><p class="fw-bold mb-0" style="font-size: 8.5pt; margin-bottom: 2px;">${t('signature_principal') || 'مدير المدرسة'}</p><p class="fw-bold mb-0" style="font-size: 8.5pt; margin-top: 2px; margin-bottom: 0;">${principalName}</p></div><div style="clear: both;"></div></div>`;
+    }
+
     const chunks = [];
     for (let i = 0; i < validTeachers.length; i += perPage) {
         chunks.push(validTeachers.slice(i, i + perPage));
     }
 
+    let html = '';
     chunks.forEach((chunk, chunkIndex) => {
         const breakClass = chunkIndex > 0 ? 'page-break' : '';
-        html += `<div class="${breakClass}" style="padding: 10px; ${containerStyle}">`;
+        html += `<div class="${breakClass}" style="padding: 4px; ${containerStyle}">`;
         chunk.forEach(teacher => {
-            html += `<div style="${itemStyle}">`;
-            const schoolName = schedule.settings?.globalSchoolName || schedule.milak?.schoolName || '';
-            html += `<h2 class="text-center mb-2 border-bottom pb-1" style="font-size: ${perPage >= 3 ? '12pt' : (perPage === 2 ? '14pt' : '18pt')};">${schoolName ? `${schoolName} - ` : ''}خشتێ حەفتیانە یێ ماموستا: ${teacher.name}</h2>`;
-            html += `<table class="table table-bordered text-center align-middle shadow-sm" style="table-layout: fixed; width: 100%;">
-                    <thead class="table-light"><tr><th style="width:15%;">الروژ \\ حەسە</th>${periodHeaders}</tr></thead><tbody>`;
-            for (let d = 0; d < days.length; d++) {
-                const isOffDay = teacher.offDays && teacher.offDays.includes(days[d]);
-                html += `<tr><td class="fw-bold bg-light" style="padding: 2px;">${days[d]}</td>`;
-
-                if (isOffDay) {
-                    html += `<td colspan="${periodsCount}" class="bg-secondary text-white fw-bold align-middle" style="letter-spacing: 2px;">بهێنڤەدان (يوم إجازة للمعلم)</td></tr>`;
-                    continue;
-                }
-
-                for (let p = 1; p <= periodsCount; p++) {
-                    let foundClass = '', foundSubject = '';
-                    for (const cName of schedule.columns) {
-                        const item = schedule.timetables?.[cName]?.[d]?.[p];
-                        if (item && item.teacher === teacher.name) {
-                            foundClass = cName;
-                            foundSubject = item.subject;
-                            break;
-                        }
-                    }
-                    const tdStyle = perPage >= 3 ? 'padding: 1px; height: 35px;' : (perPage === 2 ? 'height: 42px; padding: 2px;' : 'height: 60px;');
-                    html += `<td style="${tdStyle}">${foundClass ? `<div class="fw-bold text-danger">پولا ${foundClass}</div><div class="text-muted small">${foundSubject}</div>` : ''}</td>`;
-                }
-                html += `</tr>`;
-            }
-            html += `</tbody></table></div>`;
+            html += `<div style="${itemStyle}">${buildSingleTeacherTimetableHTML(teacher, perPage)}${sigHtml}</div>`;
         });
         html += `</div>`;
     });
-    printWithContent('خشتەیێن ماموستایان', html);
+    printWithContent('خشتەیێن ماموستایان', html, { orientation: (perPage === 4 || perPage === 1) ? 'landscape' : 'portrait' });
 }
 
 function downloadMasterTimetableHTML(pageOrientation = 'landscape') {
@@ -13061,26 +13370,29 @@ function downloadMasterTimetableHTML(pageOrientation = 'landscape') {
     let html = '';
     const days = schedule.settings.workDays || ['ئێك شەمب', 'دوو شەمب', 'سێ شەمب', 'چوار شەمب', 'پێنج شەمب'];
     const periodsCount = schedule.settings.periodsPerDay || 7;
+    const totalClasses = schedule.columns.length;
+    const rowHeight = pageOrientation === 'portrait'
+        ? Math.min(55, Math.max(34, Math.floor(950 / Math.max(1, totalClasses))))
+        : Math.min(42, Math.max(29, Math.floor(660 / Math.max(1, totalClasses))));
 
     html += `<h1 class="text-center mb-4">${t('master_class_title')}</h1>`;
-    html += `<div class="table-responsive"><table class="table table-bordered text-center align-middle" style="font-size: 7pt; width: 100%; table-layout: fixed;">
+    html += `<div class="table-responsive"><table class="table table-bordered text-center align-middle preserve-table-styles" style="font-size: 7pt; width: 100% !important; max-width: 100% !important; min-width: 0 !important; table-layout: fixed !important; border: 1.5px solid #000 !important; border-collapse: collapse !important; margin: 0 auto !important;">
                     <thead class="table-light">
                         <tr>
-                            <th rowspan="2" class="align-middle bg-secondary text-white" style="width: 50px; border: 2px solid #000 !important;">${t('col_class')}</th>`;
-    for (let d = 0; d < days.length; d++) html += `<th colspan="${periodsCount}" class="border-start border-end border-dark" style="border: 2px solid #000 !important; background: #fff !important; color: #000 !important; font-weight: bold;">${days[d]}</th>`;
+                            <th rowspan="2" class="align-middle" style="width: 38px !important; min-width: 38px !important; max-width: 38px !important; padding: 2px 1px !important; border: 1.5px solid #000 !important; background: #e2e8f0 !important; color: #000 !important; font-weight: 800; font-size: 7.5pt;">${t('col_class') || 'الصف'}</th>`;
+    for (let d = 0; d < days.length; d++) html += `<th colspan="${periodsCount}" style="border: 1.5px solid #000 !important; background: #f1f5f9 !important; color: #000 !important; font-weight: 900; font-size: 8pt; padding: 3px 1px; height: 24px;">${days[d]}</th>`;
     html += `</tr><tr>`;
     for (let d = 0; d < days.length; d++) {
-        for (let p = 1; p <= periodsCount; p++) html += `<th class="${p === 1 ? 'border-start border-dark' : ''} ${p === periodsCount ? 'border-end border-dark' : ''}" style="padding: 1px; border: 1.5px solid #000 !important; background: #fff !important; color: #000 !important; font-weight: bold;">${p}</th>`;
+        for (let p = 1; p <= periodsCount; p++) html += `<th style="padding: 2px 1px; border: 1px solid #000 !important; background: #e2e8f0 !important; color: #000 !important; font-weight: 800; font-size: 7.5pt; height: 20px;">${p}</th>`;
     }
     html += `</tr></thead><tbody>`;
 
     schedule.columns.forEach(className => {
-        html += `<tr><td class="fw-bold bg-light">${className}</td>`;
+        html += `<tr style="height: ${rowHeight}px;"><td style="width: 38px !important; min-width: 38px !important; max-width: 38px !important; padding: 2px 1px; font-weight: 900; font-size: 9pt; text-align: center; border: 1px solid #000 !important; background: #f8fafc; height: ${rowHeight}px; vertical-align: middle;">${className}</td>`;
         for (let d = 0; d < days.length; d++) {
             for (let p = 1; p <= periodsCount; p++) {
                 const item = schedule.timetables?.[className]?.[d]?.[p];
-                const borderClass = (p === 1 ? 'border-start border-dark ' : '') + (p === periodsCount ? 'border-end border-dark ' : '');
-                html += `<td class="${borderClass}" style="padding: 1px; overflow:hidden; vertical-align: middle;">${item ? getSvgFormattedText(getDisplaySubjectName(item.subject, true), true, 'text-primary', 11) + getSvgFormattedText(item.teacher, false, 'text-muted', 9.5) : ''}</td>`;
+                html += `<td style="padding: 2px 0.5px; overflow: hidden; vertical-align: middle; text-align: center; border: 1px solid #000 !important; height: ${rowHeight}px; min-height: ${rowHeight}px;">${item ? formatMasterCellContent(item.subject, item.teacher) : ''}</td>`;
             }
         }
         html += `</tr>`;
@@ -13094,27 +13406,30 @@ function printMasterTimetable(pageOrientation = 'landscape') {
     let html = '';
     const days = schedule.settings.workDays || ['ئێك شەمب', 'دوو شەمب', 'سێ شەمب', 'چوار شەمب', 'پێنج شەمب'];
     const periodsCount = schedule.settings.periodsPerDay || 7;
+    const totalClasses = schedule.columns.length;
+    const rowHeight = pageOrientation === 'portrait'
+        ? Math.min(55, Math.max(34, Math.floor(950 / Math.max(1, totalClasses))))
+        : Math.min(42, Math.max(29, Math.floor(660 / Math.max(1, totalClasses))));
 
     const schoolName = schedule.settings?.globalSchoolName || schedule.milak?.schoolName || '';
-    html += `<h3 class="text-center mb-3" style="font-size: 14pt !important; font-weight: bold;">${schoolName ? `${schoolName} - ` : ''}${t('master_class_title')}</h3>`;
-    html += `<div class="table-responsive"><table class="table table-bordered text-center align-middle" style="font-size: 7pt; width: 100%; table-layout: fixed;">
+    html += `<h3 class="text-center mb-2" style="font-size: 13pt !important; font-weight: bold; margin-top: 0;">${schoolName ? `${schoolName} - ` : ''}${t('master_class_title')}</h3>`;
+    html += `<div class="table-responsive"><table class="table table-bordered text-center align-middle preserve-table-styles" style="font-size: 7pt; width: 100% !important; max-width: 100% !important; min-width: 0 !important; table-layout: fixed !important; border: 1.5px solid #000 !important; border-collapse: collapse !important; margin: 0 auto !important;">
                     <thead class="table-light">
                         <tr>
-                            <th rowspan="2" class="align-middle bg-secondary text-white" style="width: 50px; border: 2px solid #000 !important;">${t('col_class')}</th>`;
-    for (let d = 0; d < days.length; d++) html += `<th colspan="${periodsCount}" class="border-start border-end border-dark" style="border: 2px solid #000 !important; background: #fff !important; color: #000 !important; font-weight: bold;">${days[d]}</th>`;
+                            <th rowspan="2" class="align-middle" style="width: 38px !important; min-width: 38px !important; max-width: 38px !important; padding: 2px 1px !important; border: 1.5px solid #000 !important; background: #e2e8f0 !important; color: #000 !important; font-weight: 800; font-size: 7.5pt;">${t('col_class') || 'الصف'}</th>`;
+    for (let d = 0; d < days.length; d++) html += `<th colspan="${periodsCount}" style="border: 1.5px solid #000 !important; background: #f1f5f9 !important; color: #000 !important; font-weight: 900; font-size: 8pt; padding: 3px 1px; height: 24px;">${days[d]}</th>`;
     html += `</tr><tr>`;
     for (let d = 0; d < days.length; d++) {
-        for (let p = 1; p <= periodsCount; p++) html += `<th class="${p === 1 ? 'border-start border-dark' : ''} ${p === periodsCount ? 'border-end border-dark' : ''}" style="padding: 1px; border: 1.5px solid #000 !important; background: #fff !important; color: #000 !important; font-weight: bold;">${p}</th>`;
+        for (let p = 1; p <= periodsCount; p++) html += `<th style="padding: 2px 1px; border: 1px solid #000 !important; background: #e2e8f0 !important; color: #000 !important; font-weight: 800; font-size: 7.5pt; height: 20px;">${p}</th>`;
     }
     html += `</tr></thead><tbody>`;
 
     schedule.columns.forEach(className => {
-        html += `<tr><td class="fw-bold bg-light">${className}</td>`;
+        html += `<tr style="height: ${rowHeight}px;"><td style="width: 38px !important; min-width: 38px !important; max-width: 38px !important; padding: 2px 1px; font-weight: 900; font-size: 9pt; text-align: center; border: 1px solid #000 !important; background: #f8fafc; height: ${rowHeight}px; vertical-align: middle;">${className}</td>`;
         for (let d = 0; d < days.length; d++) {
             for (let p = 1; p <= periodsCount; p++) {
                 const item = schedule.timetables?.[className]?.[d]?.[p];
-                const borderClass = (p === 1 ? 'border-start border-dark ' : '') + (p === periodsCount ? 'border-end border-dark ' : '');
-                html += `<td class="${borderClass}" style="padding: 1px; overflow:hidden;">${item ? `<div class="fw-bold text-primary" style="font-size: ${getDynamicFontSize(item.subject, 3, 0.9, 0.4)}; line-height:1.1; overflow-wrap:normal; word-break:normal; white-space:nowrap; overflow:hidden; text-overflow:clip; display:block;">${item.subject}</div><div class="text-muted" style="font-size: ${getDynamicFontSize(item.teacher, 4, 0.75, 0.35)}; line-height:1.05; overflow-wrap:normal; word-break:normal; white-space:nowrap; overflow:hidden; text-overflow:clip; display:block;">${item.teacher}</div>` : ''}</td>`;
+                html += `<td style="padding: 2px 0.5px; overflow: hidden; vertical-align: middle; text-align: center; border: 1px solid #000 !important; height: ${rowHeight}px; min-height: ${rowHeight}px;">${item ? formatMasterCellContent(item.subject, item.teacher) : ''}</td>`;
             }
         }
         html += `</tr>`;
@@ -13122,7 +13437,7 @@ function printMasterTimetable(pageOrientation = 'landscape') {
     html += `</tbody></table></div>`;
 
     const principalName = schedule.settings?.principalName || '';
-    html += `<div style="display: block; width: 100%; margin-top: 14px; clear: both; page-break-inside: avoid;"><div style="float: left; text-align: center; width: 220px; direction: rtl; margin-left: 15px;"><p class="mb-0" style="font-size: 8.5pt; font-weight: bold; margin-bottom: 2px;">${t('signature_approved_by')}</p><p class="fw-bold mb-0" style="font-size: 8.5pt; margin-bottom: 2px;">${t('signature_principal')}</p><p class="fw-bold mb-0" style="font-size: 8.5pt; margin-top: 2px; margin-bottom: 0;">${principalName || '................................'}</p></div><div style="clear: both;"></div></div>`;
+    html += `<div style="display: block; width: 100%; margin-top: 8px; clear: both; page-break-inside: avoid;"><div style="float: left; text-align: center; width: 220px; direction: rtl; margin-left: 15px;"><p class="mb-0" style="font-size: 8.5pt; font-weight: bold; margin-bottom: 2px;">${t('signature_approved_by')}</p><p class="fw-bold mb-0" style="font-size: 8.5pt; margin-bottom: 2px;">${t('signature_principal')}</p><p class="fw-bold mb-0" style="font-size: 8.5pt; margin-top: 2px; margin-bottom: 0;">${principalName || '................................'}</p></div><div style="clear: both;"></div></div>`;
 
     printWithContent(t('master_class_title'), html, { orientation: pageOrientation });
 }
@@ -13139,20 +13454,25 @@ function downloadMasterTeacherTimetableHTML(pageOrientation = 'landscape') {
 
     if (activeTeachers.length === 0) { showToast(t('toast_no_teachers_to_print'), 'error'); return; }
 
+    const totalTeachers = activeTeachers.length;
+    const rowHeight = pageOrientation === 'portrait'
+        ? Math.min(55, Math.max(32, Math.floor(950 / Math.max(1, totalTeachers))))
+        : Math.min(42, Math.max(28, Math.floor(660 / Math.max(1, totalTeachers))));
+
     html += `<h1 class="text-center mb-4">${t('master_teacher_title')}</h1>`;
-    html += `<div class="table-responsive"><table class="table table-bordered text-center align-middle" style="font-size: 7pt; width: 100%; table-layout: fixed;">
+    html += `<div class="table-responsive"><table class="table table-bordered text-center align-middle preserve-table-styles" style="font-size: 7pt; width: 100% !important; max-width: 100% !important; min-width: 0 !important; table-layout: fixed !important; border: 1.5px solid #000 !important; border-collapse: collapse !important; margin: 0 auto !important;">
                     <thead class="table-light">
                         <tr>
-                            <th rowspan="2" class="align-middle bg-secondary text-white" style="width: 120px; min-width: 120px; border: 2px solid #000 !important;">${t('col_teacher')}</th>`;
-    for (let d = 0; d < days.length; d++) html += `<th colspan="${periodsCount}" class="border-start border-end border-dark" style="border: 2px solid #000 !important; background: #fff !important; color: #000 !important; font-weight: bold;">${days[d]}</th>`;
+                            <th rowspan="2" class="align-middle" style="width: 85px !important; min-width: 85px !important; max-width: 85px !important; border: 1.5px solid #000 !important; background: #e2e8f0 !important; color: #000 !important; font-weight: 800; font-size: 7.5pt; padding: 2px 2px;">${t('col_teacher')}</th>`;
+    for (let d = 0; d < days.length; d++) html += `<th colspan="${periodsCount}" style="border: 1.5px solid #000 !important; background: #f1f5f9 !important; color: #000 !important; font-weight: 800; font-size: 8pt; padding: 3px 1px;">${days[d]}</th>`;
     html += `</tr><tr>`;
     for (let d = 0; d < days.length; d++) {
-        for (let p = 1; p <= periodsCount; p++) html += `<th class="${p === 1 ? 'border-start border-dark' : ''} ${p === periodsCount ? 'border-end border-dark' : ''}" style="padding: 1px; border: 1.5px solid #000 !important; background: #fff !important; color: #000 !important; font-weight: bold;">${p}</th>`;
+        for (let p = 1; p <= periodsCount; p++) html += `<th style="padding: 2px 1px; border: 1px solid #000 !important; background: #e2e8f0 !important; color: #000 !important; font-weight: 700; font-size: 7pt;">${p}</th>`;
     }
     html += `</tr></thead><tbody>`;
 
     activeTeachers.forEach(teacher => {
-        html += `<tr><td class="fw-bold bg-light" style="padding: 2px 4px; font-size: 7.5pt; line-height: 1.2; word-break: break-word; white-space: normal;">${teacher.name}</td>`;
+        html += `<tr style="height: ${rowHeight}px;"><td style="width: 85px !important; min-width: 85px !important; max-width: 85px !important; padding: 2px 4px; font-weight: bold; font-size: 7.5pt; line-height: 1.2; word-break: break-word; white-space: normal; border: 1px solid #000 !important; background: #f8fafc; height: ${rowHeight}px; vertical-align: middle;">${teacher.name}</td>`;
         for (let d = 0; d < days.length; d++) {
             for (let p = 1; p <= periodsCount; p++) {
                 let foundClass = '', foundSubject = '';
@@ -13164,8 +13484,7 @@ function downloadMasterTeacherTimetableHTML(pageOrientation = 'landscape') {
                         break;
                     }
                 }
-                const borderClass = (p === 1 ? 'border-start border-dark ' : '') + (p === periodsCount ? 'border-end border-dark ' : '');
-                html += `<td class="${borderClass}" style="padding: 1px; overflow:hidden; vertical-align: middle;">${foundClass ? getSvgFormattedText(foundClass, true, 'text-danger', 11) + getSvgFormattedText(getDisplaySubjectName(foundSubject, true), false, 'text-muted', 9.5) : ''}</td>`;
+                html += `<td style="padding: 1.5px 1px; overflow: hidden; vertical-align: middle; text-align: center; border: 1px solid #000 !important; height: ${rowHeight}px; min-height: ${rowHeight}px;">${foundClass ? formatMasterTeacherCellContent(foundClass, foundSubject) : ''}</td>`;
             }
         }
         html += `</tr>`;
@@ -13186,21 +13505,26 @@ function printMasterTeacherTimetable(pageOrientation = 'landscape') {
 
     if (activeTeachers.length === 0) { showToast(t('toast_no_teachers_to_print'), 'error'); return; }
 
+    const totalTeachers = activeTeachers.length;
+    const rowHeight = pageOrientation === 'portrait'
+        ? Math.min(55, Math.max(32, Math.floor(950 / Math.max(1, totalTeachers))))
+        : Math.min(42, Math.max(28, Math.floor(660 / Math.max(1, totalTeachers))));
+
     const schoolName = schedule.settings?.globalSchoolName || schedule.milak?.schoolName || '';
     html += `<h3 class="text-center mb-3" style="font-size: 14pt !important; font-weight: bold;">${schoolName ? `${schoolName} - ` : ''}${t('master_teacher_title')}</h3>`;
-    html += `<div class="table-responsive"><table class="table table-bordered text-center align-middle" style="font-size: 7pt; width: 100%; table-layout: fixed;">
+    html += `<div class="table-responsive"><table class="table table-bordered text-center align-middle preserve-table-styles" style="font-size: 7pt; width: 100% !important; max-width: 100% !important; min-width: 0 !important; table-layout: fixed !important; border: 1.5px solid #000 !important; border-collapse: collapse !important; margin: 0 auto !important;">
                     <thead class="table-light">
                         <tr>
-                            <th rowspan="2" class="align-middle bg-secondary text-white" style="width: 120px; min-width: 120px; border: 2px solid #000 !important;">${t('col_teacher')}</th>`;
-    for (let d = 0; d < days.length; d++) html += `<th colspan="${periodsCount}" class="border-start border-end border-dark" style="border: 2px solid #000 !important; background: #fff !important; color: #000 !important; font-weight: bold;">${days[d]}</th>`;
+                            <th rowspan="2" class="align-middle" style="width: 85px !important; min-width: 85px !important; max-width: 85px !important; border: 1.5px solid #000 !important; background: #e2e8f0 !important; color: #000 !important; font-weight: 800; font-size: 7.5pt; padding: 2px 2px;">${t('col_teacher')}</th>`;
+    for (let d = 0; d < days.length; d++) html += `<th colspan="${periodsCount}" style="border: 1.5px solid #000 !important; background: #f1f5f9 !important; color: #000 !important; font-weight: 800; font-size: 8pt; padding: 3px 1px;">${days[d]}</th>`;
     html += `</tr><tr>`;
     for (let d = 0; d < days.length; d++) {
-        for (let p = 1; p <= periodsCount; p++) html += `<th class="${p === 1 ? 'border-start border-dark' : ''} ${p === periodsCount ? 'border-end border-dark' : ''}" style="padding: 1px; border: 1.5px solid #000 !important; background: #fff !important; color: #000 !important; font-weight: bold;">${p}</th>`;
+        for (let p = 1; p <= periodsCount; p++) html += `<th style="padding: 2px 1px; border: 1px solid #000 !important; background: #e2e8f0 !important; color: #000 !important; font-weight: 700; font-size: 7pt;">${p}</th>`;
     }
     html += `</tr></thead><tbody>`;
 
     activeTeachers.forEach(teacher => {
-        html += `<tr><td class="fw-bold bg-light" style="padding: 2px 4px; font-size: 7.5pt; line-height: 1.2; word-break: break-word; white-space: normal;">${teacher.name}</td>`;
+        html += `<tr style="height: ${rowHeight}px;"><td style="width: 85px !important; min-width: 85px !important; max-width: 85px !important; padding: 2px 4px; font-weight: bold; font-size: 7.5pt; line-height: 1.2; word-break: break-word; white-space: normal; border: 1px solid #000 !important; background: #f8fafc; height: ${rowHeight}px; vertical-align: middle;">${teacher.name}</td>`;
         for (let d = 0; d < days.length; d++) {
             for (let p = 1; p <= periodsCount; p++) {
                 let foundClass = '', foundSubject = '';
@@ -13212,8 +13536,7 @@ function printMasterTeacherTimetable(pageOrientation = 'landscape') {
                         break;
                     }
                 }
-                const borderClass = (p === 1 ? 'border-start border-dark ' : '') + (p === periodsCount ? 'border-end border-dark ' : '');
-                html += `<td class="${borderClass}" style="padding: 1px; overflow:hidden;">${foundClass ? `<div class="fw-bold text-danger" style="font-size: ${getDynamicFontSize(foundClass, 3, 0.9, 0.4)}; line-height:1.1; overflow-wrap:normal; word-break:normal; white-space:nowrap; overflow:hidden; text-overflow:clip; display:block;">${foundClass}</div><div class="text-muted" style="font-size: ${getDynamicFontSize(foundSubject, 4, 0.75, 0.35)}; line-height:1.05; overflow-wrap:normal; word-break:normal; white-space:nowrap; overflow:hidden; text-overflow:clip; display:block;">${foundSubject}</div>` : ''}</td>`;
+                html += `<td style="padding: 1.5px 1px; overflow: hidden; vertical-align: middle; text-align: center; border: 1px solid #000 !important; height: ${rowHeight}px; min-height: ${rowHeight}px;">${foundClass ? formatMasterTeacherCellContent(foundClass, foundSubject) : ''}</td>`;
             }
         }
         html += `</tr>`;
@@ -20709,6 +21032,75 @@ function downloadClassMentorsHTML() {
     showToast(isAr ? 'تم حفظ جدول مرشدي الصفوف كملف HTML بنجاح' : 'خشتێ ڕێبەرێن پۆلان وەك فایلا HTML هاتە هەڵگرتن', 'success');
 }
 window.downloadClassMentorsHTML = downloadClassMentorsHTML;
+
+// =========================================================================
+// Global Stacking Context & Window Supervisor: Ensure All Dropdowns & Modals Appear in Front
+// =========================================================================
+(function initGlobalWindowSupervisor() {
+    if (typeof document === 'undefined') return;
+
+    // 1. Dropdown show handler: Elevate parent container above any following DOM content or tables
+    document.addEventListener('show.bs.dropdown', function (e) {
+        const toggle = e.target;
+        if (!toggle) return;
+        
+        let el = toggle.parentElement;
+        while (el && el !== document.body) {
+            if (el.classList.contains('card') || 
+                el.classList.contains('timetable-toolbar-wrapper') || 
+                el.classList.contains('substitute-toolbar-card') || 
+                el.classList.contains('supervision-header-card') || 
+                el.classList.contains('mentors-toolbar-card') || 
+                el.classList.contains('tt-toolbar-tier1') || 
+                el.classList.contains('tt-toolbar-tier2') || 
+                el.classList.contains('btn-group') || 
+                el.classList.contains('dropdown') || 
+                el.classList.contains('table-responsive')) {
+                
+                el.classList.add('dropdown-active-parent');
+                el.style.setProperty('z-index', '1060', 'important');
+                el.style.setProperty('overflow', 'visible', 'important');
+            }
+            el = el.parentElement;
+        }
+
+        const menu = toggle.nextElementSibling || toggle.closest('.btn-group, .dropdown')?.querySelector('.dropdown-menu');
+        if (menu && menu.classList.contains('dropdown-menu')) {
+            menu.style.setProperty('z-index', '2000', 'important');
+        }
+    });
+
+    // 2. Dropdown hide handler: Restore original styles
+    document.addEventListener('hide.bs.dropdown', function (e) {
+        const toggle = e.target;
+        if (!toggle) return;
+
+        let el = toggle.parentElement;
+        while (el && el !== document.body) {
+            if (el.classList.contains('dropdown-active-parent')) {
+                el.classList.remove('dropdown-active-parent');
+                el.style.removeProperty('z-index');
+                el.style.removeProperty('overflow');
+            }
+            el = el.parentElement;
+        }
+    });
+
+    // 3. Modal show handler: Ensure modals are always strictly in front of everything
+    document.addEventListener('show.bs.modal', function (e) {
+        const modal = e.target;
+        if (modal) {
+            modal.style.setProperty('z-index', '10500', 'important');
+        }
+    });
+
+    document.addEventListener('shown.bs.modal', function () {
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(bd => {
+            bd.style.setProperty('z-index', '10490', 'important');
+        });
+    });
+})();
 
 
 

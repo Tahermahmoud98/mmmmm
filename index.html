@@ -36,7 +36,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-    <link rel="stylesheet" href="style.css?v=303">
+    <link rel="stylesheet" href="style.css?v=305">
 </head>
 
 <body data-bs-theme="light">
@@ -387,44 +387,52 @@
                 <!-- Timetable Tab -->
                 <div class="tab-pane fade" id="timetable-tab-pane" role="tabpanel">
                     <div class="timetable-toolbar-wrapper card border-0 shadow-sm rounded-4 p-2.5 mb-3 bg-white">
-                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2.5 w-100">
-                            <!-- Navigation & Selector Group -->
-                            <div class="d-flex align-items-center gap-2 flex-wrap timetable-nav-group">
-                                <div class="tt-view-btn-group shadow-xs" role="group">
-                                    <input type="radio" class="btn-check" name="ttViewMode" id="btnViewClass" value="class"
-                                        checked onchange="changeTimetableView()">
-                                    <label class="btn btn-outline-primary fw-bold" for="btnViewClass"
-                                        data-i18n="btn_view_class" data-i18n-title="title_class_tt" title="خشتێ پولا"><i
-                                            class="fas fa-chalkboard me-1"></i>خشتێ پولا</label>
+                        <!-- Tier 1: Views & Selector Group -->
+                        <div class="tt-toolbar-tier1 d-flex justify-content-between align-items-center flex-wrap gap-2 pb-2 mb-2 border-bottom">
+                            <!-- Navigation & View Buttons -->
+                            <div class="tt-view-btn-group shadow-xs" role="group">
+                                <input type="radio" class="btn-check" name="ttViewMode" id="btnViewClass" value="class"
+                                    checked onchange="changeTimetableView()">
+                                <label class="btn btn-outline-primary fw-bold" for="btnViewClass"
+                                    data-i18n="btn_view_class" data-i18n-title="title_class_tt" title="خشتێ پولا"><i
+                                        class="fas fa-chalkboard me-1"></i>خشتێ پولا</label>
 
-                                    <input type="radio" class="btn-check" name="ttViewMode" id="btnViewTeacher"
-                                        value="teacher" onchange="changeTimetableView()">
-                                    <label class="btn btn-outline-primary fw-bold" for="btnViewTeacher"
-                                        data-i18n="btn_view_teacher" data-i18n-title="title_teacher_tt" title="خشتێ ماموستا"><i
-                                            class="fas fa-user-tie me-1"></i>خشتێ ماموستا</label>
+                                <input type="radio" class="btn-check" name="ttViewMode" id="btnViewTeacher"
+                                    value="teacher" onchange="changeTimetableView()">
+                                <label class="btn btn-outline-primary fw-bold" for="btnViewTeacher"
+                                    data-i18n="btn_view_teacher" data-i18n-title="title_teacher_tt" title="خشتێ ماموستا"><i
+                                        class="fas fa-user-tie me-1"></i>خشتێ ماموستا</label>
 
-                                    <input type="radio" class="btn-check" name="ttViewMode" id="btnViewMaster"
-                                        value="master" onchange="changeTimetableView()">
-                                    <label class="btn btn-outline-primary fw-bold" for="btnViewMaster"
-                                        data-i18n="btn_view_master_class" data-i18n-title="title_master_class_tt" title="ماستر پولان"><i
-                                            class="fas fa-border-all me-1"></i>ماستر پولان</label>
+                                <input type="radio" class="btn-check" name="ttViewMode" id="btnViewMaster"
+                                    value="master" onchange="changeTimetableView()">
+                                <label class="btn btn-outline-primary fw-bold" for="btnViewMaster"
+                                    data-i18n="btn_view_master_class" data-i18n-title="title_master_class_tt" title="ماستر پولان"><i
+                                        class="fas fa-border-all me-1"></i>ماستر پولان</label>
 
-                                    <input type="radio" class="btn-check" name="ttViewMode" id="btnViewMasterTeacher"
-                                        value="master_teacher" onchange="changeTimetableView()">
-                                    <label class="btn btn-outline-primary fw-bold" for="btnViewMasterTeacher"
-                                        data-i18n="btn_view_master_teacher" data-i18n-title="title_master_teacher_tt" title="ماستر ماموستایان"><i
-                                            class="fas fa-users me-1"></i>ماستر ماموستایان</label>
-                                </div>
-
-                                <div class="tt-select-wrapper d-inline-flex align-items-center">
-                                    <select id="timetableClassSelect" class="form-select form-select-sm rounded-pill fw-bold"
-                                        style="min-width: 140px; max-width: 220px;" onchange="renderTimetableGrid()"></select>
-                                    <select id="timetableTeacherSelect" class="form-select form-select-sm rounded-pill fw-bold d-none"
-                                        style="min-width: 140px; max-width: 220px;" onchange="renderTimetableGrid()"></select>
-                                </div>
+                                <input type="radio" class="btn-check" name="ttViewMode" id="btnViewMasterTeacher"
+                                    value="master_teacher" onchange="changeTimetableView()">
+                                <label class="btn btn-outline-primary fw-bold" for="btnViewMasterTeacher"
+                                    data-i18n="btn_view_master_teacher" data-i18n-title="title_master_teacher_tt" title="ماستر ماموستایان"><i
+                                        class="fas fa-users me-1"></i>ماستر ماموستایان</label>
                             </div>
 
-                            <!-- Action Buttons Tray -->
+                            <!-- Selector Filter -->
+                            <div class="tt-select-wrapper d-inline-flex align-items-center">
+                                <select id="timetableClassSelect" class="form-select form-select-sm rounded-pill fw-bold"
+                                    style="min-width: 150px; max-width: 240px;" onchange="renderTimetableGrid()"></select>
+                                <select id="timetableTeacherSelect" class="form-select form-select-sm rounded-pill fw-bold d-none"
+                                    style="min-width: 150px; max-width: 240px;" onchange="renderTimetableGrid()"></select>
+                            </div>
+                        </div>
+
+                        <!-- Tier 2: Action Buttons Tray -->
+                        <div class="tt-toolbar-tier2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2 tt-status-badge">
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1.5 fw-bold">
+                                    <i class="fas fa-calendar-alt me-1"></i><span data-i18n="tab_timetable">خشتێ حەفتیانە</span>
+                                </span>
+                            </div>
+
                             <div class="d-flex gap-1.5 flex-wrap align-items-center tt-actions-tray">
                                 <button id="btnAutoDistribute" class="btn btn-warning btn-sm rounded-pill fw-bold px-3 text-dark shadow-xs"
                                     onclick="autoDistributeTimetable()" data-i18n="btn_auto_distribute"><i
@@ -473,32 +481,32 @@
                                         data-bs-toggle="dropdown" data-i18n="btn_print"><i
                                             class="fas fa-print me-1"></i>چاپکرن</button>
                                     <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
-                                        <li><a class="dropdown-item py-1.5" href="#" onclick="printCurrentTimetableView()"
+                                        <li><a class="dropdown-item py-1.5" href="javascript:void(0)" onclick="printCurrentTimetableView()"
                                                 data-i18n="print_current_tt"><i class="fas fa-eye fa-fw me-2"></i>چاپکرنا
                                                 دیمەنێ نها (الحالي)</a></li>
                                         <li>
                                             <hr class="dropdown-divider my-1">
                                         </li>
-                                        <li><a class="dropdown-item py-1.5" href="#" onclick="promptPrintOptions('class')"
+                                        <li><a class="dropdown-item py-1.5" href="javascript:void(0)" onclick="promptPrintOptions('class')"
                                                 data-i18n="print_all_class_tt"><i
                                                     class="fas fa-layer-group fa-fw me-2 text-success"></i>هەمی خشتەیێن
                                                 پولان (للصفوف)</a></li>
-                                        <li><a class="dropdown-item py-1.5" href="#" onclick="promptPrintOptions('teacher')"
+                                        <li><a class="dropdown-item py-1.5" href="javascript:void(0)" onclick="promptPrintOptions('teacher')"
                                                 data-i18n="print_all_teacher_tt"><i
                                                     class="fas fa-user-tie fa-fw me-2 text-primary"></i>هەمی خشتەیێن
                                                 ماموستایان (فرداً فرداً)</a></li>
-                                        <li><a class="dropdown-item py-1.5" href="#" onclick="promptMasterPrintOptions('teacher')"
+                                        <li><a class="dropdown-item py-1.5" href="javascript:void(0)" onclick="promptMasterPrintOptions('teacher')"
                                                 data-i18n="print_master_teacher_tt"><i
                                                     class="fas fa-users fa-fw me-2 text-warning"></i>خشتێ گشتی ماموستایان
                                                 (أفقي/عامودي)</a></li>
-                                        <li><a class="dropdown-item py-1.5" href="#" onclick="promptMasterPrintOptions('class')"
+                                        <li><a class="dropdown-item py-1.5" href="javascript:void(0)" onclick="promptMasterPrintOptions('class')"
                                                 data-i18n="print_master_class_tt"><i
                                                     class="fas fa-border-all fa-fw me-2 text-danger"></i>خشتێ گشتی پولان
                                                 (أفقي/عامودي)</a></li>
                                         <li>
                                             <hr class="dropdown-divider my-1">
                                         </li>
-                                        <li><a class="dropdown-item py-1.5" href="#"
+                                        <li><a class="dropdown-item py-1.5" href="javascript:void(0)"
                                                 onclick="printDailySubstitutionReport('current')"><i
                                                     class="fas fa-user-clock fa-fw me-2 text-info"></i>خشتێ جهگران (طباعة
                                                 البدلاء - العرض الحالي)</a></li>
@@ -531,23 +539,6 @@
                 </div>
                 <!-- Substitute Tab -->
                 <div class="tab-pane fade" id="substitute-tab-pane" role="tabpanel">
-                    <div class="card border-0 shadow-sm rounded-4 p-2.5 mb-3 bg-white">
-                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2.5 w-100">
-                            <div class="d-flex align-items-center gap-2 flex-wrap">
-                                <span class="badge bg-warning-subtle text-dark border border-warning-subtle rounded-pill px-3 py-2 fw-bold">
-                                    <i class="fas fa-user-clock me-1 text-warning"></i><span data-i18n="tab_substitute">ماموستایێ جهگر</span>
-                                </span>
-                                <div class="d-inline-flex align-items-center gap-1.5">
-                                    <select id="substituteTeacherSelect" class="form-select form-select-sm rounded-pill fw-bold"
-                                        style="min-width: 170px; max-width: 250px;" onchange="renderSubstituteTab()">
-                                    </select>
-                                    <select id="substituteDaySelect" class="form-select form-select-sm rounded-pill fw-bold"
-                                        style="min-width: 130px; max-width: 180px;" onchange="renderSubstituteTab()">
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     <div id="substituteMainContainer"></div>
                 </div>
             </div>
@@ -922,7 +913,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="excel_template.js"></script>
 
-    <script src="app.js?v=303"></script>
+    <script src="app.js?v=311"></script>
 </body>
 
 </html>
