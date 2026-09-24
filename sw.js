@@ -1,10 +1,10 @@
-const CACHE_NAME = 'mamosta-timetable-cache-v160';
+const CACHE_NAME = 'mamosta-timetable-cache-v334';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
-  './style.css?v=86',
-  './app.js?v=245',
+  './style.css?v=333',
+  './app.js?v=334',
   './icon.svg',
   'https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@100..900&display=swap',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',

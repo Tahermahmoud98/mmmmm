@@ -318,8 +318,8 @@ const LANG_KU = {
     val_btn_open_teacher_blocked: "🔓 ڤەکرنا پەنجەرا حظرێ بۆ ڤی ماموستای",
     val_teacher_restrictions_title: "وانەیێن قەدەغەکری يێن مامۆستایان (حظر الحصص)",
     val_teacher_blocked_count: "وانەیێن قەدەغەکری",
-    btn_subject_restrictions: "قفل وقيود المواد",
-    btn_manual_edit_tt: "دەستکاریکرنا دستی",
+    btn_subject_restrictions: "قفل و سنوردارکرنا بابەتان",
+    btn_manual_edit_tt: "دەستکاریکرنا ب دەستی",
     subject_restrictions_title: "قفل و سنوردارکرنا وانەیێن بابه‌تان",
     subject_restrictions_desc: "دیاریکرنا وانەیێن قەدەغەکری یان مجاز بۆ هەر بابەتەکێ (بۆ نموونە: قەدەغەکرنا بابەتی ل وانەیا شەشێ یان حەفتێ، یان قوفڵکرنا وانەیان د خشتەی دا)",
     lock_slot: "قفلکرنا وانەیێ",
@@ -6655,7 +6655,7 @@ function formatMasterTeacherCellContent(className, subjectText) {
 let activeSubjectRestrictionName = null;
 let subjectRestrictionsWorkingCopy = {};
 
-function ttSubjectCanTakeSlot(subject, dayName, period, schedule = null) {
+function ttSubjectCanTakeSlot(subject, dayName, period, schedule = null, className = null) {
     if (!subject) return true;
     if (!schedule) schedule = allSchedules[activeScheduleName];
     if (!schedule || !schedule.settings) return true;
@@ -6665,6 +6665,24 @@ function ttSubjectCanTakeSlot(subject, dayName, period, schedule = null) {
     const translatedName = typeof translateSubjectName === 'function' ? translateSubjectName(cleanSubject) : cleanSubject;
     const restriction = restrictions[cleanSubject] || restrictions[translatedName];
     if (!restriction) return true;
+
+    // Check if restriction is scoped to specific classes/grades
+    if (Array.isArray(restriction.targetClasses) && restriction.targetClasses.length > 0) {
+        if (className) {
+            const cleanClass = String(className).trim();
+            let matches = restriction.targetClasses.includes(cleanClass);
+            if (!matches) {
+                const grade = typeof getGradeFromClassName === 'function' ? getGradeFromClassName(cleanClass) : null;
+                if (grade && (restriction.targetClasses.includes(`grade:${grade}`) || restriction.targetClasses.includes(String(grade)))) {
+                    matches = true;
+                }
+            }
+            // If this class is not in the restricted target classes/grades, it is completely free
+            if (!matches) {
+                return true;
+            }
+        }
+    }
 
     // 1. Max period limit
     if (period !== null && period !== undefined && restriction.maxPeriod) {
@@ -6696,6 +6714,24 @@ function ttSubjectCanTakeSlot(subject, dayName, period, schedule = null) {
     }
 
     return true;
+}
+
+function getAllUniqueClassesInSchedule(schedule = null) {
+    if (!schedule) schedule = allSchedules[activeScheduleName];
+    if (!schedule) return [];
+    if (Array.isArray(schedule.columns) && schedule.columns.length > 0) {
+        return [...schedule.columns];
+    }
+    const classes = new Set();
+    if (schedule.timetables) {
+        Object.keys(schedule.timetables).forEach(c => classes.add(c));
+    }
+    if (schedule.teachers) {
+        schedule.teachers.forEach(t => {
+            if (t.classes) Object.keys(t.classes).forEach(c => classes.add(c));
+        });
+    }
+    return Array.from(classes);
 }
 
 function getAllUniqueSubjectsInSchedule(schedule = null) {
@@ -6748,6 +6784,80 @@ function openSubjectRestrictionsModal() {
     }
 }
 
+function setSubjectTargetScope(scope) {
+    const subj = activeSubjectRestrictionName;
+    if (!subj) return;
+    subjectRestrictionsWorkingCopy[subj] = subjectRestrictionsWorkingCopy[subj] || {};
+    const r = subjectRestrictionsWorkingCopy[subj];
+    if (scope === 'all') {
+        r.targetClasses = [];
+    } else {
+        const schedule = allSchedules[activeScheduleName];
+        const allClasses = getAllUniqueClassesInSchedule(schedule);
+        if (!Array.isArray(r.targetClasses) || r.targetClasses.length === 0) {
+            r.targetClasses = [...allClasses];
+        }
+    }
+    renderSubjectRestrictionsGrid();
+}
+
+function toggleSubjectTargetClass(className) {
+    const subj = activeSubjectRestrictionName;
+    if (!subj) return;
+    subjectRestrictionsWorkingCopy[subj] = subjectRestrictionsWorkingCopy[subj] || {};
+    const r = subjectRestrictionsWorkingCopy[subj];
+    if (!Array.isArray(r.targetClasses)) {
+        const schedule = allSchedules[activeScheduleName];
+        r.targetClasses = [...getAllUniqueClassesInSchedule(schedule)];
+    }
+    const idx = r.targetClasses.indexOf(className);
+    if (idx !== -1) {
+        r.targetClasses.splice(idx, 1);
+    } else {
+        r.targetClasses.push(className);
+    }
+    renderSubjectRestrictionsGrid();
+}
+
+function toggleSubjectTargetGrade(grade) {
+    const subj = activeSubjectRestrictionName;
+    if (!subj) return;
+    subjectRestrictionsWorkingCopy[subj] = subjectRestrictionsWorkingCopy[subj] || {};
+    const r = subjectRestrictionsWorkingCopy[subj];
+    const schedule = allSchedules[activeScheduleName];
+    const allClasses = getAllUniqueClassesInSchedule(schedule);
+    const gradeClasses = allClasses.filter(c => getGradeFromClassName(c) === String(grade));
+    if (gradeClasses.length === 0) return;
+
+    if (!Array.isArray(r.targetClasses)) {
+        r.targetClasses = [...allClasses];
+    }
+
+    const allSelected = gradeClasses.every(c => r.targetClasses.includes(c));
+    if (allSelected) {
+        r.targetClasses = r.targetClasses.filter(c => !gradeClasses.includes(c));
+    } else {
+        gradeClasses.forEach(c => {
+            if (!r.targetClasses.includes(c)) r.targetClasses.push(c);
+        });
+    }
+    renderSubjectRestrictionsGrid();
+}
+
+function selectAllSubjectTargetClasses(selectAll) {
+    const subj = activeSubjectRestrictionName;
+    if (!subj) return;
+    subjectRestrictionsWorkingCopy[subj] = subjectRestrictionsWorkingCopy[subj] || {};
+    const r = subjectRestrictionsWorkingCopy[subj];
+    if (selectAll) {
+        const schedule = allSchedules[activeScheduleName];
+        r.targetClasses = [...getAllUniqueClassesInSchedule(schedule)];
+    } else {
+        r.targetClasses = [];
+    }
+    renderSubjectRestrictionsGrid();
+}
+
 function renderSubjectRestrictionsGrid() {
     const schedule = allSchedules[activeScheduleName];
     const container = document.getElementById('subjectRestrictionsContainer');
@@ -6771,17 +6881,62 @@ function renderSubjectRestrictionsGrid() {
         maxPeriod: null,
         blockedDays: [],
         blockedPeriods: [],
-        blockedSlots: {}
+        blockedSlots: {},
+        targetClasses: []
     };
 
     // Subject buttons pills
     const subjectPills = uniqueSubjects.map(subj => {
         const isActive = subj === currentSubj;
-        const hasRule = !!subjectRestrictionsWorkingCopy[subj];
+        const r = subjectRestrictionsWorkingCopy[subj];
+        const hasRule = !!r && (
+            (r.blockedDays && r.blockedDays.length > 0) ||
+            (r.blockedPeriods && r.blockedPeriods.length > 0) ||
+            (r.blockedSlots && Object.values(r.blockedSlots).some(arr => arr && arr.length > 0)) ||
+            (r.maxPeriod) ||
+            (Array.isArray(r.targetClasses) && r.targetClasses.length > 0)
+        );
         return `
             <button type="button" class="btn ${isActive ? 'btn-primary' : 'btn-outline-secondary'} btn-sm rounded-pill px-3 py-1 fw-bold position-relative shadow-sm" onclick="activeSubjectRestrictionName='${subj.replace(/'/g, "\\'")}'; renderSubjectRestrictionsGrid();">
                 ${translateSubjectName(subj)}
                 ${hasRule ? '<span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"><span class="visually-hidden">Rule</span></span>' : ''}
+            </button>
+        `;
+    }).join(' ');
+
+    // Classes & Grades logic
+    const allClasses = getAllUniqueClassesInSchedule(schedule);
+    const hasClassFilter = Array.isArray(currentRestriction.targetClasses) && currentRestriction.targetClasses.length > 0;
+    const selectedClasses = hasClassFilter ? currentRestriction.targetClasses : [];
+
+    // Distinct grades
+    const gradeMap = {};
+    allClasses.forEach(c => {
+        const g = getGradeFromClassName(c) || 'other';
+        if (!gradeMap[g]) gradeMap[g] = [];
+        gradeMap[g].push(c);
+    });
+    const distinctGrades = Object.keys(gradeMap).filter(g => g !== 'other').sort((a, b) => parseInt(a) - parseInt(b));
+
+    // Grade quick buttons
+    const gradeButtonsHtml = distinctGrades.map(g => {
+        const classesInGrade = gradeMap[g];
+        const allInGradeSelected = hasClassFilter && classesInGrade.every(c => selectedClasses.includes(c));
+        const someInGradeSelected = hasClassFilter && classesInGrade.some(c => selectedClasses.includes(c));
+        const btnClass = allInGradeSelected ? 'btn-primary' : (someInGradeSelected ? 'btn-outline-primary' : 'btn-outline-secondary');
+        return `
+            <button type="button" class="btn btn-sm ${btnClass} rounded-pill px-3 py-1 fw-bold shadow-sm" onclick="toggleSubjectTargetGrade('${g}')" title="تحديد / إلغاء تحديد كافة شعب الصف ${g}">
+                <i class="fas ${allInGradeSelected ? 'fa-check-square' : 'fa-square'} me-1"></i>${t('col_class', 'الصف')} ${g}
+            </button>
+        `;
+    }).join(' ');
+
+    // Class chips
+    const classChipsHtml = allClasses.map(c => {
+        const isSelected = selectedClasses.includes(c);
+        return `
+            <button type="button" class="btn btn-sm ${isSelected ? 'btn-danger' : 'btn-outline-secondary text-muted'} rounded-pill px-2 py-0 fw-bold" onclick="toggleSubjectTargetClass('${c.replace(/'/g, "\\'")}')" style="font-size: 0.8rem; margin: 2px;">
+                <i class="fas ${isSelected ? 'fa-lock' : 'fa-unlock'} me-1"></i>${c}
             </button>
         `;
     }).join(' ');
@@ -6845,6 +7000,57 @@ function renderSubjectRestrictionsGrid() {
                         ${Array.from({ length: periodsCount }, (_, i) => `<option value="${i + 1}" ${currentRestriction.maxPeriod == (i + 1) ? 'selected' : ''}>وانەیا ${i + 1}</option>`).join('')}
                     </select>
                 </div>
+            </div>
+
+            <!-- Class & Grade Scope Selector -->
+            <div class="p-3 mb-3 rounded-3 border" style="background: linear-gradient(135deg, rgba(238, 242, 255, 0.7) 0%, rgba(243, 244, 246, 0.7) 100%);">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                    <label class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                        <i class="fas fa-layer-group text-primary"></i>
+                        <span>تطبيق القيد على الصفوف / دیاریکرنا پۆلان:</span>
+                    </label>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn ${!hasClassFilter ? 'btn-primary active' : 'btn-outline-primary'} fw-bold px-3" onclick="setSubjectTargetScope('all')">
+                            <i class="fas fa-globe me-1"></i>كافة الصفوف (گشت پۆل)
+                        </button>
+                        <button type="button" class="btn ${hasClassFilter ? 'btn-primary active' : 'btn-outline-primary'} fw-bold px-3" onclick="setSubjectTargetScope('specific')">
+                            <i class="fas fa-filter me-1"></i>صفوف ومراحل محددة (پۆلێن دیاریکری)
+                        </button>
+                    </div>
+                </div>
+
+                ${hasClassFilter ? `
+                    <div class="mt-2 pt-2 border-top">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                            <div class="small text-muted fw-bold">
+                                <i class="fas fa-mouse-pointer me-1 text-primary"></i>تحديد سريع للمراحل (الصفوف):
+                            </div>
+                            <div class="d-flex gap-1">
+                                <button type="button" class="btn btn-sm btn-link text-decoration-none py-0 px-1 fw-bold text-primary" onclick="selectAllSubjectTargetClasses(true)">[تحديد الكل]</button>
+                                <button type="button" class="btn btn-sm btn-link text-decoration-none py-0 px-1 fw-bold text-danger" onclick="selectAllSubjectTargetClasses(false)">[إلغاء الكل]</button>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap gap-1 mb-2">
+                            ${gradeButtonsHtml}
+                        </div>
+                        <div class="small text-muted fw-bold mb-1">
+                            الشُعب المشمولة بالقفل (${selectedClasses.length} من أصل ${allClasses.length}):
+                        </div>
+                        <div class="d-flex flex-wrap gap-1" style="max-height: 90px; overflow-y: auto;">
+                            ${classChipsHtml}
+                        </div>
+                        <div class="alert alert-info py-2 px-3 mt-2 mb-0 small rounded-2 d-flex align-items-center gap-2">
+                            <i class="fas fa-info-circle text-info fs-5"></i>
+                            <div>
+                                <strong>تنبيه دقيق:</strong> قفل مادة <span class="badge bg-primary">${translateSubjectName(currentSubj)}</span> سيُطبّق <u>فقط</u> على الصفوف المحددة أعلاه بالأحمر (🔒)، وستكون <strong>حرة ومتاحة بالكامل لباقي الصفوف</strong> دون أي قيد.
+                            </div>
+                        </div>
+                    </div>
+                ` : `
+                    <div class="small text-muted mt-1">
+                        <i class="fas fa-info-circle text-primary me-1"></i>القيد مطبق حالياً على <strong>كافة الصفوف</strong> في المدرسة بالتساوي. إذا أردت تخصيصه لصفوف معينة فقط (مثل الخامس أو السادس)، اضغط على "صفوف ومراحل محددة".
+                    </div>
+                `}
             </div>
 
             <div class="table-responsive border rounded-3 mb-3">
@@ -7139,7 +7345,7 @@ function manualAssignLessonToSlot(className, dayIndex, period, subject, teacher,
     }
 
     // Check subject restrictions
-    if (!ttSubjectCanTakeSlot(subject, dayName, period, schedule)) {
+    if (!ttSubjectCanTakeSlot(subject, dayName, period, schedule, className)) {
         showToast(t('subject_restricted_period_warn'), 'warning');
     }
 
@@ -7208,9 +7414,9 @@ function canSwapSlots(className, fromDay, fromPeriod, toDay, toPeriod, schedule)
     const toDayName = days[toDay];
 
     // Check subject restrictions for itemA at (toDay, toPeriod)
-    if (itemA && !ttSubjectCanTakeSlot(itemA.subject, toDayName, toPeriod, schedule)) return false;
+    if (itemA && !ttSubjectCanTakeSlot(itemA.subject, toDayName, toPeriod, schedule, className)) return false;
     // Check subject restrictions for itemB at (fromDay, fromPeriod)
-    if (itemB && !ttSubjectCanTakeSlot(itemB.subject, fromDayName, fromPeriod, schedule)) return false;
+    if (itemB && !ttSubjectCanTakeSlot(itemB.subject, fromDayName, fromPeriod, schedule, className)) return false;
 
     // Check teacher conflicts
     if (itemA && itemA.teacher) {
@@ -8881,8 +9087,8 @@ function renderSubstituteFinder(schedule, container, days, periodsCount) {
     // Build the Top Sub-View Bar
     const subViewBarHtml = `
         <div class="substitute-header-card mb-3">
-            <!-- Tier 1: View Navigation Tabs & Filters -->
-            <div class="substitute-toolbar-tier1 d-flex justify-content-between align-items-center flex-wrap gap-2 pb-2 mb-2 border-bottom">
+            <!-- Tier 1: View Navigation Tabs (Right in RTL) & Status Context Badges (Left in RTL) -->
+            <div class="substitute-toolbar-tier1 d-flex justify-content-between align-items-center flex-wrap gap-2 pb-2.5 mb-2.5 border-bottom">
                 <!-- Segmented View Tabs -->
                 <div class="substitute-segmented-nav shadow-xs" role="group">
                     <button type="button" class="substitute-segmented-tab ${substituteSubViewMode === 'weekly_master' ? 'active' : ''}" onclick="switchSubstituteSubView('weekly_master')">
@@ -8899,52 +9105,52 @@ function renderSubstituteFinder(schedule, container, days, periodsCount) {
                     </button>
                 </div>
 
-                <!-- Filters: Teacher & Day Selects -->
-                <div class="substitute-filters-group d-inline-flex align-items-center gap-1.5 flex-wrap">
-                    <select id="substituteTeacherSelect" class="form-select form-select-sm rounded-pill fw-bold substitute-select"
-                        style="min-width: 160px; max-width: 240px;" onchange="renderSubstituteTab()">
-                        ${teacherOptionsHtml}
-                    </select>
-                    <select id="substituteDaySelect" class="form-select form-select-sm rounded-pill fw-bold substitute-select"
-                        style="min-width: 130px; max-width: 190px;" onchange="renderSubstituteTab()">
-                        ${dayOptionsHtml}
-                    </select>
+                <!-- Status Badges & Info Capsule -->
+                <div class="d-flex align-items-center gap-2 flex-wrap substitute-status-info">
+                    <div class="d-inline-flex align-items-center gap-1.5 py-1 px-2.5 rounded-pill bg-light border shadow-xs">
+                        <i class="fas ${!isAllTeachers ? 'fa-user-clock text-danger' : 'fa-calendar-check text-primary'}"></i>
+                        <span class="small fw-bold text-muted">${isAr ? 'الجدول:' : 'خشتە:'}</span>
+                        <span class="badge ${!isAllTeachers ? 'bg-danger text-white' : 'bg-primary text-white'} rounded-pill px-2.5 py-1 fw-bold shadow-xs">
+                            ${teacherBadgeDisplay}
+                        </span>
+                    </div>
+
+                    <div class="d-inline-flex align-items-center gap-1.5 flex-wrap">
+                        ${!isAllTeachers ? `
+                            <span class="badge bg-light text-secondary border rounded-pill py-1.5 px-2.5"><i class="fas fa-graduation-cap me-1 text-primary"></i>${translateSubjectName(absentSpec) || (isAr ? 'معلم' : 'مامۆستا')}</span>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill py-1.5 px-2.5"><i class="fas fa-book-reader me-1"></i>${totalSlotsCount} ${isAr ? 'حصة' : 'وانە'}</span>
+                            <span class="badge ${assignedCount === totalSlotsCount && totalSlotsCount > 0 ? 'bg-success text-white' : 'bg-warning-subtle text-dark border border-warning-subtle'} rounded-pill py-1.5 px-2.5 shadow-xs">
+                                <i class="fas fa-user-check me-1"></i>${assignedCount} / ${totalSlotsCount} ${isAr ? 'تم البديل' : 'هاتنە دانان'}
+                            </span>
+                        ` : `
+                            ${leaveNames.length > 0 ? `
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill py-1.5 px-2.5"><i class="fas fa-user-clock me-1"></i>${leaveNames.length} ${isAr ? 'مستحق إجازة' : 'مۆڵەتدار'}</span>
+                                <span class="badge ${assignedCount === totalSlotsCount && totalSlotsCount > 0 ? 'bg-success text-white' : 'bg-warning-subtle text-dark border border-warning-subtle'} rounded-pill py-1.5 px-2.5 shadow-xs">
+                                    <i class="fas fa-user-check me-1"></i>${assignedCount} / ${totalSlotsCount} ${isAr ? 'بديل' : 'بەدیل'}
+                                </span>
+                            ` : `
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill py-1.5 px-2.5"><i class="fas fa-check me-1"></i>${totalAssignedSubstitutes} ${isAr ? 'بديل مسند' : 'بەدیل'}</span>
+                            `}
+                        `}
+                    </div>
                 </div>
             </div>
 
-            <!-- Tier 2: Status Badges & Action Buttons Toolbar -->
-            <div class="substitute-toolbar-tier2 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <!-- Status Badges Info -->
-                <div class="d-flex align-items-center gap-2 flex-wrap substitute-status-info">
-                    <span class="substitute-avatar-icon shadow-xs">
-                        <i class="fas fa-user-clock fs-5"></i>
+            <!-- Tier 2: Filters Capsule (Right in RTL) & Action Buttons Toolbar (Left in RTL) -->
+            <div class="substitute-toolbar-tier2 d-flex justify-content-between align-items-center flex-wrap gap-2.5">
+                <!-- Filters: Teacher & Day Selects Capsule -->
+                <div class="substitute-filters-group d-inline-flex align-items-center gap-1.5 p-1 px-2.5 rounded-pill bg-light border shadow-xs flex-wrap">
+                    <span class="text-muted small fw-bold px-1 d-inline-flex align-items-center gap-1">
+                        <i class="fas fa-filter text-primary" style="font-size: 0.78rem;"></i>
                     </span>
-                    <div>
-                        <div class="d-flex align-items-center gap-2 flex-wrap">
-                            <h6 class="mb-0 fw-bold text-dark">${isAr ? 'الجدول:' : 'خشتە:'}</h6>
-                            <span class="badge ${!isAllTeachers ? 'bg-danger text-white' : 'bg-primary text-white'} px-2.5 py-1 fs-6 shadow-xs rounded-pill">
-                                ${teacherBadgeDisplay}
-                            </span>
-                        </div>
-                        <div class="small mt-1 d-flex align-items-center flex-wrap gap-1.5">
-                            ${!isAllTeachers ? `
-                                <span class="badge bg-light text-secondary border rounded-pill"><i class="fas fa-graduation-cap me-1"></i>${translateSubjectName(absentSpec) || (isAr ? 'معلم' : 'مامۆستا')}</span>
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill"><i class="fas fa-book-reader me-1"></i>${totalSlotsCount} ${isAr ? 'حصة' : 'وانە'}</span>
-                                <span class="badge ${assignedCount === totalSlotsCount && totalSlotsCount > 0 ? 'bg-success text-white' : 'bg-warning-subtle text-dark border border-warning-subtle'} rounded-pill">
-                                    <i class="fas fa-user-check me-1"></i>${assignedCount} / ${totalSlotsCount} ${isAr ? 'تم البديل' : 'هاتنە دانان'}
-                                </span>
-                            ` : `
-                                ${leaveNames.length > 0 ? `
-                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill"><i class="fas fa-user-clock me-1"></i>${leaveNames.length} ${isAr ? 'مستحق إجازة' : 'مۆڵەتدار'}</span>
-                                    <span class="badge ${assignedCount === totalSlotsCount && totalSlotsCount > 0 ? 'bg-success text-white' : 'bg-warning-subtle text-dark border border-warning-subtle'} rounded-pill">
-                                        <i class="fas fa-user-check me-1"></i>${assignedCount} / ${totalSlotsCount} ${isAr ? 'بديل' : 'بەدیل'}
-                                    </span>
-                                ` : `
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill"><i class="fas fa-check me-1"></i>${totalAssignedSubstitutes} ${isAr ? 'بديل مسند' : 'بەدیل'}</span>
-                                `}
-                            `}
-                        </div>
-                    </div>
+                    <select id="substituteTeacherSelect" class="form-select form-select-sm rounded-pill fw-bold substitute-select shadow-xs"
+                        style="min-width: 170px; max-width: 250px;" onchange="renderSubstituteTab()">
+                        ${teacherOptionsHtml}
+                    </select>
+                    <select id="substituteDaySelect" class="form-select form-select-sm rounded-pill fw-bold substitute-select shadow-xs"
+                        style="min-width: 140px; max-width: 210px;" onchange="renderSubstituteTab()">
+                        ${dayOptionsHtml}
+                    </select>
                 </div>
 
                 <!-- Action Buttons Toolbar -->
@@ -8961,8 +9167,8 @@ function renderSubstituteFinder(schedule, container, days, periodsCount) {
                     <button type="button" class="btn btn-success btn-sm rounded-pill fw-bold shadow-xs text-white substitute-btn-action substitute-btn-html" onclick="downloadSubstituteHTML('current')" title="${isAr ? 'تنزيل كملف HTML' : 'داونلودکرنا فایلی HTML'}">
                         <i class="fas fa-file-code me-1"></i><span>HTML</span>
                     </button>
-                    <button type="button" class="btn btn-primary btn-sm rounded-pill fw-bold shadow-xs text-white substitute-btn-action substitute-btn-print" onclick="printDailySubstitutionReport('current')" title="${isAr ? 'طباعة' : 'چاپکرن'}">
-                        <i class="fas fa-print me-1"></i><span>${isAr ? 'طباعة' : 'چاپکرن'}</span>
+                    <button type="button" class="btn btn-dark btn-sm rounded-pill fw-bold shadow-xs text-white substitute-btn-action substitute-btn-print" onclick="printDailySubstitutionReport('current')" title="${isAr ? 'طباعة' : 'چاپکرن'}">
+                        <i class="fas fa-print me-1 text-warning"></i><span>${isAr ? 'طباعة' : 'چاپکرن'}</span>
                     </button>
                     <button type="button" class="btn btn-outline-danger btn-sm rounded-pill fw-bold shadow-xs substitute-btn-action substitute-btn-clear" onclick="clearSubstituteAssignments()" title="${clearBtnTitle}">
                         <i class="fas fa-trash-alt me-1"></i><span>${isAr ? 'تفريغ' : 'ڤالاکرن'}</span>
@@ -9038,7 +9244,7 @@ function renderSubstituteFinder(schedule, container, days, periodsCount) {
                             const subDisplayName = (getSmartTeacherDisplayName(assignedSub, schedule.teachers) || assignedSub).trim().split(/\s+/)[0];
                             h += `<td class="${borderClass} timetable-cell" style="background-color: #dcfce7 !important; border: 1px solid #16a34a; overflow:hidden; vertical-align: middle; padding: 2px 1px; height: 40px; cursor: pointer; position: relative;" onclick="openSubstitutePickerModal(${d}, ${p}, '${foundClass.replace(/'/g, "\\'")}', '${foundSubject.replace(/'/g, "\\'")}', '${tName.replace(/'/g, "\\'")}')" title="البديل: ${assignedSub} (${foundClass} / ${foundSubject})">` +
                                 `<a href="javascript:void(0)" onclick="event.stopPropagation(); removeSubstituteAssignment('${tName.replace(/'/g, "\\'")}', ${d}, ${p}, '${foundClass.replace(/'/g, "\\'")}')" title="إلغاء البديل" style="position: absolute; top: 1px; left: 2px; font-size: 0.65rem; color: #dc2626; text-decoration: none; font-weight: bold; z-index: 3;">✕</a>` +
-                                getSvgFormattedText('✓ ' + subDisplayName, true, 'text-success fw-bold', 11) +
+                                getSvgFormattedText(subDisplayName, true, 'text-success fw-bold', 11) +
                                 getSvgFormattedText(foundClass, false, 'text-muted fw-bold', 9.5) +
                                 `</td>`;
                         } else {
@@ -9070,7 +9276,7 @@ function renderSubstituteFinder(schedule, container, days, periodsCount) {
                         }
                         if (subClassAssigned) {
                             const subCoveredFirst = absentTeacherCovered ? absentTeacherCovered.trim().split(/\s+/)[0] : '';
-                            const subLabel = subCoveredFirst ? ('✓ ' + subCoveredFirst) : (isAr ? '✓ بديل' : '✓ جهگر');
+                            const subLabel = subCoveredFirst ? subCoveredFirst : (isAr ? 'بديل' : 'جهگر');
                             h += `<td class="${borderClass} bg-success-subtle text-success small fw-bold" style="border: 1px solid #16a34a; overflow:hidden; vertical-align: middle; padding: 2px 1px; height: 40px;" title="${isAr ? 'بديل عن' : 'جهگر بۆ'} ${absentTeacherCovered || ''} (${subClassAssigned})">` +
                                 getSvgFormattedText(subLabel, true, 'text-success fw-bold', 11) +
                                 getSvgFormattedText(subClassAssigned, false, 'text-success fw-bold', 9.5) +
@@ -9148,7 +9354,7 @@ function renderSubstituteFinder(schedule, container, days, periodsCount) {
                             const subDisplayName = getSmartTeacherDisplayName(assignedSub, schedule.teachers);
                             h += `<td class="${borderClass} timetable-cell" style="background-color: #dcfce7 !important; border: 1.5px solid #16a34a; overflow:hidden; vertical-align: middle; padding: 2px 1px; height: 40px; cursor: pointer; position: relative;" onclick="openSubstitutePickerModal(${d}, ${p}, '${className.replace(/'/g, "\\'")}', '${subject.replace(/'/g, "\\'")}', '${originalTeacher.replace(/'/g, "\\'")}')" title="البديل: ${assignedSub} | الأصلي: ${originalTeacher} (${subject}) - انقر للتعديل">` +
                                 `<a href="javascript:void(0)" onclick="event.stopPropagation(); removeSubstituteAssignment('${originalTeacher.replace(/'/g, "\\'")}', ${d}, ${p}, '${className.replace(/'/g, "\\'")}')" title="إلغاء البديل" style="position: absolute; top: 1px; left: 2px; font-size: 0.65rem; color: #dc2626; text-decoration: none; font-weight: bold; z-index: 3;">✕</a>` +
-                                getSvgFormattedText('✓ ' + subDisplayName, true, 'text-success fw-bold', 11) +
+                                getSvgFormattedText(subDisplayName, true, 'text-success fw-bold', 11) +
                                 getSvgFormattedText(getDisplaySubjectName(subject, true) + ' (' + getTeacherDisplayName(originalTeacher) + ')', false, 'text-muted', 8.5) +
                                 `</td>`;
                         } else {
@@ -9349,7 +9555,7 @@ function renderSubstituteFinder(schedule, container, days, periodsCount) {
                                     ${assignedSub ? `
                                         <div class="mt-1">
                                             <span class="badge bg-success text-white py-1 px-2 rounded-2 shadow-xs" style="font-size: 0.75rem;">
-                                                <i class="fas fa-check me-1"></i>${assignedSub}
+                                                ${assignedSub}
                                                 <a href="javascript:void(0)" onclick="removeSubstituteAssignment('${curTeacherName.replace(/'/g, "\\'")}', ${d}, ${p}, '${foundClass.replace(/'/g, "\\'")}')" class="text-white ms-1 text-decoration-none fw-bold" title="${t('cancel', 'إلغاء البديل')}">✕</a>
                                             </span>
                                         </div>
@@ -9455,7 +9661,7 @@ function renderSubstituteFinder(schedule, container, days, periodsCount) {
                     <td class="p-1 align-middle bg-danger-subtle text-danger text-center fw-bold small" style="border: 1.5px solid #f87171;">
                         <span class="badge bg-danger mb-1">${foundC}</span>
                         <div style="font-size: 0.72rem;">${translateSubjectName(foundS)}</div>
-                        ${assignedSub ? `<div class="badge bg-success text-white mt-1 p-1" style="font-size: 0.7rem; background-color: #15803d !important; color: #ffffff !important;">✓ ${assignedSub}</div>` : `<div class="badge bg-warning text-dark mt-1" style="font-size: 0.65rem;">شاغر</div>`}
+                        ${assignedSub ? `<div class="badge bg-success text-white mt-1 p-1" style="font-size: 0.7rem; background-color: #15803d !important; color: #ffffff !important;">${assignedSub}</div>` : `<div class="badge bg-warning text-dark mt-1" style="font-size: 0.65rem;">شاغر</div>`}
                     </td>
                 `;
             } else {
@@ -9574,7 +9780,7 @@ function renderSubstituteFinder(schedule, container, days, periodsCount) {
                     if (isAssigned) {
                         rowCells += `
                             <td class="p-1 align-middle text-center" style="background-color: #15803d !important; color: #ffffff !important; border: 1.5px solid #16a34a;">
-                                <div class="fw-bold" style="font-size: 0.75rem; color: #ffffff !important;">✓ جهگر</div>
+                                <div class="fw-bold" style="font-size: 0.75rem; color: #ffffff !important;">جهگر</div>
                             </td>
                         `;
                     } else if (absentClass) {
@@ -9653,7 +9859,7 @@ function renderSubstituteFinder(schedule, container, days, periodsCount) {
                                 <td class="align-middle fw-bold">
                                     ${assignedSub ? `
                                         <div class="d-flex align-items-center justify-content-between p-1 rounded" style="background-color: #15803d !important; color: #ffffff !important;">
-                                            <span class="fw-bold text-truncate" style="color: #ffffff !important;"><i class="fas fa-check-circle me-1 text-warning"></i>${assignedSub}</span>
+                                            <span class="fw-bold text-truncate" style="color: #ffffff !important;">${assignedSub}</span>
                                             <button type="button" class="btn btn-link btn-sm p-0 ms-1 fw-bold" style="color: #fef08a !important;" onclick="removeSubstituteAssignment('${absentTeacherName.replace(/'/g, "\\'")}', ${d}, ${p}, '${cName.replace(/'/g, "\\'")}')" title="لابردن">
                                                 <i class="fas fa-times"></i>
                                             </button>
@@ -9775,22 +9981,22 @@ function buildSubstitutePrintableHtml(arg1, arg2, arg3, arg4) {
     let targetRowHeight = 22;
     let cellPadding = '2.5px 1px';
     if (teacherCount <= 12) {
-        targetRowHeight = 38;
-        cellPadding = '7px 1px';
+        targetRowHeight = 36;
+        cellPadding = '6px 1px';
     } else if (teacherCount <= 18) {
-        targetRowHeight = 30;
-        cellPadding = '5px 1px';
-    } else if (teacherCount <= 26) {
-        targetRowHeight = 23;
-        cellPadding = '3.5px 1px';
-    } else if (teacherCount <= 36) {
-        targetRowHeight = 17.5;
-        cellPadding = '2px 0.5px';
-    } else if (teacherCount <= 45) {
-        targetRowHeight = 14;
+        targetRowHeight = 28;
+        cellPadding = '4.5px 1px';
+    } else if (teacherCount <= 24) {
+        targetRowHeight = 20;
+        cellPadding = '2.5px 1px';
+    } else if (teacherCount <= 32) {
+        targetRowHeight = 15;
         cellPadding = '1px 0.5px';
+    } else if (teacherCount <= 42) {
+        targetRowHeight = 13;
+        cellPadding = '0.5px';
     } else {
-        targetRowHeight = 12;
+        targetRowHeight = 11.5;
         cellPadding = '0.5px';
     }
 
@@ -9846,7 +10052,7 @@ function buildSubstitutePrintableHtml(arg1, arg2, arg3, arg4) {
                         const subDisplayName = (getSmartTeacherDisplayName(assignedSub, allTeachers) || assignedSub).trim().split(/\s+/)[0];
                         rowCells += `
                             <td class="${borderClass}" style="height: ${targetRowHeight}px; min-height: ${targetRowHeight}px; width: ${teacherPeriodColWidthPct}%; max-width: ${teacherPeriodColWidthPct}%; min-width: 0 !important; padding: ${cellPadding} !important; overflow:hidden; border: 1px solid #000 !important; vertical-align: middle; background-color: #dcfce7 !important;">
-                                <div class="fw-bold text-success" style="font-size: ${cellMainFontSize}pt; line-height:1.1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="البديل: ${assignedSub}">✓ ${subDisplayName}</div>
+                                <div class="fw-bold text-success" style="font-size: ${cellMainFontSize}pt; line-height:1.1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="البديل: ${assignedSub}">${subDisplayName}</div>
                                 <div class="text-muted fw-bold" style="font-size: ${cellSubFontSize}pt; line-height:1.05; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${foundClass}</div>
                             </td>
                         `;
@@ -9879,7 +10085,7 @@ function buildSubstitutePrintableHtml(arg1, arg2, arg3, arg4) {
                     }
                     if (subClassAssigned) {
                         const subCoveredFirst = absentTeacherCovered ? absentTeacherCovered.trim().split(/\s+/)[0] : '';
-                        const subLabel = subCoveredFirst ? ('✓ ' + subCoveredFirst) : (isAr ? '✓ بديل' : '✓ جهگر');
+                        const subLabel = subCoveredFirst ? subCoveredFirst : (isAr ? 'بديل' : 'جهگر');
                         rowCells += `
                             <td class="${borderClass}" style="height: ${targetRowHeight}px; min-height: ${targetRowHeight}px; width: ${teacherPeriodColWidthPct}%; max-width: ${teacherPeriodColWidthPct}%; min-width: 0 !important; padding: ${cellPadding} !important; overflow:hidden; border: 1px solid #000 !important; vertical-align: middle; background-color: #dcfce7 !important;">
                                 <div class="fw-bold text-success" style="font-size: ${cellMainFontSize}pt; line-height:1.1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${subLabel}</div>
@@ -9900,7 +10106,7 @@ function buildSubstitutePrintableHtml(arg1, arg2, arg3, arg4) {
     const masterFullTitle = `${masterTitle}${schoolName ? ' - ' + schoolName : ''}`;
 
     const weeklyMasterSection = `
-        <h3 class="text-center mb-3" style="font-size: 13.5pt !important; font-weight: bold; color: #000;">${masterFullTitle}</h3>
+        <h3 class="text-center mb-2" style="font-size: 12.5pt !important; font-weight: bold; color: #000; margin-top: 0; margin-bottom: 6px !important;">${masterFullTitle}</h3>
         <div class="table-responsive" style="overflow: visible !important; width: 100% !important; max-width: 100% !important;">
             <table class="table table-bordered text-center align-middle preserve-table-styles" style="font-size: ${baseFontSize}pt; width: 100% !important; max-width: 100% !important; table-layout: fixed !important; border-collapse: collapse !important; border: 2px solid #000 !important; margin: 0 !important;">
                 ${wmThead}
@@ -9909,7 +10115,7 @@ function buildSubstitutePrintableHtml(arg1, arg2, arg3, arg4) {
                 </tbody>
             </table>
         </div>
-        <div class="print-signature-wrapper" style="display: block; width: 100%; margin-top: 14px; clear: both; page-break-inside: avoid;">
+        <div class="print-signature-wrapper" style="display: block; width: 100%; margin-top: 6px; clear: both; page-break-inside: avoid;">
             <div class="print-signature-left" style="float: left; text-align: center; width: 220px; direction: rtl; margin-left: 20px;">
                 <p class="mb-0" style="font-size: 8.5pt; font-weight: bold; margin-bottom: 2px;">${t('signature_approved_by')}</p>
                 <p class="fw-bold mb-0" style="font-size: 8.5pt; margin-bottom: 2px;">${t('signature_principal')}</p>
@@ -9982,7 +10188,7 @@ function buildSubstitutePrintableHtml(arg1, arg2, arg3, arg4) {
                         const subDisplayName = getSmartTeacherDisplayName(assignedSub, allTeachers);
                         rowCells += `
                             <td class="${borderClass}" style="height: ${classTargetRowHeight}px; min-height: ${classTargetRowHeight}px; width: ${classPeriodColWidthPct}%; max-width: ${classPeriodColWidthPct}%; min-width: 0 !important; padding: ${classCellPadding} !important; overflow:hidden; border: 1px solid #000 !important; vertical-align: middle;">
-                                <div class="fw-bold text-success" style="font-size: ${cellMainFontSize}pt; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">✓ ${subDisplayName}</div>
+                                <div class="fw-bold text-success" style="font-size: ${cellMainFontSize}pt; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${subDisplayName}</div>
                                 <div class="text-muted" style="font-size: ${cellSubFontSize}pt; line-height:1.05; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${translateSubjectName(foundSubject)} (${getTeacherDisplayName(originalTeacher)})</div>
                             </td>
                         `;
@@ -10104,7 +10310,7 @@ function buildSubstitutePrintableHtml(arg1, arg2, arg3, arg4) {
                             <div style="color: #64748b; font-size: 8.5pt; margin-top: 2px; line-height: 1.1;">${translateSubjectName(foundSubject)}</div>
                             ${assignedSub ? `
                                 <div style="background-color: #15803d; color: #ffffff; font-weight: bold; font-size: 7.5pt; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 3px;">
-                                    ✓ ${assignedSub}
+                                    ${assignedSub}
                                 </div>
                             ` : ''}
                         </td>
@@ -10182,7 +10388,7 @@ function buildSubstitutePrintableHtml(arg1, arg2, arg3, arg4) {
             absentCells += `
                 <td style="background-color: #fee2e2; color: #991b1b; font-weight: bold; padding: 6px; border: 1.5px solid #f87171;">
                     <div>${foundC} - ${translateSubjectName(foundS)}</div>
-                    ${assignedSub ? `<div style="background-color: #16a34a; color: #fff; padding: 2px 4px; border-radius: 4px; font-size: 8pt; margin-top: 3px;">✓ البديل: ${assignedSub}</div>` : `<div style="background-color: #dc2626; color: #fff; padding: 2px 4px; border-radius: 4px; font-size: 7.5pt; margin-top: 3px;">شاغر (مطلوب بديل)</div>`}
+                    ${assignedSub ? `<div style="background-color: #16a34a; color: #fff; padding: 2px 4px; border-radius: 4px; font-size: 8pt; margin-top: 3px;">${isAr ? 'البديل: ' : 'جهگر: '}${assignedSub}</div>` : `<div style="background-color: #dc2626; color: #fff; padding: 2px 4px; border-radius: 4px; font-size: 7.5pt; margin-top: 3px;">شاغر (مطلوب بديل)</div>`}
                 </td>
             `;
         } else {
@@ -10307,7 +10513,7 @@ function buildSubstitutePrintableHtml(arg1, arg2, arg3, arg4) {
                 if (isAssigned) {
                     rowCells += `
                         <td style="background-color: #dcfce7; color: #166534; font-weight: bold; padding: 4px; border: 1.5px solid #16a34a;">
-                            <div style="font-size: 8pt;">✓ جهگرێ دیاریکری</div>
+                            <div style="font-size: 8pt;">جهگرێ دیاریکری</div>
                         </td>
                     `;
                 } else if (absentClass) {
@@ -10374,7 +10580,7 @@ function buildSubstitutePrintableHtml(arg1, arg2, arg3, arg4) {
                                 ${candBadgesHtml}
                             </td>
                             <td style="font-weight: bold; padding: 6px; width: 160px;">
-                                ${assignedSub ? `<span style="background-color:#15803d; color:#ffffff !important; padding:3px 8px; border-radius:6px; font-weight:bold; display:inline-block;">✓ ${assignedSub}</span>` : `<span style="color:#94a3b8; font-size:8.5pt;">چاوەڕوانە (قيد الانتظار)</span>`}
+                                ${assignedSub ? `<span style="background-color:#15803d; color:#ffffff !important; padding:3px 8px; border-radius:6px; font-weight:bold; display:inline-block;">${assignedSub}</span>` : `<span style="color:#94a3b8; font-size:8.5pt;">چاوەڕوانە (قيد الانتظار)</span>`}
                             </td>
                         </tr>
                     `;
@@ -10430,7 +10636,7 @@ function buildSubstitutePrintableHtml(arg1, arg2, arg3, arg4) {
                             <td style="font-weight: bold; width: 65px; padding: 6px;">${p}</td>
                             <td style="font-weight: bold; width: 85px; padding: 6px;">${cName}</td>
                             <td style="font-weight: bold; width: 120px; padding: 6px;">${translateSubjectName(item.subject)}</td>
-                            <td style="font-weight: bold; font-size: 1.05em; color: #166534; width: 170px; padding: 6px;">${assignedSub ? `✓ ${assignedSub}` : '....................................'}</td>
+                            <td style="font-weight: bold; font-size: 1.05em; color: #166534; width: 170px; padding: 6px;">${assignedSub ? assignedSub : '....................................'}</td>
                             <td style="width: 110px; padding: 6px;">...................</td>
                             <td style="padding: 6px;"></td>
                         </tr>
@@ -11362,7 +11568,7 @@ function handleTimetableDrop(evt) {
         }
 
         const workDays = schedule.settings?.workDays || ['ئێك شەمب', 'دوو شەمب', 'سێ شەمب', 'چوار شەمب', 'پێنج شەمب'];
-        if (!ttSubjectCanTakeSlot(subject, workDays[toDay], toPeriod, schedule)) {
+        if (!ttSubjectCanTakeSlot(subject, workDays[toDay], toPeriod, schedule, className)) {
             showToast(t('subject_restricted_period_warn'), 'warning');
         }
     }
@@ -11955,7 +12161,7 @@ function ttCandidateSlots(schedule, timetables, item, days, periodsCount, meta, 
 
     for (let d = 0; d < days.length; d++) {
         const dayName = days[d];
-        if (!ttSubjectCanTakeSlot(item.subject, dayName, null, schedule)) continue;
+        if (!ttSubjectCanTakeSlot(item.subject, dayName, null, schedule, item.className)) continue;
 
         // Hard rule: Do not exceed daily quota for this subject in this class
         const currentSubjectInDay = ttSubjectDayLoad(timetables, item.className, d, item.subject);
@@ -11964,7 +12170,7 @@ function ttCandidateSlots(schedule, timetables, item, days, periodsCount, meta, 
         for (let p = 1; p <= periodsCount; p++) {
             const slotKey = `${item.className}|${d}|${p}`;
             if (blockedSlotKey && slotKey === blockedSlotKey) continue;
-            if (!ttSubjectCanTakeSlot(item.subject, dayName, p, schedule)) continue;
+            if (!ttSubjectCanTakeSlot(item.subject, dayName, p, schedule, item.className)) continue;
             if (!ttTeacherCanTake(teacherObj, dayName, p)) continue;
             if (timetables[item.className]?.[d]?.[p]) continue;
             if (ttTeacherBusy(timetables, schedule.columns, item.teacher, d, p)) continue;
@@ -12327,14 +12533,14 @@ function ttTryFastPlaceWithSwap(schedule, timetables, item, days, periodsCount, 
     // 2. High-speed 1-step swap: displace an item if it can find a free candidate slot
     for (let d = 0; d < days.length; d++) {
         const dayName = days[d];
-        if (!ttSubjectCanTakeSlot(item.subject, dayName, null, schedule)) continue;
+        if (!ttSubjectCanTakeSlot(item.subject, dayName, null, schedule, item.className)) continue;
         if (ttSubjectDayLoad(timetables, item.className, d, item.subject) >= maxDaily) continue;
 
         for (let p = 1; p <= periodsCount; p++) {
             const occupied = timetables[item.className]?.[d]?.[p];
             // Never displace locked slots or same subject
             if (!occupied || occupied.subject === item.subject || occupied.locked) continue;
-            if (!ttSubjectCanTakeSlot(item.subject, dayName, p, schedule)) continue;
+            if (!ttSubjectCanTakeSlot(item.subject, dayName, p, schedule, item.className)) continue;
             if (!ttTeacherCanTake(teacherObj, dayName, p)) continue;
             if (ttTeacherBusy(timetables, schedule.columns, item.teacher, d, p, item.className)) continue;
 
@@ -12373,13 +12579,13 @@ function ttTryFastPlaceWithSwap(schedule, timetables, item, days, periodsCount, 
     // 3. 2-Step (2-hop) swap: displace occupied item 1, which in turn displaces occupied item 2 into an empty slot
     for (let d = 0; d < days.length; d++) {
         const dayName = days[d];
-        if (!ttSubjectCanTakeSlot(item.subject, dayName, null, schedule)) continue;
+        if (!ttSubjectCanTakeSlot(item.subject, dayName, null, schedule, item.className)) continue;
         if (ttSubjectDayLoad(timetables, item.className, d, item.subject) >= maxDaily) continue;
 
         for (let p = 1; p <= periodsCount; p++) {
             const occupied1 = timetables[item.className]?.[d]?.[p];
             if (!occupied1 || occupied1.subject === item.subject || occupied1.locked) continue;
-            if (!ttSubjectCanTakeSlot(item.subject, dayName, p, schedule)) continue;
+            if (!ttSubjectCanTakeSlot(item.subject, dayName, p, schedule, item.className)) continue;
             if (!ttTeacherCanTake(teacherObj, dayName, p)) continue;
             if (ttTeacherBusy(timetables, schedule.columns, item.teacher, d, p, item.className)) continue;
 
@@ -12404,7 +12610,7 @@ function ttTryFastPlaceWithSwap(schedule, timetables, item, days, periodsCount, 
                     if (d2 === d && p2 === p) continue;
                     const occupied2 = timetables[item.className]?.[d2]?.[p2];
                     if (!occupied2 || occupied2.locked || occupied2.subject === displaced1.subject) continue;
-                    if (!ttSubjectCanTakeSlot(displaced1.subject, days[d2], p2, schedule)) continue;
+                    if (!ttSubjectCanTakeSlot(displaced1.subject, days[d2], p2, schedule, displaced1.className)) continue;
                     if (!ttTeacherCanTake(teacher1, days[d2], p2)) continue;
                     if (ttTeacherBusy(timetables, schedule.columns, displaced1.teacher, d2, p2, item.className)) continue;
 
@@ -12450,11 +12656,11 @@ function ttTryFastPlaceWithSwap(schedule, timetables, item, days, periodsCount, 
     // shift that teacher's lesson in the other class to an alternative slot in the other class
     for (let d = 0; d < days.length; d++) {
         const dayName = days[d];
-        if (!ttSubjectCanTakeSlot(item.subject, dayName, null, schedule)) continue;
+        if (!ttSubjectCanTakeSlot(item.subject, dayName, null, schedule, item.className)) continue;
         if (ttSubjectDayLoad(timetables, item.className, d, item.subject) >= maxDaily) continue;
 
         for (let p = 1; p <= periodsCount; p++) {
-            if (!ttSubjectCanTakeSlot(item.subject, dayName, p, schedule)) continue;
+            if (!ttSubjectCanTakeSlot(item.subject, dayName, p, schedule, item.className)) continue;
             if (!ttTeacherCanTake(teacherObj, dayName, p)) continue;
 
             const curInTargetClass = timetables[item.className]?.[d]?.[p];
@@ -12571,7 +12777,7 @@ function ttSanitizeSeed(schedule, seedTimetables, requiredItems, days, periodsCo
                     continue;
                 }
 
-                if (!ttSubjectCanTakeSlot(candidate.subject, days[d], p, schedule)) continue;
+                if (!ttSubjectCanTakeSlot(candidate.subject, days[d], p, schedule, candidate.className)) continue;
                 if (!ttCanPlaceSubject(cleaned, candidate.className, d, candidate.subject, meta, days.length)) continue;
                 if (!ttTeacherCanTake(teacherObj, days[d], p)) continue;
                 if (ttTeacherBusy(cleaned, schedule.columns, candidate.teacher, d, p)) continue;
@@ -15135,16 +15341,6 @@ function renderSupervisionTab() {
                     <button class="btn btn-sm btn-outline-danger fw-bold rounded-pill px-3 shadow-xs supervision-btn-clear" onclick="${isPeriodMode ? 'clearPeriodSupervisionSchedule()' : 'clearSupervisionSchedule()'}" title="${isAr ? 'تفريغ الجدول' : 'ڤالاکرنا خشتەی'}">
                         <i class="fas fa-trash-alt me-1"></i><span>${isAr ? 'تفريغ' : 'ڤالاکرن'}</span>
                     </button>
-
-                    <div class="dropdown no-print supervision-btn-more" style="position: relative;">
-                        <button class="btn btn-sm btn-outline-secondary fw-bold rounded-pill px-3 shadow-xs dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">
-                            <i class="fas fa-ellipsis-h me-1"></i><span>${isAr ? 'خيارات' : 'هەڵبژاردن'}</span>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3" style="font-size: 0.8rem;">
-                            <li><a class="dropdown-item py-1.5" href="#" onclick="toggleSupervisionMatrixView()"><i class="fas fa-table me-2 text-info"></i>${isAr ? 'تبديل عرض مصفوفة الفراغ' : 'نیشاندانا ماتریکسا بەتاڵیێ'}</a></li>
-                            <li><a class="dropdown-item py-1.5 text-danger" href="#" onclick="${isPeriodMode ? 'clearPeriodSupervisionSchedule()' : 'clearSupervisionSchedule()'}"><i class="fas fa-trash-alt me-2"></i>${isAr ? 'تفريغ الجدول' : 'ڤالاکرنا خشتەی'}</a></li>
-                        </ul>
-                    </div>
                 </div>
             </div>
         </div>`;
@@ -15219,7 +15415,7 @@ function renderSupervisionTab() {
             const isDayComplete = (dayCoveredCount >= periodsCount);
 
             html += `
-            <div class="col-12 col-md-6 col-lg-4 col-xl mb-2">
+            <div class="supervision-day-col mb-2">
                 <div class="card h-100 border-0 shadow-sm rounded-4 bg-white day-card" style="overflow: visible;">
                     <!-- Day Header -->
                     <div class="p-2.5 px-3 border-bottom d-flex justify-content-between align-items-center ${isDayComplete ? 'bg-success-subtle text-success-emphasis' : 'bg-light text-dark'}">
@@ -15415,7 +15611,7 @@ function renderSupervisionTab() {
             const isCompleted = dayAssignments.length >= supervisorsPerDay;
 
             html += `
-            <div class="col-12 col-md-6 col-lg-4 col-xl mb-2">
+            <div class="supervision-day-col mb-2">
                 <div class="card h-100 border-0 shadow-sm rounded-4 bg-white day-card" style="overflow: visible;">
                     <!-- Day Header -->
                     <div class="p-2.5 px-3 border-bottom d-flex justify-content-between align-items-center ${isCompleted ? 'bg-success-subtle text-success-emphasis' : 'bg-light text-dark'}">
@@ -17847,15 +18043,13 @@ function generateSupervisionScheduleDocumentHTML(forDownload = false) {
             <tr class="empty-day-row">
                 <td class="idx-col"><span class="num-pill">${globalRowIndex++}</span></td>
                 <td class="day-col fw-bold">${dayName}</td>
-                <td colspan="5" class="text-muted fst-italic py-3">${isAr ? 'لا يوجد مراقبون مكلفون لهذا اليوم' : 'چ چاڤدێر بۆ ڤێ رۆژێ نەهاتینە دانان'}</td>
+                <td class="text-muted fst-italic py-3">${isAr ? 'لا يوجد مراقبون مكلفون لهذا اليوم' : 'چ چاڤدێر بۆ ڤێ رۆژێ نەهاتینە دانان'}</td>
             </tr>`;
         } else {
             dayAssigns.forEach((item, slotIndex) => {
                 const teacher = allTeachers.find(t => t.id === item.teacherId) || { name: item.teacherName || '', specialization: '' };
-                const dayStats = getTeacherFreePeriodsOnDay(teacher, dayIndex, schedule);
                 const isFirstOfDay = slotIndex === 0;
                 const rowSpanAttr = isFirstOfDay ? `rowspan="${dayAssigns.length}"` : '';
-                const loc = item.location || (isAr ? 'الساحة والممرات' : 'حەوشە و گۆڕەپان');
 
                 tableRowsHTML += `
                 <tr class="data-row ${slotIndex % 2 === 0 ? 'even-row' : 'odd-row'}">
@@ -17873,24 +18067,6 @@ function generateSupervisionScheduleDocumentHTML(forDownload = false) {
                             <span class="teacher-name">${teacher.name}</span>
                             ${teacher.specialization ? `<span class="spec-pill">${teacher.specialization}</span>` : ''}
                         </div>
-                    </td>
-                    <td class="loc-cell">
-                        <span class="loc-badge">
-                            <span class="loc-icon">📍</span>
-                            <span>${loc}</span>
-                        </span>
-                    </td>
-                    <td class="free-cell">
-                        <div class="free-box">
-                            <span class="free-pill">⏰ ${dayStats.freeCount} ${isAr ? 'حصص' : 'وانە'}</span>
-                            <span class="periods-desc">${dayStats.freePeriods.length > 0 ? `(${dayStats.freePeriods.join('، ')})` : (isAr ? 'مشغول' : 'مژویل')}</span>
-                        </div>
-                    </td>
-                    <td class="sig-cell">
-                        <div class="sig-guide">...................................</div>
-                    </td>
-                    <td class="notes-cell">
-                        <div class="notes-guide"></div>
                     </td>
                 </tr>`;
             });
@@ -18276,13 +18452,9 @@ function generateSupervisionScheduleDocumentHTML(forDownload = false) {
                 <table class="sup-table">
                     <thead>
                         <tr>
-                            <th style="width: 38px;">#</th>
-                            <th style="width: 125px;">${isAr ? 'اليوم' : 'رۆژ'}</th>
+                            <th style="width: 45px;">#</th>
+                            <th style="width: 140px;">${isAr ? 'اليوم' : 'رۆژ'}</th>
                             <th>${isAr ? 'اسم المعلم المراقب' : 'ناڤێ ماموستایێ چاڤدێر'}</th>
-                            <th style="width: 190px;">${isAr ? 'مكان المراقبة المكلف به' : 'جهێ چاڤدێریێ'}</th>
-                            <th style="width: 175px;">${isAr ? 'حصص الفراغ' : 'وانەیێن بەتاڵ'}</th>
-                            <th style="width: 120px;">${isAr ? 'توقيع المراقب' : 'ئیمزا'}</th>
-                            <th style="width: 110px;">${isAr ? 'ملاحظات' : 'تێبینی'}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -19137,8 +19309,20 @@ function renderClassMentorsTab() {
     });
     const unassignedCount = Math.max(0, classes.length - assignedCount);
 
-    // Build Cards for Classes
+    // View mode: default to 'table'
+    if (!window.classMentorsViewMode) {
+        try {
+            window.classMentorsViewMode = localStorage.getItem('class_mentors_view_mode') || 'table';
+        } catch (e) {
+            window.classMentorsViewMode = 'table';
+        }
+    }
+    const viewMode = window.classMentorsViewMode;
+
+    // Build Table Rows and Cards for Classes
     let cardsHTML = '';
+    let tableRowsHTML = '';
+
     if (classes.length === 0) {
         cardsHTML = `
         <div class="col-12 text-center py-5">
@@ -19146,6 +19330,14 @@ function renderClassMentorsTab() {
             <h5 class="fw-bold text-secondary">${isAr ? 'لا توجد صفوف أو شعب مضافة في هذا الجدول' : 'چ پۆل یان پولگەهـ د ڤی خشتەی دا نینن'}</h5>
             <p class="text-muted small">${isAr ? 'يمكنك إضافة الفصول من تبويب دابەشکرنا وانان أولاً' : 'دشێی پۆلان ل تەبا دابەشکرنا وانان زێدە بکەی'}</p>
         </div>`;
+        tableRowsHTML = `
+        <tr>
+            <td colspan="8" class="text-center py-5 text-muted">
+                <div style="font-size: 2.5rem; opacity: 0.3;" class="mb-2">🏫</div>
+                <h6 class="fw-bold text-secondary">${isAr ? 'لا توجد صفوف أو شعب مضافة في هذا الجدول' : 'چ پۆل یان پولگەهـ د ڤی خشتەی دا نینن'}</h6>
+                <p class="small mb-0">${isAr ? 'يمكنك إضافة الفصول من تبويب دابەشکرنا وانان أولاً' : 'دشێی پۆلان ل تەبا دابەشکرنا وانان زێدە بکەی'}</p>
+            </td>
+        </tr>`;
     } else {
         classes.forEach((className, idx) => {
             const assignment = assignments[className];
@@ -19171,6 +19363,78 @@ function renderClassMentorsTab() {
                 optionsHTML += `<option value="${t.id}" ${isSelected ? 'selected' : ''}>${star}${t.name} (${pBadge})</option>`;
             });
 
+            // 1. Build Table Row
+            tableRowsHTML += `
+            <tr class="${isAssigned ? 'table-row-assigned' : 'table-row-vacant'}">
+                <td class="text-muted fw-bold">
+                    <span class="badge bg-light text-secondary border rounded-pill px-2.5 py-1" style="font-size: 0.78rem;">#${idx + 1}</span>
+                </td>
+                <td>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1.5 rounded-3 fw-bold" style="font-size: 0.95rem;">
+                        <i class="fas fa-chalkboard me-1.5 text-primary"></i>${className}
+                    </span>
+                </td>
+                <td>
+                    ${isAssigned ? `
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 rounded-pill fw-bold" style="font-size: 0.78rem;">
+                            <i class="fas fa-check-circle me-1"></i>${isAr ? 'بمرشد' : 'ب ڕێبەر'}
+                        </span>
+                    ` : `
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1.5 rounded-pill fw-bold" style="font-size: 0.78rem;">
+                            <i class="fas fa-exclamation-circle me-1"></i>${isAr ? 'شاغر' : 'شاغر'}
+                        </span>
+                    `}
+                </td>
+                <td style="text-align: start; padding-right: 14px; padding-left: 14px;">
+                    ${isAssigned ? `
+                        <div class="d-flex align-items-center gap-2.5">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white flex-shrink-0" style="width: 35px; height: 35px; background: linear-gradient(135deg, #0284c7, #0369a1); font-size: 0.85rem; box-shadow: 0 2px 6px rgba(2,132,199,0.25);">
+                                <i class="fas fa-user-graduate"></i>
+                            </div>
+                            <div class="text-truncate" style="max-width: 250px;">
+                                <div class="fw-bold text-dark" style="font-size: 0.92rem; line-height: 1.25;">${assignedTeacher.name}</div>
+                                <div class="text-muted small text-truncate" style="font-size: 0.72rem;">${assignedTeacher.jobTitle ? `${assignedTeacher.jobTitle} • ` : ''}${assignedTeacher.specialization || (isAr ? 'معلم' : 'ماموستا')}</div>
+                            </div>
+                        </div>
+                    ` : `
+                        <span class="text-muted small fst-italic">
+                            <i class="fas fa-user-slash me-1 opacity-50"></i>${isAr ? 'لا يوجد مرشد معين' : 'چ ڕێبەر نەهاتیە دیاریکرن'}
+                        </span>
+                    `}
+                </td>
+                <td>
+                    ${isAssigned && (assignedTeacher.specialization || assignedTeacher.jobTitle) ? `
+                        <span class="badge bg-light text-secondary border px-2.5 py-1 rounded-2 fw-semibold" style="font-size: 0.78rem;">${assignedTeacher.specialization || assignedTeacher.jobTitle}</span>
+                    ` : `<span class="text-muted small">-</span>`}
+                </td>
+                <td>
+                    ${isAssigned && periodsInClass > 0 ? `
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 rounded-pill fw-bold" style="font-size: 0.82rem;">
+                            <i class="fas fa-clock me-1"></i>${periodsInClass} ${isAr ? 'حصة' : 'وانە'}
+                        </span>
+                    ` : isAssigned ? `
+                        <span class="badge bg-light text-muted border px-2.5 py-1 rounded-pill" style="font-size: 0.76rem;">0 ${isAr ? 'حصة' : 'وانە'}</span>
+                    ` : `<span class="text-muted small">-</span>`}
+                </td>
+                <td>
+                    <select class="form-select form-select-sm rounded-pill border-primary-subtle fw-semibold" style="font-size: 0.82rem; min-width: 210px; cursor: pointer;" onchange="assignClassMentorManual('${className}', this.value)">
+                        ${optionsHTML}
+                    </select>
+                </td>
+                <td>
+                    ${isAssigned ? `
+                        <button type="button" class="btn btn-sm btn-outline-danger rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" onclick="clearClassMentorForClass('${className}')" title="${isAr ? 'إلغاء المرشد لهذا الصف' : 'لادانا ڕێبەری'}">
+                            <i class="fas fa-trash-alt" style="font-size: 0.75rem;"></i>
+                        </button>
+                    ` : `
+                        <button type="button" class="btn btn-sm btn-light rounded-circle p-0 text-muted disabled opacity-50 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <i class="fas fa-minus" style="font-size: 0.75rem;"></i>
+                        </button>
+                    `}
+                </td>
+            </tr>`;
+
+            // 2. Build Cards HTML
             cardsHTML += `
             <div class="col-12 col-md-6 col-lg-4 col-xl-3">
                 <div class="mentor-clay-card ${isAssigned ? 'is-assigned' : ''}">
@@ -19257,7 +19521,17 @@ function renderClassMentorsTab() {
                     </div>
                 </div>
 
-                <div class="mentors-actions-grid">
+                <div class="mentors-actions-grid d-flex align-items-center flex-wrap gap-2">
+                    <!-- View Mode Switcher -->
+                    <div class="btn-group btn-group-sm p-0.5 bg-light rounded-pill border shadow-xs me-1" role="group">
+                        <button type="button" class="btn btn-sm rounded-pill px-3 fw-bold ${viewMode === 'table' ? 'btn-primary shadow-xs' : 'btn-light text-secondary'}" onclick="setClassMentorsViewMode('table')">
+                            <i class="fas fa-table me-1"></i>${isAr ? 'جدول' : 'خشتە'}
+                        </button>
+                        <button type="button" class="btn btn-sm rounded-pill px-3 fw-bold ${viewMode === 'cards' ? 'btn-primary shadow-xs' : 'btn-light text-secondary'}" onclick="setClassMentorsViewMode('cards')">
+                            <i class="fas fa-th-large me-1"></i>${isAr ? 'بطاقات' : 'کارت'}
+                        </button>
+                    </div>
+
                     <button class="btn btn-sm btn-outline-primary fw-bold rounded-pill px-3 shadow-xs" onclick="openMentorsTeacherModal()">
                         <i class="fas fa-user-check me-1"></i>${isAr ? 'المعلمون' : 'مامۆستا'} (${eligibleCount})
                     </button>
@@ -19318,13 +19592,46 @@ function renderClassMentorsTab() {
             </div>
         </div>
 
-        <!-- Classes Cards Grid -->
-        <div class="row g-3">
-            ${cardsHTML}
-        </div>
+        <!-- Classes Content (Table View by Default or Cards View) -->
+        ${viewMode === 'table' ? `
+            <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4 mentors-table-card">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-center mentors-interactive-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 55px; padding: 12px 8px;">#</th>
+                                <th style="width: 115px; padding: 12px 8px;">${isAr ? 'الصف / الشعبة' : 'پۆل'}</th>
+                                <th style="width: 120px; padding: 12px 8px;">${isAr ? 'الحالة' : 'ڕەوش'}</th>
+                                <th style="min-width: 220px; padding: 12px 14px; text-align: start;">${isAr ? 'المرشد المعين' : 'ڕێبەرێ دەستنیشانکری'}</th>
+                                <th style="width: 145px; padding: 12px 8px;">${isAr ? 'التخصص والمسمى' : 'تایبەتمەندی و ناونیشان'}</th>
+                                <th style="width: 130px; padding: 12px 8px;">${isAr ? 'الحصص بالصف' : 'وانە ل پۆلێ'}</th>
+                                <th style="min-width: 240px; padding: 12px 10px;">${isAr ? 'تعيين أو تغيير المرشد' : 'دەستنیشانکرن و گوهۆڕین'}</th>
+                                <th style="width: 65px; padding: 12px 8px;">${isAr ? 'حذف' : 'لادان'}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRowsHTML}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        ` : `
+            <div class="row g-3 mb-4">
+                ${cardsHTML}
+            </div>
+        `}
     </div>`;
 }
 window.renderClassMentorsTab = renderClassMentorsTab;
+
+function setClassMentorsViewMode(mode) {
+    window.classMentorsViewMode = mode;
+    try {
+        localStorage.setItem('class_mentors_view_mode', mode);
+    } catch (e) {}
+    renderClassMentorsTab();
+}
+window.setClassMentorsViewMode = setClassMentorsViewMode;
 
 // Open Modal to Select/Deselect Teachers for Mentorship
 function openMentorsTeacherModal() {
