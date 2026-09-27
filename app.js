@@ -28,7 +28,7 @@ const LANG_KU = {
     delete_schedule: "ژێبرنا خشتێ چالاك",
     tab_distribution: "دابەشکرنا وانان",
     tab_timetable: "خشتێ حەفتیانە",
-    tab_substitute: "ماموستایێ جهگر",
+    tab_substitute: "ماموستایێن جێگر",
     tab_nisab: "نصاب وانان",
     tab_statistics: "ئامار و داتا",
     tab_supervision: "خشتێ چاڤدێریێ",
@@ -1833,7 +1833,7 @@ let activeScheduleName = '';
 let nextTeacherId = 1;
 let teacherModalInstance = null;
 let settingsModalInstance = null;
-let tableViewMode = 'detailed'; // 'simple' or 'detailed'
+let tableViewMode = localStorage.getItem('app_table_view_mode') || 'detailed'; // 'detailed', 'official', 'simple', or 'ledger'
 let modalLayoutMode = 'vertical'; // 'vertical' or 'horizontal'
 let currentEditingTeacher = null;
 
@@ -2383,12 +2383,27 @@ async function handleSaveLoad(action) {
 
 // --- App Rendering ---
 function renderApp(filter = '') {
-    if (!activeScheduleName || !allSchedules[activeScheduleName]) return;
+    if (!allSchedules || typeof allSchedules !== 'object') allSchedules = {};
+    if (!activeScheduleName || !allSchedules[activeScheduleName]) {
+        const keys = Object.keys(allSchedules).filter(k => k && k.trim() !== '' && k !== 'undefined' && k !== 'null');
+        if (keys.length > 0) {
+            activeScheduleName = keys[0];
+        } else {
+            const defName = 'خشتێ سه‌ره‌كی';
+            allSchedules[defName] = { columns: [], teachers: [], nisab: {}, settings: {} };
+            activeScheduleName = defName;
+        }
+    }
+
+    const schedule = allSchedules[activeScheduleName];
+    if (!schedule) return;
+    if (!Array.isArray(schedule.teachers)) schedule.teachers = [];
+    if (!Array.isArray(schedule.columns)) schedule.columns = [];
+    if (!schedule.settings || typeof schedule.settings !== 'object') schedule.settings = {};
 
     // Update the school stage selection dropdown label in the first tab if exists
     const stageBtn = document.getElementById('stageSelectorBtn');
     if (stageBtn) {
-        const schedule = allSchedules[activeScheduleName];
         const md = schedule?.settings?.milakData || {};
         const schoolType = md.schoolType || 'سه‌ره‌تایی 1-6';
         let label = schoolType;
@@ -2402,48 +2417,216 @@ function renderApp(filter = '') {
         stageBtn.innerHTML = `<i class="fas fa-graduation-cap me-1"></i> ${label}`;
     }
 
-    renderDistributionTable(filter || '');
-    renderAdditionalTables();
-    renderStatisticsTab();
-    renderNisabTab();
-    if (typeof initTimetableTab === 'function') initTimetableTab();
+    try {
+        renderDistributionTable(filter || '');
+    } catch (e) {
+        console.error('Error in renderDistributionTable:', e);
+    }
+    try {
+        renderAdditionalTables();
+    } catch (e) {
+        console.error('Error in renderAdditionalTables:', e);
+    }
+    try {
+        renderStatisticsTab();
+    } catch (e) {
+        console.error('Error in renderStatisticsTab:', e);
+    }
+    try {
+        renderNisabTab();
+    } catch (e) {
+        console.error('Error in renderNisabTab:', e);
+    }
+    if (typeof initTimetableTab === 'function') {
+        try { initTimetableTab(); } catch (e) { console.error('Error in initTimetableTab:', e); }
+    }
 
     // Also re-render Milak Tab if the container is currently visible
     const milakPane = document.getElementById('milak-tab-pane');
     if (milakPane && milakPane.classList.contains('show')) {
-        renderMilakTab();
+        if (typeof renderMilakTab === 'function') renderMilakTab();
     }
 }
 
 // --- Distribution Tab Functions ---
-function toggleTableView() {
-    if (tableViewMode === 'simple') {
-        tableViewMode = 'detailed';
-        showToast(t('toast_view_detailed', 'دیمەنێ خشتەی هاتە گوهورین بۆ: ورده‌كاری'), 'info');
-    } else if (tableViewMode === 'detailed') {
-        tableViewMode = 'ledger';
-        showToast(t('toast_view_ledger', 'دیمەنێ خشتەی هاتە گوهورین بۆ: میلاکی گشتی'), 'info');
-    } else {
-        tableViewMode = 'simple';
-        showToast(t('toast_view_simple', 'دیمەنێ خشتەی هاتە گوهورین بۆ: سادە'), 'info');
-    }
-    renderDistributionTable(searchInput.value);
+function setTableViewMode(mode) {
+    tableViewMode = mode;
+    try { localStorage.setItem('app_table_view_mode', mode); } catch (_) { }
+    updateTableViewButtonLabel();
+    const modeNames = {
+        'official': 'خشتێ فەرمی یێ وەزارەتێ',
+        'detailed': 'ورده‌كاری',
+        'simple': 'سادە',
+        'ledger': 'میلاکی گشتی'
+    };
+    showToast(t('toast_view_changed', `دیمەنێ خشتەی هاتە گوهورین بۆ: ${modeNames[mode] || mode}`), 'info');
+    renderDistributionTable(searchInput ? searchInput.value : '');
 }
+window.setTableViewMode = setTableViewMode;
+
+function toggleTableView() {
+    if (tableViewMode === 'official') {
+        tableViewMode = 'detailed';
+    } else if (tableViewMode === 'detailed') {
+        tableViewMode = 'simple';
+    } else if (tableViewMode === 'simple') {
+        tableViewMode = 'ledger';
+    } else {
+        tableViewMode = 'official';
+    }
+    try { localStorage.setItem('app_table_view_mode', tableViewMode); } catch (_) { }
+    updateTableViewButtonLabel();
+    const modeNames = {
+        'official': 'خشتێ فەرمی یێ وەزارەتێ',
+        'detailed': 'ورده‌كاری',
+        'simple': 'سادە',
+        'ledger': 'میلاکی گشتی'
+    };
+    showToast(t('toast_view_changed', `دیمەنێ خشتەی هاتە گوهورین بۆ: ${modeNames[tableViewMode] || tableViewMode}`), 'info');
+    renderDistributionTable(searchInput ? searchInput.value : '');
+}
+window.toggleTableView = toggleTableView;
+
+function updateTableViewButtonLabel() {
+    const lbl = document.getElementById('tableViewBtnLabel');
+    if (!lbl) return;
+    if (tableViewMode === 'official') {
+        lbl.innerHTML = `<i class="fas fa-file-invoice text-warning me-1"></i> فەرمی (وەزارەت)`;
+    } else if (tableViewMode === 'detailed') {
+        lbl.innerHTML = `<i class="fas fa-table me-1"></i> دیمەن: ورده‌كاری`;
+    } else if (tableViewMode === 'simple') {
+        lbl.innerHTML = `<i class="fas fa-list-alt me-1"></i> دیمەن: سادە`;
+    } else if (tableViewMode === 'ledger') {
+        lbl.innerHTML = `<i class="fas fa-users-cog me-1"></i> دیمەن: میلاکی گشتی`;
+    }
+}
+window.updateTableViewButtonLabel = updateTableViewButtonLabel;
+
+function saveOfficialSetting(field, val) {
+    const schedule = allSchedules[activeScheduleName];
+    if (!schedule) return;
+    if (!schedule.settings) schedule.settings = {};
+    schedule.settings[field] = val !== undefined ? String(val).trim() : '';
+    saveData();
+}
+window.saveOfficialSetting = saveOfficialSetting;
+
+function saveTeacherOfficialQuota(teacherId, val) {
+    const schedule = allSchedules[activeScheduleName];
+    if (!schedule || !Array.isArray(schedule.teachers)) return;
+    const teacher = schedule.teachers.find(t => t.id === teacherId);
+    if (teacher) {
+        teacher.quota = parseInt(val, 10) || 0;
+        saveData();
+        renderDistributionTable(searchInput ? searchInput.value : '');
+    }
+}
+window.saveTeacherOfficialQuota = saveTeacherOfficialQuota;
+
+function saveTeacherOfficialNotes(teacherId, val) {
+    const schedule = allSchedules[activeScheduleName];
+    if (!schedule || !Array.isArray(schedule.teachers)) return;
+    const teacher = schedule.teachers.find(t => t.id === teacherId);
+    if (teacher) {
+        teacher.notes = val !== undefined ? String(val).trim() : '';
+        saveData();
+    }
+}
+window.saveTeacherOfficialNotes = saveTeacherOfficialNotes;
+
+function saveOfficialGradeStudentStats(gradeKey, field, val) {
+    const schedule = allSchedules[activeScheduleName];
+    if (!schedule) return;
+    if (!schedule.settings) schedule.settings = {};
+    if (!schedule.settings.officialStudentStats) schedule.settings.officialStudentStats = {};
+    if (!schedule.settings.officialStudentStats[gradeKey]) schedule.settings.officialStudentStats[gradeKey] = {};
+    schedule.settings.officialStudentStats[gradeKey][field] = parseInt(val, 10) || 0;
+    saveData();
+    renderDistributionTable(searchInput ? searchInput.value : '');
+}
+window.saveOfficialGradeStudentStats = saveOfficialGradeStudentStats;
+
+function saveOfficialLeaveCell(rowIndex, colIndex, val) {
+    const schedule = allSchedules[activeScheduleName];
+    if (!schedule) return;
+    if (!schedule.settings) schedule.settings = {};
+    if (!schedule.settings.officialLeaveData || !Array.isArray(schedule.settings.officialLeaveData)) {
+        schedule.settings.officialLeaveData = [];
+    }
+    while (schedule.settings.officialLeaveData.length <= rowIndex) {
+        schedule.settings.officialLeaveData.push(['', '', '', '', '', '', '', '']);
+    }
+    schedule.settings.officialLeaveData[rowIndex][colIndex] = val !== undefined ? String(val).trim() : '';
+    saveData();
+}
+window.saveOfficialLeaveCell = saveOfficialLeaveCell;
+
+function addOfficialLeaveRow() {
+    const schedule = allSchedules[activeScheduleName];
+    if (!schedule) return;
+    if (!schedule.settings) schedule.settings = {};
+    if (!schedule.settings.officialLeaveData || !Array.isArray(schedule.settings.officialLeaveData)) {
+        schedule.settings.officialLeaveData = [];
+    }
+    schedule.settings.officialLeaveData.push(['', '', '', '', '', '', '', '']);
+    saveData();
+    renderDistributionTable(searchInput ? searchInput.value : '');
+}
+window.addOfficialLeaveRow = addOfficialLeaveRow;
+
+function removeOfficialLeaveRow(idx) {
+    const schedule = allSchedules[activeScheduleName];
+    if (!schedule || !schedule.settings?.officialLeaveData) return;
+    schedule.settings.officialLeaveData.splice(idx, 1);
+    saveData();
+    renderDistributionTable(searchInput ? searchInput.value : '');
+}
+window.removeOfficialLeaveRow = removeOfficialLeaveRow;
 
 function renderDistributionTable(filter = '') {
-    const schedule = allSchedules[activeScheduleName];
     const container = document.getElementById('tableContainer');
-    nextTeacherId = schedule.teachers.length > 0 ? Math.max(...schedule.teachers.map(t => t.id || 0)) + 1 : 1;
+    if (!container) return;
+    const additionalContainer = document.getElementById('additionalTablesContainer');
+
+    if (!activeScheduleName || !allSchedules[activeScheduleName]) {
+        const keys = Object.keys(allSchedules || {}).filter(k => k && k.trim() !== '' && k !== 'undefined' && k !== 'null');
+        if (keys.length > 0) {
+            activeScheduleName = keys[0];
+        } else {
+            const defName = 'خشتێ سه‌ره‌كی';
+            if (!allSchedules || typeof allSchedules !== 'object') allSchedules = {};
+            allSchedules[defName] = { columns: [], teachers: [], nisab: {}, settings: {} };
+            activeScheduleName = defName;
+        }
+    }
+
+    const schedule = allSchedules[activeScheduleName];
+    if (!schedule) {
+        container.innerHTML = `<div class="p-4 text-center text-muted">خشتە نەهاتە دیتن</div>`;
+        return;
+    }
+    if (!Array.isArray(schedule.teachers)) schedule.teachers = [];
+    if (!Array.isArray(schedule.columns)) schedule.columns = [];
+    if (!schedule.settings || typeof schedule.settings !== 'object') schedule.settings = {};
+
+    nextTeacherId = schedule.teachers.length > 0 ? Math.max(...schedule.teachers.map(t => (typeof t.id === 'number' && !isNaN(t.id)) ? t.id : 0)) + 1 : 1;
+
+    updateTableViewButtonLabel();
 
     if (schedule.teachers.length === 0) {
         container.innerHTML = `<div class="empty-state"><i class="fas fa-user-plus fa-3x mb-3"></i><h5>${t('empty_table_title')}</h5><p>${t('empty_table_desc')}</p><button class="btn btn-primary" onclick="openTeacherModal()">${t('btn_teacher')}</button></div>`;
+        if (additionalContainer) additionalContainer.style.display = 'block';
         return;
     }
-    const filteredTeachers = schedule.teachers.filter(t => t.name.toLowerCase().includes(filter.toLowerCase()));
+    const filteredTeachers = schedule.teachers.filter(t => (t.name || '').toLowerCase().includes((filter || '').toLowerCase()));
 
-    if (tableViewMode === 'ledger') {
+    if (tableViewMode === 'official') {
+        if (additionalContainer) additionalContainer.style.display = 'none';
+        container.innerHTML = renderOfficialMinistryTable(schedule, filteredTeachers);
+    } else if (tableViewMode === 'ledger') {
+        if (additionalContainer) additionalContainer.style.display = 'block';
         const schoolType = schedule?.settings?.milakData?.schoolType || 'سه‌ره‌تایی 1-6';
-        const stagePredefined = typeof getStageSpecializations === 'function' 
+        const stagePredefined = typeof getStageSpecializations === 'function'
             ? getStageSpecializations(schoolType).filter(s => s !== 'یێن دی' && s !== 'شتی تر' && s !== 'أخرى' && s !== 'Other')
             : PREDEFINED_SUBJECTS;
         let rawSubjects = [...stagePredefined, ...schedule.teachers.flatMap(t => (t.subjects || []).map(s => s.name))];
@@ -2535,6 +2718,7 @@ function renderDistributionTable(filter = '') {
         `;
         container.innerHTML = tableHTML;
     } else {
+        if (additionalContainer) additionalContainer.style.display = 'block';
         const teacherRowsHtml = filteredTeachers.map((teacher, index) => {
             if (tableViewMode === 'detailed') {
                 return renderTeacherTbodyDetailed(teacher, schedule.columns, index, filteredTeachers.length);
@@ -2561,7 +2745,7 @@ function renderDistributionTable(filter = '') {
     const dropdownMenu = document.getElementById('scheduleDropdownMenu');
     const dropdownLabel = document.getElementById('activeScheduleLabel');
     const scheduleKeys = Object.keys(allSchedules).filter(k => k && k.trim() !== '' && k !== 'undefined' && k !== 'null');
-    
+
     if (scheduleKeys.length === 0) {
         const defName = 'خشتێ سه‌ره‌كی';
         allSchedules[defName] = { columns: [], teachers: [], nisab: {}, settings: {} };
@@ -2582,7 +2766,7 @@ function renderDistributionTable(filter = '') {
         let menuHTML = `<li class="px-3 py-1.5 text-muted small fw-bold border-bottom mb-1 d-flex align-items-center justify-content-between">
             <span><i class="fas fa-list-ul me-1"></i> هەمی خشتە (${scheduleKeys.length})</span>
         </li>`;
-        
+
         scheduleKeys.forEach(name => {
             const sch = allSchedules[name] || {};
             const isDef = (name === 'خشتێ سه‌ره‌كی' || name === 'الجدول الرئيسي' || name === 'Default Schedule' || name === 'خشتەی سەرەکی');
@@ -2638,27 +2822,537 @@ function switchSchedule(name) {
 }
 window.switchSchedule = switchSchedule;
 
+function renderOfficialMinistryTable(schedule, filteredTeachers) {
+    const columns = schedule.columns || [];
+
+    // 1. Group columns by grade
+    const parsedCols = columns.map((col, idx) => {
+        const cleaned = (col || '').trim();
+        const m = cleaned.match(/^([^\d٠-٩]*)([\d٠-٩]+)\s*(.*)$/);
+        let grade = '١';
+        let section = cleaned;
+        if (m) {
+            grade = m[2];
+            section = (m[3] || m[1] || '').trim() || cleaned;
+        } else {
+            const first = cleaned.charAt(0);
+            grade = first;
+            section = cleaned.slice(1).trim() || cleaned;
+        }
+        return { col, idx, grade, section };
+    });
+
+    const gradeGroups = [];
+    parsedCols.forEach(item => {
+        let lastGroup = gradeGroups[gradeGroups.length - 1];
+        if (lastGroup && lastGroup.grade === item.grade) {
+            item.groupIndex = lastGroup.groupIndex;
+            lastGroup.columns.push(item);
+        } else {
+            const gIdx = gradeGroups.length;
+            item.groupIndex = gIdx;
+            gradeGroups.push({
+                grade: item.grade,
+                groupIndex: gIdx,
+                columns: [item]
+            });
+        }
+    });
+
+    // 2. Compute Staff Types Breakdown
+    let countMiri = 0, countKrie = 0, countTekal = 0;
+    (schedule.teachers || []).forEach(t => {
+        const st = (t.status || '').toLowerCase();
+        const jb = (t.jobTitle || '').toLowerCase();
+        if (st.includes('وانەبێژ') || st.includes('گرێبەست') || st.includes('محاضر') || st.includes('عقد') || jb.includes('وانەبێژ') || jb.includes('گرێبەست')) {
+            countKrie++;
+        } else {
+            countMiri++;
+        }
+    });
+
+    const colTotals = {};
+    columns.forEach(c => colTotals[c] = 0);
+    let grandAssignedTotal = 0;
+    let grandQuotaTotal = 0;
+    let grandExtraTotal = 0;
+
+    // 3. Render Teacher Rows
+    const rowsHtml = filteredTeachers.map((tItem, idx) => {
+        let totalAssigned = 0;
+
+        // Subject breakdown calculation
+        const subjectCounts = {};
+        columns.forEach(c => {
+            if (tItem.classes?.[c]) {
+                for (const [sName, sVal] of Object.entries(tItem.classes[c])) {
+                    const val = parseInt(sVal, 10) || 0;
+                    if (val > 0) {
+                        const trName = translateSubjectName(sName);
+                        subjectCounts[trName] = (subjectCounts[trName] || 0) + val;
+                        totalAssigned += val;
+                        colTotals[c] = (colTotals[c] || 0) + val;
+                    }
+                }
+            }
+        });
+
+        if (Object.keys(subjectCounts).length === 0 && Array.isArray(tItem.subjects)) {
+            tItem.subjects.forEach(s => {
+                const trName = translateSubjectName(s.name);
+                subjectCounts[trName] = s.periods || s.totalCount || 0;
+            });
+        }
+
+        const subjectsDisplay = Object.entries(subjectCounts)
+            .map(([sName, cnt]) => `<div class="official-sub-item"><span class="sub-name">${sName}</span>: <span class="sub-count fw-bold">${cnt}</span></div>`)
+            .join('') || '<span class="text-muted">-</span>';
+
+        // 3a. Collect all unique subjects taught by this teacher across ALL columns
+        // We need to know the ordered list of distinct subjects for multi-row rendering
+        const allSubjectNames = []; // ordered unique subject names
+        columns.forEach(c => {
+            if (tItem.classes?.[c]) {
+                Object.entries(tItem.classes[c]).forEach(([sName, sVal]) => {
+                    const val = parseInt(sVal, 10) || 0;
+                    const trName = translateSubjectName(sName);
+                    if (val > 0 && !allSubjectNames.includes(trName)) {
+                        allSubjectNames.push(trName);
+                    }
+                });
+            }
+        });
+
+        const numSubjects = allSubjectNames.length;
+        const rowSpan = numSubjects >= 2 ? numSubjects : 1;
+
+        // Build per-subject per-column value map: subjectRowValues[subjectName][colKey] = count
+        const subjectRowValues = {};
+        allSubjectNames.forEach(sn => { subjectRowValues[sn] = {}; });
+        columns.forEach(c => {
+            if (tItem.classes?.[c]) {
+                Object.entries(tItem.classes[c]).forEach(([sName, sVal]) => {
+                    const val = parseInt(sVal, 10) || 0;
+                    const trName = translateSubjectName(sName);
+                    if (val > 0 && subjectRowValues[trName]) {
+                        subjectRowValues[trName][c] = (subjectRowValues[trName][c] || 0) + val;
+                    }
+                });
+            }
+        });
+
+        // Teacher Legal Quota
+        let legalQuota = 24;
+        if (tItem.quota !== undefined && tItem.quota !== null && tItem.quota !== '') {
+            legalQuota = parseInt(tItem.quota, 10);
+        } else if (schedule.nisab && schedule.nisab[tItem.name] !== undefined) {
+            legalQuota = parseInt(schedule.nisab[tItem.name], 10) || 24;
+        } else {
+            const jb = (tItem.jobTitle || '').toLowerCase();
+            if (jb.includes('رێڤەبەر') || jb.includes('مدير')) legalQuota = 4;
+            else if (jb.includes('هاریکار') || jb.includes('معاون') || jb.includes('مساعد')) legalQuota = 12;
+            else legalQuota = 24;
+        }
+
+        const displayedQuota = totalAssigned > 0 ? Math.min(totalAssigned, legalQuota) : 0;
+        const extraQuota = totalAssigned > legalQuota ? (totalAssigned - legalQuota) : 0;
+
+        grandAssignedTotal += totalAssigned;
+        grandQuotaTotal += displayedQuota;
+        grandExtraTotal += extraQuota;
+
+        const isFirst = idx === 0;
+        const isLast = idx === filteredTeachers.length - 1;
+        const miniMoveControls = `<div class="d-inline-flex align-items-center justify-content-center gap-1">
+            <i class="fas fa-grip-vertical drag-handle text-secondary me-1 no-print" style="cursor:grab;" title="راکێشە بۆ گوهورینا جهی"></i>
+            <span class="fw-bold px-1">${idx + 1}</span>
+            <div class="btn-group-vertical btn-group-sm no-print ms-1" style="scale: 0.8;">
+                <button type="button" class="btn btn-xs btn-outline-secondary p-0 px-1" onclick="moveTeacherRow(${tItem.id}, 'up')" title="ببلندکرن" ${isFirst ? 'disabled' : ''}><i class="fas fa-chevron-up"></i></button>
+                <button type="button" class="btn btn-xs btn-outline-secondary p-0 px-1" onclick="moveTeacherRow(${tItem.id}, 'down')" title="ئینانە خوارێ" ${isLast ? 'disabled' : ''}><i class="fas fa-chevron-down"></i></button>
+            </div>
+        </div>`;
+
+        if (numSubjects < 2) {
+            // Single subject or no subject — single row (original behavior)
+            const colCells = parsedCols.map(c => {
+                const isShaded = (c.groupIndex % 2 === 1);
+                let pVal = 0;
+                if (tItem.classes?.[c.col]) {
+                    pVal = Object.values(tItem.classes[c.col]).reduce((acc, v) => acc + (parseInt(v, 10) || 0), 0);
+                }
+                return `<td class="${isShaded ? 'official-col-shaded' : 'official-col-white'} fw-bold">${pVal > 0 ? pVal : ''}</td>`;
+            }).join('');
+
+            return `
+            <tbody class="official-teacher-tbody" data-teacher-id="${tItem.id}">
+            <tr data-teacher-id="${tItem.id}">
+                <td>${miniMoveControls}</td>
+                <td class="fw-bold text-start px-2 bg-white text-nowrap">${escapeHTML(tItem.name)}</td>
+                <td class="text-nowrap">${escapeHTML(tItem.jobTitle || '')}</td>
+                <td class="text-nowrap">${escapeHTML(tItem.certificate || '')}</td>
+                <td class="text-nowrap">${escapeHTML(tItem.specialization || '')}</td>
+                <td class="text-start px-2 bg-white">${subjectsDisplay}</td>
+                ${colCells}
+                <td class="fw-bold bg-white text-primary">${totalAssigned > 0 ? totalAssigned : '0'}</td>
+                <td class="bg-white" contenteditable="true" onblur="saveTeacherOfficialQuota(${tItem.id}, this.innerText)" title="نصابا یاسایی: ${legalQuota}">${displayedQuota}</td>
+                <td class="bg-white ${extraQuota > 0 ? 'text-danger fw-bold' : 'text-muted'}">${extraQuota > 0 ? extraQuota : '-'}</td>
+                <td class="text-start small px-2" contenteditable="true" onblur="saveTeacherOfficialNotes(${tItem.id}, this.innerText)" title="کلیک بکە بۆ نڤیسینا تێبینی">${escapeHTML(tItem.notes || '')}</td>
+                <td class="no-print text-nowrap">
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="openTeacherModal(${tItem.id})" title="دەستکاری"><i class="fas fa-edit"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteTeacher(${tItem.id})" title="ژێبرن"><i class="fas fa-trash"></i></button>
+                    </div>
+                </td>
+            </tr>
+            </tbody>`;
+        }
+
+        // Multiple subjects — generate one <tr> per subject, with rowspan for info columns
+        const rows = allSubjectNames.map((subjName, si) => {
+            const isFirstSubjRow = si === 0;
+            const borderStyle = si > 0 ? ' style="border-top:2px solid #555 !important;"' : '';
+
+            const colCells = parsedCols.map(c => {
+                const isShaded = (c.groupIndex % 2 === 1);
+                const val = subjectRowValues[subjName]?.[c.col] || 0;
+                return `<td class="${isShaded ? 'official-col-shaded' : 'official-col-white'} fw-bold"${borderStyle}>${val > 0 ? val : ''}</td>`;
+            }).join('');
+
+            if (isFirstSubjRow) {
+                return `
+            <tr data-teacher-id="${tItem.id}">
+                <td rowspan="${rowSpan}">${miniMoveControls}</td>
+                <td rowspan="${rowSpan}" class="fw-bold text-start px-2 bg-white text-nowrap">${escapeHTML(tItem.name)}</td>
+                <td rowspan="${rowSpan}" class="text-nowrap">${escapeHTML(tItem.jobTitle || '')}</td>
+                <td rowspan="${rowSpan}" class="text-nowrap">${escapeHTML(tItem.certificate || '')}</td>
+                <td rowspan="${rowSpan}" class="text-nowrap">${escapeHTML(tItem.specialization || '')}</td>
+                <td rowspan="${rowSpan}" class="text-start px-2 bg-white">${subjectsDisplay}</td>
+                ${colCells}
+                <td rowspan="${rowSpan}" class="fw-bold bg-white text-primary">${totalAssigned > 0 ? totalAssigned : '0'}</td>
+                <td rowspan="${rowSpan}" class="bg-white" contenteditable="true" onblur="saveTeacherOfficialQuota(${tItem.id}, this.innerText)" title="نصابا یاسایی: ${legalQuota}">${displayedQuota}</td>
+                <td rowspan="${rowSpan}" class="bg-white ${extraQuota > 0 ? 'text-danger fw-bold' : 'text-muted'}">${extraQuota > 0 ? extraQuota : '-'}</td>
+                <td rowspan="${rowSpan}" class="text-start small px-2" contenteditable="true" onblur="saveTeacherOfficialNotes(${tItem.id}, this.innerText)">${escapeHTML(tItem.notes || '')}</td>
+                <td rowspan="${rowSpan}" class="no-print text-nowrap">
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="openTeacherModal(${tItem.id})" title="دەستکاری"><i class="fas fa-edit"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteTeacher(${tItem.id})" title="ژێبرن"><i class="fas fa-trash"></i></button>
+                    </div>
+                </td>
+            </tr>`;
+            } else {
+                return `<tr data-teacher-id="${tItem.id}" data-subrow="true">${colCells}</tr>`;
+            }
+        }).join('');
+
+        return `<tbody class="official-teacher-tbody" data-teacher-id="${tItem.id}">${rows}</tbody>`;
+    }).join('');
+
+    // 4. Grade Names Mapping for Bottom Student Statistics Table
+    const gradeNamesMap = {
+        '1': 'ئێکێ', '١': 'ئێکێ',
+        '2': 'دووێ', '٢': 'دووێ',
+        '3': 'سیێ', '٣': 'سیێ',
+        '4': 'چارێ', '٤': 'چارێ',
+        '5': 'پێنجێ', '٥': 'پێنجێ',
+        '6': 'شەشێ', '٦': 'شەشێ',
+        '7': 'حەفتێ', '٧': 'حەفتێ',
+        '8': 'هەشتێ', '٨': 'هەشتێ',
+        '9': 'نەهێ', '٩': 'نەهێ',
+        '10': 'دەهێ', '١٠': 'دەهێ',
+        '11': 'یازدەهێ', '١١': 'یازدەهێ',
+        '12': 'دوازدەهێ', '١٢': 'دوازدەهێ'
+    };
+
+    let totalSectionsSum = 0;
+    let totalBoysSum = 0;
+    let totalGirlsSum = 0;
+    let totalStudentsSum = 0;
+
+    const studentRowsHtml = gradeGroups.map((g, gIdx) => {
+        const gradeTitle = gradeNamesMap[g.grade] || `پۆلا ${g.grade}`;
+        const secCount = g.columns.length;
+        totalSectionsSum += secCount;
+
+        const statObj = schedule.settings?.officialStudentStats?.[g.grade] || {};
+        let boys = statObj.boys !== undefined ? statObj.boys : '';
+        let girls = statObj.girls !== undefined ? statObj.girls : '';
+
+        // Auto-transfer from studentTableData if officialStudentStats not manually filled
+        if ((boys === '' || boys === undefined) && (girls === '' || girls === undefined)) {
+            const sTableData = schedule.settings?.studentTableData;
+            if (Array.isArray(sTableData) && sTableData.length > 0) {
+                const matchedRow = sTableData.find((r, idx) => {
+                    if (!r) return false;
+                    const cText = String(r[1] || '').trim();
+                    const numText = String(r[0] || '').trim();
+                    return cText.includes(g.grade) || cText.includes(gradeTitle) || numText === String(g.grade) || idx === gIdx;
+                });
+                if (matchedRow) {
+                    if (matchedRow[3] !== undefined && matchedRow[3] !== '') boys = matchedRow[3];
+                    if (matchedRow[4] !== undefined && matchedRow[4] !== '') girls = matchedRow[4];
+                }
+            }
+        }
+
+        const bNum = parseInt(boys, 10) || 0;
+        const gNum = parseInt(girls, 10) || 0;
+        const total = (boys !== '' || girls !== '') ? (bNum + gNum) : '';
+
+        totalBoysSum += bNum;
+        totalGirlsSum += gNum;
+        totalStudentsSum += (bNum + gNum);
+
+        return `
+            <tr>
+                <td class="fw-bold bg-white text-center">${gradeTitle}</td>
+                <td class="fw-bold text-center">${secCount}</td>
+                <td contenteditable="true" onblur="saveOfficialGradeStudentStats('${g.grade}', 'boys', this.innerText)" class="text-center">${boys}</td>
+                <td contenteditable="true" onblur="saveOfficialGradeStudentStats('${g.grade}', 'girls', this.innerText)" class="text-center">${girls}</td>
+                <td class="fw-bold bg-light text-center">${total}</td>
+            </tr>
+        `;
+    }).join('');
+
+    // 5. Leave Teachers Rows (مامۆستایێن مۆڵەتدان) - 10 rows standard government template
+    let leaveData = schedule.settings?.officialLeaveData;
+    const isOfficialLeaveEmpty = !leaveData || !Array.isArray(leaveData) || leaveData.length === 0 || leaveData.every(row => !row || !Array.isArray(row) || row.every(c => !c || String(c).trim() === ''));
+
+    // Auto-transfer from leaveTableData if officialLeaveData is empty
+    if (isOfficialLeaveEmpty && schedule.settings?.leaveTableData && Array.isArray(schedule.settings.leaveTableData) && schedule.settings.leaveTableData.length > 0) {
+        leaveData = schedule.settings.leaveTableData.map(row => Array.isArray(row) ? [...row] : []);
+    }
+
+    if (!leaveData || !Array.isArray(leaveData) || leaveData.length === 0) {
+        leaveData = Array.from({ length: 10 }, () => ['', '', '', '', '', '', '', '']);
+    } else if (leaveData.length < 10) {
+        while (leaveData.length < 10) {
+            leaveData.push(['', '', '', '', '', '', '', '']);
+        }
+    }
+
+    const leaveRowsHtml = leaveData.map((row, rIdx) => {
+        return `
+            <tr>
+                <td class="fw-bold text-center" style="white-space: nowrap;">${rIdx + 1}</td>
+                <td contenteditable="true" onblur="saveOfficialLeaveCell(${rIdx}, 0, this.innerText)" class="text-center px-2">${escapeHTML(row[0] || '')}</td>
+                <td contenteditable="true" onblur="saveOfficialLeaveCell(${rIdx}, 1, this.innerText)" class="text-center px-1" style="white-space: nowrap;">${escapeHTML(row[1] || '')}</td>
+                <td contenteditable="true" onblur="saveOfficialLeaveCell(${rIdx}, 2, this.innerText)" class="text-center px-2" style="min-width: 105px;">${escapeHTML(row[2] || '')}</td>
+                <td contenteditable="true" onblur="saveOfficialLeaveCell(${rIdx}, 3, this.innerText)" class="text-center px-1" style="white-space: nowrap;">${escapeHTML(row[3] || '')}</td>
+                <td contenteditable="true" onblur="saveOfficialLeaveCell(${rIdx}, 4, this.innerText)" class="text-center px-1 small" style="white-space: nowrap;">${escapeHTML(row[4] || '')}</td>
+                <td contenteditable="true" onblur="saveOfficialLeaveCell(${rIdx}, 5, this.innerText)" class="text-center px-1 small" style="white-space: nowrap;">${escapeHTML(row[5] || '')}</td>
+                <td contenteditable="true" onblur="saveOfficialLeaveCell(${rIdx}, 6, this.innerText)" class="text-center px-1 small" style="white-space: nowrap;">${escapeHTML(row[6] || '')}</td>
+                <td contenteditable="true" onblur="saveOfficialLeaveCell(${rIdx}, 7, this.innerText)" class="text-center px-1 small" style="white-space: nowrap;">${escapeHTML(row[7] || '')}</td>
+            </tr>
+        `;
+    }).join('');
+
+    return `
+        <div class="official-doc-container">
+            <!-- Official Header Box (Exact Replica of Official Word Document) -->
+            <table class="official-top-header-table">
+                <tr>
+                    <!-- Right in RTL: School Information -->
+                    <td class="official-header-td-right" style="width: 35%; text-align: right; vertical-align: middle; padding: 3px 8px;">
+                        <div class="official-school-line"><strong>کارگێڕیا قوتابخانا :</strong> <span contenteditable="true" onblur="saveOfficialSetting('schoolName', this.innerText)" class="official-editable-field fw-bold">${escapeHTML(schedule.settings?.schoolName || schedule.settings?.milakData?.schoolName || 'جودی یابنەڕەت یا تێکەڵ')}</span></div>
+                        <div class="official-school-line"><strong>جهێ قوتابخانێ:</strong> <span contenteditable="true" onblur="saveOfficialSetting('schoolLocation', this.innerText)" class="official-editable-field">${escapeHTML(schedule.settings?.schoolLocation || schedule.settings?.milakData?.schoolLocation || 'زاخۆ / تلکەبەر')}</span></div>
+                        <div class="official-school-line"><strong>تەلەفۆن:</strong> <span contenteditable="true" onblur="saveOfficialSetting('schoolPhone', this.innerText)" class="official-editable-field" dir="ltr">${escapeHTML(schedule.settings?.schoolPhone || schedule.settings?.milakData?.schoolPhone || '07512038397')}</span></div>
+                    </td>
+
+                    <!-- Center in RTL: Title, Number, and Academic Year -->
+                    <td class="official-header-td-center" style="width: 42%; text-align: center; vertical-align: middle; padding: 3px 4px;">
+                        <div class="official-main-title">خشتێ دابەشکرنــــا بەهریَـــن حەفتیانە</div>
+                        <div class="official-doc-meta">
+                            <span>ژمــــاره ( <span contenteditable="true" onblur="saveOfficialSetting('docNumber', this.innerText)" class="official-editable-field px-2">${schedule.settings?.docNumber ? escapeHTML(schedule.settings.docNumber) : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'}</span> )</span>
+                        </div>
+                        <div class="official-doc-meta">
+                            <span>ساڵا خواندنــــێ ( <span contenteditable="true" onblur="saveOfficialSetting('academicYear', this.innerText)" class="official-editable-field fw-bold px-1">${escapeHTML(schedule.settings?.academicYear || schedule.settings?.milakData?.academicYear || '٢٠٢٦ / ٢٠٢٧')}</span> )</span>
+                        </div>
+                    </td>
+
+                    <!-- Left in RTL: Staff Summary (میری / کرێ / تێکەڵ) -->
+                    <td class="official-header-td-left" style="width: 23%; text-align: start; vertical-align: middle; padding: 3px 8px;">
+                        <div class="official-staff-line"><strong>میری:</strong> <span contenteditable="true" onblur="saveOfficialSetting('miriCount', this.innerText)" class="official-editable-field">${schedule.settings?.miriCount !== undefined ? escapeHTML(schedule.settings.miriCount) : (countMiri ? countMiri : '/')}</span></div>
+                        <div class="official-staff-line"><strong>کرێ:</strong> <span contenteditable="true" onblur="saveOfficialSetting('krieCount', this.innerText)" class="official-editable-field">${schedule.settings?.krieCount !== undefined ? escapeHTML(schedule.settings.krieCount) : (countKrie ? countKrie : '')}</span></div>
+                        <div class="official-staff-line"><strong>تێکەڵ:</strong> <span contenteditable="true" onblur="saveOfficialSetting('tekalCount', this.innerText)" class="official-editable-field">${schedule.settings?.tekalCount !== undefined ? escapeHTML(schedule.settings.tekalCount) : '/'}</span></div>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- Official Ministry Table -->
+            <div class="table-responsive official-table-responsive">
+                <table class="table table-bordered align-middle text-center table-official-ministry" id="teachers-main-table">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" class="official-th official-col-nowrap" style="width: 32px;">ز</th>
+                            <th rowspan="2" class="official-th" style="min-width: 160px;">ناڤێ ماموستایی</th>
+                            <th rowspan="2" class="official-th official-col-nowrap" style="width: 60px;">نیشانا کاری</th>
+                            <th rowspan="2" class="official-th official-col-nowrap" style="width: 60px;">بڕوانامە</th>
+                            <th rowspan="2" class="official-th official-col-nowrap" style="width: 60px;">بسپۆر</th>
+                            <th rowspan="2" class="official-th" style="min-width: 90px;">وانێت دبێژیت</th>
+                            <th colspan="${Math.max(1, parsedCols.length)}" class="official-th text-center" style="letter-spacing: 2px; font-weight: 800;">پـوولەکان</th>
+                            <th rowspan="2" class="official-th official-th-vertical" style="width: 32px; min-width: 32px;">سەرجەم بەهرا</th>
+                            <th rowspan="2" class="official-th official-th-vertical" style="width: 32px; min-width: 32px;">بەهرێن ماموستایی</th>
+                            <th rowspan="2" class="official-th official-th-vertical" style="width: 32px; min-width: 32px;">بەهرێ زێدە</th>
+                            <th rowspan="2" class="official-th official-th-vertical" style="width: 32px; min-width: 32px;">تێبینی</th>
+                            <th rowspan="2" class="official-th no-print" style="width: 60px;">کردارەکان</th>
+                        </tr>
+                        <tr>
+                            ${parsedCols.map(c => {
+        const isShaded = (c.groupIndex % 2 === 1);
+        return `
+                                    <th class="official-class-col-header ${isShaded ? 'official-col-shaded' : 'official-col-white'}" data-col-name="${c.col}" title="${c.grade} ${c.section}">
+                                        <div class="official-class-combined">
+                                            <span class="official-grade-num">${c.grade}</span>
+                                            <span class="official-section-let">${c.section}</span>
+                                        </div>
+                                    </th>
+                                `;
+    }).join('')}
+                        </tr>
+                    </thead>
+                    ${rowsHtml}
+                    <tfoot>
+                        <tr class="fw-bold text-center table-light" style="font-size: 0.9rem;">
+                            <td colspan="6" class="text-end pe-3 text-dark">سەرجەم</td>
+                            ${parsedCols.map(c => {
+        const isShaded = (c.groupIndex % 2 === 1);
+        const val = colTotals[c.col] || 0;
+        return `<td class="${isShaded ? 'official-col-shaded' : 'official-col-white'} text-primary">${val > 0 ? val : ''}</td>`;
+    }).join('')}
+                            <td class="text-primary bg-white">${grandAssignedTotal > 0 ? grandAssignedTotal : '0'}</td>
+                            <td class="bg-white">${grandQuotaTotal > 0 ? grandQuotaTotal : '0'}</td>
+                            <td class="text-danger bg-white">${grandExtraTotal > 0 ? grandExtraTotal : '-'}</td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Official Bottom Summary Grid (Page 3 of Official PDF) -->
+            <div class="official-bottom-container mt-4">
+                <div class="official-bottom-grid">
+                    <!-- Right Column: Student Statistics + Reasons for Change -->
+                    <div class="official-bottom-col-right">
+                        <!-- 1. Student Statistics Table -->
+                        <div class="official-student-section-wrapper">
+                            <table class="table table-bordered official-sub-table official-student-table">
+                                <thead>
+                                    <tr>
+                                        <th colspan="5" class="official-th official-sub-main-title">
+                                            خشتێ پۆل و هۆب و ژمارا قوتابیان
+                                        </th>
+                                    </tr>
+                                    <tr>
+                                        <th rowspan="2" class="official-th" style="vertical-align: middle; width: 26%;">پۆل</th>
+                                        <th rowspan="2" class="official-th" style="vertical-align: middle; width: 22%;">ژمارا هۆبا</th>
+                                        <th colspan="2" class="official-th">ژمارا قوتابیان</th>
+                                        <th rowspan="2" class="official-th" style="vertical-align: middle; width: 24%;">سەرجەم</th>
+                                    </tr>
+                                    <tr>
+                                        <th class="official-th" style="width: 14%;">کوڕ</th>
+                                        <th class="official-th" style="width: 14%;">کچ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${studentRowsHtml}
+                                </tbody>
+                                <tfoot>
+                                    <tr class="fw-bold table-light">
+                                        <td>سەرجەم</td>
+                                        <td>${totalSectionsSum}</td>
+                                        <td>${totalBoysSum > 0 ? totalBoysSum : ''}</td>
+                                        <td>${totalGirlsSum > 0 ? totalGirlsSum : ''}</td>
+                                        <td class="text-primary fw-bold">${totalStudentsSum > 0 ? totalStudentsSum : ''}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <!-- 2. Reasons for Change (Directly Under Students Table) -->
+                        <div class="official-reasons-wrapper mt-2">
+                            <div class="official-reasons-header">
+                                <strong>ئه‌گه‌رێن گوهۆڕینێ :</strong>
+                            </div>
+                            <div contenteditable="true" onblur="saveOfficialSetting('changeReasons', this.innerText)" class="official-reasons-box" placeholder="ئەگەرێن گوهۆڕینا خشتەی بنڤیسە...">${escapeHTML(schedule.settings?.changeReasons || '')}</div>
+                        </div>
+                    </div>
+
+                    <!-- Left Column: Teachers on Leave Full Table -->
+                    <div class="official-bottom-col-left">
+                        <div class="official-leave-table-wrapper">
+                            <table class="table table-bordered official-sub-table official-leave-table">
+                                <thead>
+                                    <tr>
+                                        <th colspan="9" class="official-th official-sub-main-title">
+                                            مامۆستایێن مۆڵەتدان
+                                        </th>
+                                    </tr>
+                                    <tr>
+                                        <th rowspan="2" class="official-th" style="width: 26px; vertical-align: middle; white-space: nowrap;">ز</th>
+                                        <th rowspan="2" class="official-th" style="min-width: 110px; vertical-align: middle;">ناڤێ مامۆستایی</th>
+                                        <th rowspan="2" class="official-th" style="min-width: 65px; vertical-align: middle; white-space: nowrap;">بسپۆر</th>
+                                        <th rowspan="2" class="official-th" style="min-width: 105px; vertical-align: middle;">جۆرێ مۆڵەتێ</th>
+                                        <th rowspan="2" class="official-th" style="width: 38px; vertical-align: middle; white-space: nowrap;">ماوە</th>
+                                        <th colspan="2" class="official-th" style="white-space: nowrap;">بەروارا مۆڵەتێ</th>
+                                        <th colspan="2" class="official-th" style="white-space: nowrap;">فەرمانی کارگێڕی</th>
+                                    </tr>
+                                    <tr>
+                                        <th class="official-th" style="width: 68px; font-size: 0.72rem; white-space: nowrap;">ژ بەروارا</th>
+                                        <th class="official-th" style="width: 68px; font-size: 0.72rem; white-space: nowrap;">هەتا بەروارا</th>
+                                        <th class="official-th" style="width: 48px; font-size: 0.72rem; white-space: nowrap;">ژمارە</th>
+                                        <th class="official-th" style="width: 65px; font-size: 0.72rem; white-space: nowrap;">بەروار</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${leaveRowsHtml}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Signatures & Effective Date Row -->
+                <div class="official-sign-row mt-3">
+                    <div class="official-sign-right fw-bold">
+                        <span>کار پێ دهێتە کرن ژ ڕۆژا:</span>
+                        <span contenteditable="true" onblur="saveOfficialSetting('effectDate', this.innerText)" class="official-editable-field px-3">${escapeHTML(schedule.settings?.effectDate || '..... / ..... / 202')}</span>
+                    </div>
+                    <div class="official-sign-left text-center">
+                        <div class="fw-bold mb-1">مۆر و ئیمزا رێڤه‌به‌رێ قوتابخانێ</div>
+                        <div class="text-muted small">${escapeHTML(schedule.settings?.principalName || schedule.settings?.milakData?.principalName || 'طاهر محمود محمد')}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+window.renderOfficialMinistryTable = renderOfficialMinistryTable;
+
 function renderTeacherTbodyDetailed(teacher, columns, teacherIndex, totalCount = 1) {
+    if (!teacher) return '';
+    teacher.subjects = Array.isArray(teacher.subjects) ? teacher.subjects : [];
+    teacher.classes = (teacher.classes && typeof teacher.classes === 'object') ? teacher.classes : {};
+    columns = Array.isArray(columns) ? columns : [];
     const numSubjects = teacher.subjects.length || 1;
     const rowspanAttr = `rowspan="${numSubjects}"`;
-    const totalDistributed = columns.reduce((s, c) => s + (teacher.classes?.[c] ? Object.values(teacher.classes[c]).reduce((a, b) => a + parseInt(b, 10), 0) : 0), 0);
+    const totalDistributed = columns.reduce((s, c) => s + (teacher.classes[c] ? Object.values(teacher.classes[c]).reduce((a, b) => a + (parseInt(b, 10) || 0), 0) : 0), 0);
 
     const isFirst = teacherIndex === 0;
     const isLast = teacherIndex === totalCount - 1;
     const miniMoveControls = `<div class="d-inline-flex align-items-center justify-content-center gap-1"><i class="fas fa-grip-vertical drag-handle text-secondary me-1 no-print" style="cursor:grab;" title="راکێشە بۆ گوهورینا جهی"></i><span class="fw-bold px-1">${teacherIndex + 1}</span><div class="btn-group-vertical btn-group-sm no-print ms-1" style="scale: 0.8;"><button type="button" class="btn btn-xs btn-outline-secondary p-0 px-1" onclick="moveTeacherRow(${teacher.id}, 'up')" title="ببلندکرن" ${isFirst ? 'disabled' : ''}><i class="fas fa-chevron-up"></i></button><button type="button" class="btn btn-xs btn-outline-secondary p-0 px-1" onclick="moveTeacherRow(${teacher.id}, 'down')" title="ئینانە خوارێ" ${isLast ? 'disabled' : ''}><i class="fas fa-chevron-down"></i></button></div></div>`;
 
     if (teacher.subjects.length === 0) {
-        return `<tbody data-teacher-id="${teacher.id}"><tr><td class="align-middle text-center user-select-none" style="white-space:nowrap;">${miniMoveControls}</td><td class="text-nowrap fw-bold">${teacher.name || ''}</td><td class="text-nowrap">${teacher.certificate || ''}</td><td class="text-nowrap">${teacher.jobTitle || ''}</td><td class="text-nowrap">${translateSubjectName(teacher.specialization) || ''}</td><td></td>${columns.map(() => `<td></td>`).join('')}<td><span class="badge bg-primary fs-6">0</span></td><td class="no-print text-nowrap"><div class="btn-group btn-group-sm" role="group"><button type="button" class="btn btn-sm btn-outline-primary" onclick="openTeacherModal(${teacher.id})"><i class="fas fa-edit"></i></button><button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteTeacher(${teacher.id})"><i class="fas fa-trash"></i></button></div></td></tr></tbody>`;
+        return `<tbody data-teacher-id="${teacher.id}"><tr><td class="align-middle text-center user-select-none" style="white-space:nowrap;">${miniMoveControls}</td><td class="text-nowrap fw-bold">${escapeHTML(teacher.name || '')}</td><td class="text-nowrap">${escapeHTML(teacher.certificate || '')}</td><td class="text-nowrap">${escapeHTML(teacher.jobTitle || '')}</td><td class="text-nowrap">${escapeHTML(translateSubjectName(teacher.specialization) || '')}</td><td></td>${columns.map(() => `<td></td>`).join('')}<td><span class="badge bg-primary fs-6">0</span></td><td class="no-print text-nowrap"><div class="btn-group btn-group-sm" role="group"><button type="button" class="btn btn-sm btn-outline-primary" onclick="openTeacherModal(${teacher.id})"><i class="fas fa-edit"></i></button><button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteTeacher(${teacher.id})"><i class="fas fa-trash"></i></button></div></td></tr></tbody>`;
     }
 
     const subjectsHtml = teacher.subjects.map((subject, subjectIndex) => {
         let rowHtml = '<tr>';
         if (subjectIndex === 0) {
-            rowHtml += `<td ${rowspanAttr} class="align-middle text-center user-select-none" style="white-space:nowrap;">${miniMoveControls}</td><td ${rowspanAttr} class="text-nowrap fw-bold">${teacher.name || ''}</td><td ${rowspanAttr} class="text-nowrap">${teacher.certificate || ''}</td><td ${rowspanAttr} class="text-nowrap">${teacher.jobTitle || ''}</td><td ${rowspanAttr} class="text-nowrap">${translateSubjectName(teacher.specialization) || ''}</td>`;
+            rowHtml += `<td ${rowspanAttr} class="align-middle text-center user-select-none" style="white-space:nowrap;">${miniMoveControls}</td><td ${rowspanAttr} class="text-nowrap fw-bold">${escapeHTML(teacher.name || '')}</td><td ${rowspanAttr} class="text-nowrap">${escapeHTML(teacher.certificate || '')}</td><td ${rowspanAttr} class="text-nowrap">${escapeHTML(teacher.jobTitle || '')}</td><td ${rowspanAttr} class="text-nowrap">${escapeHTML(translateSubjectName(teacher.specialization) || '')}</td>`;
         }
-        rowHtml += `<td>${translateSubjectName(subject.name)}: ${subject.periods}</td>`;
+        rowHtml += `<td>${escapeHTML(translateSubjectName(subject.name) || '')}: ${subject.periods || 0}</td>`;
         columns.forEach(col => {
-            const periodsInClass = teacher.classes?.[col]?.[subject.name] || '';
+            const periodsInClass = teacher.classes[col]?.[subject.name] || '';
             rowHtml += `<td>${periodsInClass}</td>`;
         });
         if (subjectIndex === 0) {
@@ -2672,25 +3366,29 @@ function renderTeacherTbodyDetailed(teacher, columns, teacherIndex, totalCount =
 }
 
 function renderTeacherRowSimple(teacher, columns, index, totalCount = 1) {
-    const distributed = columns.reduce((s, c) => s + (teacher.classes?.[c] ? Object.values(teacher.classes[c]).reduce((a, b) => a + parseInt(b, 10), 0) : 0), 0);
+    if (!teacher) return '';
+    teacher.subjects = Array.isArray(teacher.subjects) ? teacher.subjects : [];
+    teacher.classes = (teacher.classes && typeof teacher.classes === 'object') ? teacher.classes : {};
+    columns = Array.isArray(columns) ? columns : [];
+    const distributed = columns.reduce((s, c) => s + (teacher.classes[c] ? Object.values(teacher.classes[c]).reduce((a, b) => a + (parseInt(b, 10) || 0), 0) : 0), 0);
     const teacherSubjects = teacher.subjects.length > 0 ? teacher.subjects : [{ name: '', periods: '' }];
 
     const isFirst = index === 0;
     const isLast = index === totalCount - 1;
     const miniMoveControls = `<div class="d-inline-flex align-items-center justify-content-center gap-1"><i class="fas fa-grip-vertical drag-handle text-secondary me-1 no-print" style="cursor:grab;" title="راکێشە بۆ گوهورینا جهی"></i><span class="fw-bold px-1">${index + 1}</span><div class="btn-group-vertical btn-group-sm no-print ms-1" style="scale: 0.8;"><button type="button" class="btn btn-xs btn-outline-secondary p-0 px-1" onclick="moveTeacherRow(${teacher.id}, 'up')" title="ببلندکرن" ${isFirst ? 'disabled' : ''}><i class="fas fa-chevron-up"></i></button><button type="button" class="btn btn-xs btn-outline-secondary p-0 px-1" onclick="moveTeacherRow(${teacher.id}, 'down')" title="ئینانە خوارێ" ${isLast ? 'disabled' : ''}><i class="fas fa-chevron-down"></i></button></div></div>`;
 
-    const subjectsCellHtml = teacherSubjects.map(s => `<div class="subject-entry">${s.name ? `${translateSubjectName(s.name)} (${s.periods})` : '&nbsp;'}</div>`).join('');
+    const subjectsCellHtml = teacherSubjects.map(s => `<div class="subject-entry">${s.name ? `${escapeHTML(translateSubjectName(s.name))} (${s.periods || 0})` : '&nbsp;'}</div>`).join('');
 
     const classDistributionCellsHtml = columns.map(col => {
         const cellContent = teacherSubjects.map(subject => {
-            const periods = subject.name ? teacher.classes?.[col]?.[subject.name] : undefined;
-            return `<div class="subject-entry">${periods ? `${translateSubjectName(subject.name)}: ${periods}` : '&nbsp;'}</div>`;
+            const periods = subject.name ? teacher.classes[col]?.[subject.name] : undefined;
+            return `<div class="subject-entry">${periods ? `${escapeHTML(translateSubjectName(subject.name))}: ${periods}` : '&nbsp;'}</div>`;
         }).join('');
         return `<td class="class-distribution-cell-padded">${cellContent}</td>`;
     }).join('');
 
     return `<tbody data-teacher-id="${teacher.id}"><tr>
-            <td class="align-middle text-center user-select-none" style="white-space:nowrap;">${miniMoveControls}</td><td class="text-nowrap fw-bold">${teacher.name || ''}</td><td class="text-nowrap">${teacher.certificate || ''}</td><td class="text-nowrap">${teacher.jobTitle || ''}</td><td class="text-nowrap">${translateSubjectName(teacher.specialization) || ''}</td>
+            <td class="align-middle text-center user-select-none" style="white-space:nowrap;">${miniMoveControls}</td><td class="text-nowrap fw-bold">${escapeHTML(teacher.name || '')}</td><td class="text-nowrap">${escapeHTML(teacher.certificate || '')}</td><td class="text-nowrap">${escapeHTML(teacher.jobTitle || '')}</td><td class="text-nowrap">${escapeHTML(translateSubjectName(teacher.specialization) || '')}</td>
             <td class="subjects-cell-padded">${subjectsCellHtml}</td>
             ${classDistributionCellsHtml}
             <td><span class="badge bg-primary fs-6">${distributed}</span></td>
@@ -2704,8 +3402,9 @@ function renderTeacherRowSimple(teacher, columns, index, totalCount = 1) {
 }
 
 function renderFooter(schedule) {
-    if (schedule.columns.length === 0) return '';
-    const totals = schedule.columns.map(c => schedule.teachers.reduce((s, t) => s + (t.classes?.[c] ? Object.values(t.classes[c]).reduce((a, b) => a + parseInt(b, 10), 0) : 0), 0));
+    if (!schedule || !Array.isArray(schedule.columns) || schedule.columns.length === 0) return '';
+    const teachers = Array.isArray(schedule.teachers) ? schedule.teachers : [];
+    const totals = schedule.columns.map(c => teachers.reduce((s, t) => s + (t && t.classes && t.classes[c] ? Object.values(t.classes[c]).reduce((a, b) => a + (parseInt(b, 10) || 0), 0) : 0), 0));
     const grandTotal = totals.reduce((a, b) => a + b, 0);
     return `<tr class="table-light fw-bold"><td colspan="6" class="text-end">${t('grand_total')}</td>${totals.map(tVal => `<td>${tVal}</td>`).join('')}<td>${grandTotal}</td><td class="no-print"></td></tr>`;
 }
@@ -2791,38 +3490,470 @@ function renderAdditionalTables() {
             </tr></tfoot>
         </table>`;
 
-    const leaveHeaders = [t('col_num'), t('col_teacher'), t('col_specialization'), t('col_leave_from'), t('col_leave_to'), t('col_leave_reason')];
-    let leaveTable = `<table class="table table-bordered"><thead><tr>${leaveHeaders.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>`;
+    // Leave table with official multi-header format
+    // Columns: ز | ناڤێ مامۆستایی | بسپۆر | جۆرێ مۆڵەتێ | ماوە | بەروارا مۆڵەتێ (ژ / هەتا) | فەرمانی کارگێڕی (ژمارە / بەروار)
+    // Each data row: [name, specialization, leaveType, duration, fromDate, toDate, orderNo, orderDate]
+    let leaveTableRows2 = ``;
     for (let r = 0; r < leaveTableRows; r++) {
-        leaveTable += `<tr>`;
-        for (let c = 0; c < leaveHeaders.length; c++) {
-            const content = (leaveTableData[r] && leaveTableData[r][c]) ? leaveTableData[r][c] : '';
-            leaveTable += `<td contenteditable="true" onblur="saveAdditionalTableData(this, 'leave', ${r}, ${c})">${content}</td>`;
-        }
-        leaveTable += `</tr>`;
+        const row = leaveTableData[r] || [];
+        const get = (i) => row[i] ? String(row[i]) : '';
+        leaveTableRows2 += `<tr>
+            <td class="text-center fw-bold" style="white-space:nowrap;">${r + 1}</td>
+            <td contenteditable="true" onblur="saveAdditionalTableData(this,'leave',${r},0)" class="text-center px-2" style="white-space:nowrap;">${get(0)}</td>
+            <td contenteditable="true" onblur="saveAdditionalTableData(this,'leave',${r},1)" class="text-center px-1" style="white-space:nowrap;">${get(1)}</td>
+            <td contenteditable="true" onblur="saveAdditionalTableData(this,'leave',${r},2)" class="text-center px-2" style="white-space:nowrap; min-width:110px;">${get(2)}</td>
+            <td contenteditable="true" onblur="saveAdditionalTableData(this,'leave',${r},3)" class="text-center px-1" style="white-space:nowrap;">${get(3)}</td>
+            <td contenteditable="true" onblur="saveAdditionalTableData(this,'leave',${r},4)" class="text-center px-1 small" style="white-space:nowrap; font-size:0.75rem;">${get(4)}</td>
+            <td contenteditable="true" onblur="saveAdditionalTableData(this,'leave',${r},5)" class="text-center px-1 small" style="white-space:nowrap; font-size:0.75rem;">${get(5)}</td>
+            <td contenteditable="true" onblur="saveAdditionalTableData(this,'leave',${r},6)" class="text-center px-1 small" style="white-space:nowrap; font-size:0.75rem;">${get(6)}</td>
+            <td contenteditable="true" onblur="saveAdditionalTableData(this,'leave',${r},7)" class="text-center px-1 small" style="white-space:nowrap; font-size:0.75rem;">${get(7)}</td>
+        </tr>`;
     }
-    leaveTable += `</tbody></table>`;
+    const leaveTable = `<table class="table table-bordered text-center align-middle" style="font-size:0.78rem; border-collapse:collapse; width:100%; table-layout:auto;">
+        <thead>
+            <tr>
+                <th rowspan="2" class="official-th" style="vertical-align:middle; width:26px; white-space:nowrap;">ز</th>
+                <th rowspan="2" class="official-th" style="vertical-align:middle; min-width:110px; text-align:center; padding:4px 6px; white-space:nowrap;">ناڤێ مامۆستایی</th>
+                <th rowspan="2" class="official-th" style="vertical-align:middle; min-width:65px; white-space:nowrap;">بسپۆر</th>
+                <th rowspan="2" class="official-th" style="vertical-align:middle; min-width:110px; white-space:nowrap;">جۆرێ مۆڵەتێ</th>
+                <th rowspan="2" class="official-th" style="vertical-align:middle; width:36px; white-space:nowrap;">ماوە</th>
+                <th colspan="2" class="official-th" style="white-space:nowrap;">بەروارا مۆڵەتێ</th>
+                <th colspan="2" class="official-th" style="white-space:nowrap;">فەرمانی کارگێڕی</th>
+            </tr>
+            <tr>
+                <th class="official-th" style="width:68px; font-size:0.72rem; white-space:nowrap;">ژ بەروارا</th>
+                <th class="official-th" style="width:68px; font-size:0.72rem; white-space:nowrap;">هەتا بەروارا</th>
+                <th class="official-th" style="width:48px; font-size:0.72rem; white-space:nowrap;">ژمارە</th>
+                <th class="official-th" style="width:65px; font-size:0.72rem; white-space:nowrap;">بەروار</th>
+            </tr>
+        </thead>
+        <tbody>${leaveTableRows2}</tbody>
+    </table>`;
 
-    const managerSignature = `<div class="text-center" id="managerSignature"><p class="mb-1"><strong>${t('signature_approved_by')}</strong></p><p class="fw-bold mb-0">${t('signature_principal')}</p><p>${principalName || '.......'}</p></div>`;
+    const managerSignature = `<div class="text-center mt-3" id="managerSignature"><p class="mb-1"><strong>${t('signature_approved_by')}</strong></p><p class="fw-bold mb-0">${t('signature_principal')}</p><p>${principalName || '.......'}</p></div>`;
 
-    container.innerHTML = `<div class="row mt-5">
-            <div class="col-lg-7 mb-4 mb-lg-0">${studentTable}</div>
-            <div class="col-lg-5 d-flex flex-column justify-content-between">${leaveTable}${managerSignature}</div>
+    container.innerHTML = `<div class="row mt-4">
+            <div class="col-lg-5 mb-4 mb-lg-0">${studentTable}</div>
+            <div class="col-lg-7 d-flex flex-column justify-content-between">${leaveTable}${managerSignature}</div>
         </div>`;
 }
 
 function saveAdditionalTableData(cell, tableType, rowIndex, colIndex) {
     const schedule = allSchedules[activeScheduleName];
+    if (!schedule) return;
+    if (!schedule.settings) schedule.settings = {};
     const dataKey = tableType === 'student' ? 'studentTableData' : 'leaveTableData';
     if (!schedule.settings[dataKey]) schedule.settings[dataKey] = [];
     while (schedule.settings[dataKey].length <= rowIndex) {
         schedule.settings[dataKey].push([]);
     }
     schedule.settings[dataKey][rowIndex][colIndex] = cell.innerText;
-    saveData();
+
+    // Dual-sync to officialLeaveData if leave table
+    if (tableType === 'leave') {
+        if (!schedule.settings.officialLeaveData) {
+            schedule.settings.officialLeaveData = Array.from({ length: 10 }, () => ['', '', '', '', '', '', '', '']);
+        }
+        while (schedule.settings.officialLeaveData.length <= rowIndex) {
+            schedule.settings.officialLeaveData.push(['', '', '', '', '', '', '', '']);
+        }
+        schedule.settings.officialLeaveData[rowIndex][colIndex] = cell.innerText;
+    }
+
+    if (typeof saveData === 'function') saveData();
 }
 
-// --- Printing Functions ---
+function saveOfficialSetting(key, value) {
+    const schedule = allSchedules[activeScheduleName];
+    if (!schedule) return;
+    if (!schedule.settings) schedule.settings = {};
+    schedule.settings[key] = value;
+    if (typeof saveData === 'function') saveData();
+}
+window.saveOfficialSetting = saveOfficialSetting;
+
+function saveOfficialGradeStudentStats(grade, field, value) {
+    const schedule = allSchedules[activeScheduleName];
+    if (!schedule) return;
+    if (!schedule.settings) schedule.settings = {};
+    if (!schedule.settings.officialStudentStats) schedule.settings.officialStudentStats = {};
+    if (!schedule.settings.officialStudentStats[grade]) schedule.settings.officialStudentStats[grade] = {};
+    schedule.settings.officialStudentStats[grade][field] = value;
+    if (typeof saveData === 'function') saveData();
+}
+window.saveOfficialGradeStudentStats = saveOfficialGradeStudentStats;
+
+function saveOfficialLeaveCell(rowIndex, colIndex, value) {
+    const schedule = allSchedules[activeScheduleName];
+    if (!schedule) return;
+    if (!schedule.settings) schedule.settings = {};
+    if (!schedule.settings.officialLeaveData) {
+        schedule.settings.officialLeaveData = Array.from({ length: 10 }, () => ['', '', '', '', '', '', '', '']);
+    }
+    while (schedule.settings.officialLeaveData.length <= rowIndex) {
+        schedule.settings.officialLeaveData.push(['', '', '', '', '', '', '', '']);
+    }
+    schedule.settings.officialLeaveData[rowIndex][colIndex] = value;
+
+    // Dual-sync to leaveTableData as well
+    if (!schedule.settings.leaveTableData) schedule.settings.leaveTableData = [];
+    while (schedule.settings.leaveTableData.length <= rowIndex) {
+        schedule.settings.leaveTableData.push(['', '', '', '', '', '', '', '']);
+    }
+    schedule.settings.leaveTableData[rowIndex][colIndex] = value;
+
+    if (typeof saveData === 'function') saveData();
+}
+function saveTeacherOfficialQuota(teacherId, value) {
+    const schedule = allSchedules[activeScheduleName];
+    if (!schedule || !Array.isArray(schedule.teachers)) return;
+    const teacher = schedule.teachers.find(t => t.id === teacherId);
+    if (teacher) {
+        teacher.quota = parseInt(value, 10) || 0;
+        if (typeof saveData === 'function') saveData();
+        const container = document.getElementById('officialTableContainer');
+        if (container) container.innerHTML = renderOfficialMinistryTable(schedule);
+    }
+}
+window.saveTeacherOfficialQuota = saveTeacherOfficialQuota;
+
+function saveTeacherOfficialNotes(teacherId, value) {
+    const schedule = allSchedules[activeScheduleName];
+    if (!schedule || !Array.isArray(schedule.teachers)) return;
+    const teacher = schedule.teachers.find(t => t.id === teacherId);
+    if (teacher) {
+        teacher.notes = value.trim();
+        if (typeof saveData === 'function') saveData();
+    }
+}
+window.saveTeacherOfficialNotes = saveTeacherOfficialNotes;
+
+function getOfficialPrintStyles() {
+    return `<style>
+        @page {
+            size: A4 landscape;
+            margin: 2.5mm 3.5mm 2.5mm 3.5mm !important;
+        }
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        html, body {
+            background: #ffffff !important;
+            color: #000000 !important;
+            font-family: 'Noto Kufi Arabic', system-ui, -apple-system, sans-serif !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            direction: rtl;
+        }
+        .no-print, .d-none, [data-bs-toggle], .btn-group, .btn-group-vertical, .drag-handle, button, .btn {
+            display: none !important;
+        }
+        .official-doc-container {
+            background: #ffffff !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 auto !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            display: block !important;
+        }
+        .official-top-header-table {
+            width: 100% !important;
+            border: 2px solid #0f172a !important;
+            border-collapse: collapse !important;
+            margin-bottom: 2px !important;
+            background: #ffffff !important;
+        }
+        .official-top-header-table td {
+            border: none !important;
+            vertical-align: middle !important;
+            padding: 1px 4px !important;
+            color: #0f172a !important;
+        }
+        .official-staff-line, .official-school-line {
+            font-size: 0.68rem !important;
+            font-weight: 700 !important;
+            color: #0f172a !important;
+            line-height: 1.15 !important;
+        }
+        .official-main-title {
+            font-size: 0.74rem !important;
+            font-weight: 800 !important;
+            color: #0f172a !important;
+            letter-spacing: 0.2px !important;
+            margin-bottom: 0 !important;
+        }
+        .official-doc-meta {
+            font-size: 0.68rem !important;
+            font-weight: 700 !important;
+            color: #1e293b !important;
+            line-height: 1.15 !important;
+        }
+        .table-responsive, .official-table-responsive {
+            overflow: visible !important;
+            display: block !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        .table-official-ministry {
+            border: 2px solid #0f172a !important;
+            border-collapse: collapse !important;
+            width: 100% !important;
+            table-layout: auto !important;
+            font-size: 0.72rem !important;
+            margin-bottom: 0 !important;
+        }
+        .table-official-ministry thead,
+        thead {
+            display: table-row-group !important;
+        }
+        .table-official-ministry tfoot,
+        tfoot {
+            display: table-row-group !important;
+        }
+        .official-teacher-tbody,
+        .table-official-ministry tbody,
+        .table-official-ministry tr,
+        tbody,
+        tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            break-inside: avoid-page !important;
+        }
+        .table-official-ministry th,
+        .table-official-ministry td {
+            border: 1.2px solid #0f172a !important;
+            padding: 2px 2px !important;
+            text-align: center !important;
+            vertical-align: middle !important;
+            line-height: 1.15 !important;
+            color: #0f172a !important;
+        }
+        .table-official-ministry thead th.official-th {
+            background-color: #e2e8f0 !important;
+            color: #0f172a !important;
+            font-weight: 800 !important;
+            font-size: 0.74rem !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        .official-col-nowrap {
+            white-space: nowrap !important;
+        }
+        .official-class-col-header {
+            width: 17px !important;
+            min-width: 17px !important;
+            max-width: 20px !important;
+            padding: 1px 0 !important;
+            white-space: nowrap !important;
+        }
+        .official-class-combined {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 1px !important;
+            white-space: nowrap !important;
+        }
+        .official-grade-num {
+            font-size: 0.62rem !important;
+            font-weight: 800 !important;
+            line-height: 1 !important;
+        }
+        .official-section-let {
+            font-size: 0.68rem !important;
+            font-weight: 700 !important;
+            line-height: 1 !important;
+        }
+        .official-col-white {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        .official-col-shaded {
+            background-color: #cbd5e1 !important;
+            color: #0f172a !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        .official-th-vertical {
+            writing-mode: vertical-rl !important;
+            text-orientation: mixed !important;
+            transform: rotate(180deg) !important;
+            white-space: nowrap !important;
+            vertical-align: middle !important;
+            padding: 4px 1px !important;
+            height: 110px !important;
+            min-height: 110px !important;
+            width: 24px !important;
+            min-width: 24px !important;
+            max-width: 26px !important;
+            font-size: 0.68rem !important;
+            line-height: 1 !important;
+        }
+        .official-sub-item {
+            font-size: 0.66rem !important;
+            line-height: 1.15 !important;
+            white-space: nowrap !important;
+        }
+        .official-sub-item .sub-name {
+            font-weight: 600 !important;
+        }
+        .official-sub-item .sub-count {
+            color: #2563eb !important;
+            font-weight: 700 !important;
+        }
+        .official-bottom-container {
+            margin-top: 6px !important;
+            border: 2px solid #000000 !important;
+            border-radius: 4px !important;
+            padding: 4px 8px !important;
+            background: #ffffff !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            box-sizing: border-box !important;
+        }
+        .official-bottom-grid {
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 8px !important;
+            align-items: flex-start !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        .official-bottom-col-right {
+            flex: 0 0 35% !important;
+            max-width: 35% !important;
+            width: 35% !important;
+            box-sizing: border-box !important;
+        }
+        .official-bottom-col-left {
+            flex: 1 1 auto !important;
+            max-width: calc(65% - 8px) !important;
+            width: calc(65% - 8px) !important;
+            box-sizing: border-box !important;
+        }
+        .official-sub-main-title {
+            background-color: #e2e8f0 !important;
+            font-size: 0.74rem !important;
+            font-weight: 800 !important;
+            text-align: center !important;
+            padding: 2px 4px !important;
+            color: #000000 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        .official-sub-table {
+            border: 1.5px solid #000000 !important;
+            border-collapse: collapse !important;
+            width: 100% !important;
+            font-size: 0.68rem !important;
+            margin-bottom: 0 !important;
+        }
+        .official-sub-table thead th {
+            background-color: #f1f5f9 !important;
+            color: #000000 !important;
+            font-weight: 700 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        .official-sub-table th,
+        .official-sub-table td {
+            border: 1px solid #000000 !important;
+            padding: 1.5px 3px !important;
+            text-align: center !important;
+            vertical-align: middle !important;
+            color: #000000 !important;
+            line-height: 1.15 !important;
+        }
+        .official-reasons-wrapper {
+            margin-top: 4px !important;
+        }
+        .official-reasons-header {
+            font-size: 0.74rem !important;
+            font-weight: 800 !important;
+            color: #000000 !important;
+            margin-bottom: 2px !important;
+        }
+        .official-reasons-box {
+            border: 1.2px solid #000000 !important;
+            border-radius: 4px !important;
+            background: #ffffff !important;
+            color: #000000 !important;
+            min-height: 38px !important;
+            padding: 3px 6px !important;
+            font-size: 0.70rem !important;
+            line-height: 1.25 !important;
+            box-sizing: border-box !important;
+        }
+        .official-sign-row {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            margin-top: 8px !important;
+            padding-top: 6px !important;
+            border-top: 1px dashed #000000 !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        .official-sign-right {
+            font-size: 0.74rem !important;
+            font-weight: 700 !important;
+            color: #000000 !important;
+        }
+        .official-sign-left {
+            font-size: 0.74rem !important;
+            font-weight: 700 !important;
+            color: #000000 !important;
+            text-align: center !important;
+        }
+        .official-sign-left .text-muted {
+            color: #333333 !important;
+            font-size: 0.68rem !important;
+        }
+        .official-editable-field {
+            border: none !important;
+            outline: none !important;
+            display: inline-block !important;
+            background: transparent !important;
+        }
+        .official-staff-summary-table {
+            border-collapse: collapse !important;
+            border: 1.5px solid #0f172a !important;
+            width: 100% !important;
+            max-width: 220px !important;
+            font-size: 0.72rem !important;
+            background: #ffffff !important;
+            margin-left: 0 !important;
+        }
+        .official-staff-summary-table th,
+        .official-staff-summary-table td {
+            border: 1px solid #0f172a !important;
+            padding: 2px 4px !important;
+            text-align: center !important;
+            vertical-align: middle !important;
+        }
+        .official-staff-summary-table th {
+            background: #f1f5f9 !important;
+            font-weight: 700 !important;
+            text-align: right !important;
+            color: #0f172a !important;
+        }
+        .official-staff-sum-row {
+            background: #e2e8f0 !important;
+            font-weight: 800 !important;
+        }
+    </style>`;
+}
+
 function getPrintStyleTemplate() {
     return `<style>
         body { font-family:"Noto Kufi Arabic",sans-serif; -webkit-print-color-adjust:exact!important; color-adjust:exact!important; print-color-adjust:exact!important; background-color:#fff; }
@@ -2838,8 +3969,8 @@ function getPrintStyleTemplate() {
         .table:not(.preserve-table-styles) thead th { background-color:#fce4d6!important; font-weight:bold; color:#000!important; border: 1px solid #adb5bd !important; }
         .table:not(.preserve-table-styles) .badge { background-color: transparent !important; color: #000 !important; border: none !important; padding: 0 !important; font-size: inherit !important; font-weight: bold !important; }
         .preserve-table-styles th, .preserve-table-styles td { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-        thead { display:table-header-group }
-        tfoot { display:table-footer-group }
+        thead { display:table-row-group !important; }
+        tfoot { display:table-row-group !important; }
         hr { margin:2px 0!important; border-top:1px solid #ccc!important; }
         #additionalTablesContainer .table { margin-top:25px!important; font-size:8pt; table-layout:auto !important; zoom: 1; }
         #additionalTablesContainer .table td { height:24px; }
@@ -2942,10 +4073,11 @@ function getPrintStyleTemplate() {
 function buildStyledHtmlDocument(title, contentHTML, options = {}) {
     const orientation = options.orientation || 'landscape';
     const isWebExport = options.isWebExport || false;
-    const orientationStyle = `<style>@page { size: ${orientation}; margin: 0.3cm; } @media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }</style>`;
+    const isOfficialDoc = options.isOfficialDoc || false;
+    const orientationStyle = isOfficialDoc ? '' : `<style>@page { size: ${orientation}; margin: 0.3cm; } @media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }</style>`;
     const fontAwesomeLink = `<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">`;
     const googleFontLink = `<link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;600;700;800;900&display=swap" rel="stylesheet">`;
-    const footerHTML = `<div class="print-footer">م: طاهر محمود محمد (07503727069)</div>`;
+    const footerHTML = isOfficialDoc ? '' : `<div class="print-footer no-print">م: طاهر محمود محمد (07503727069)</div>`;
     const webClayStyle = `
     <style>
         :root {
@@ -3008,9 +4140,14 @@ function buildStyledHtmlDocument(title, contentHTML, options = {}) {
             background: #64748b;
         }
     </style>`;
-    const baseStyle = isWebExport
-        ? webClayStyle
-        : getPrintStyleTemplate();
+    let baseStyle;
+    if (isOfficialDoc) {
+        baseStyle = getOfficialPrintStyles();
+    } else if (isWebExport) {
+        baseStyle = webClayStyle;
+    } else {
+        baseStyle = getPrintStyleTemplate();
+    }
     return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title}</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">${fontAwesomeLink}${googleFontLink}${baseStyle}${orientationStyle}</head><body dir="rtl">${contentHTML}${footerHTML}</body></html>`;
 }
 
@@ -3165,6 +4302,13 @@ function printWithContent(title, contentHTML, options = {}) {
 }
 
 function getCurrentDistributionHTML() {
+    if (tableViewMode === 'official') {
+        const officialContainer = document.querySelector('#tableContainer .official-doc-container');
+        if (!officialContainer) return null;
+        const clone = officialContainer.cloneNode(true);
+        clone.querySelectorAll('.no-print').forEach(el => el.remove());
+        return clone.outerHTML;
+    }
     const tableNode = document.querySelector('#tableContainer table');
     if (!tableNode) return null;
     const tableClone = tableNode.cloneNode(true);
@@ -3245,7 +4389,77 @@ function printAllTables() {
     printWithContent(`چاپكرنا خشتان - ${activeScheduleName}`, printAreaClone.innerHTML);
 }
 
+function printCurrentView() {
+    // 1. If in official ministry view
+    if (tableViewMode === 'official') {
+        const officialContainer = document.querySelector(".official-doc-container");
+        if (officialContainer) {
+            // Clone the container so we can strip no-print elements
+            const clone = officialContainer.cloneNode(true);
+            clone.querySelectorAll(".no-print").forEach(el => el.remove());
+            clone.querySelectorAll("[contenteditable='true']").forEach(el => el.removeAttribute('contenteditable'));
+            printWithContent(
+                `خشتێ دابەشکرنا بەهرێن - ${activeScheduleName}`,
+                clone.outerHTML,
+                { orientation: 'landscape', isOfficialDoc: true }
+            );
+            return;
+        }
+    }
+
+    // 2. Check active main tab
+    const activeTab = document.querySelector('#mainTabs .nav-link.active');
+    const tabId = activeTab ? activeTab.id : 'distribution-tab';
+
+    if (tabId === 'distribution-tab') {
+        if (tableViewMode === 'detailed') {
+            printComprehensiveDistribution();
+        } else if (tableViewMode === 'simple') {
+            printDistributionSimple();
+        } else if (tableViewMode === 'ledger') {
+            window.print();
+        } else {
+            window.print();
+        }
+    } else if (tabId === 'timetable-tab') {
+        if (typeof printTimetable === 'function') printTimetable();
+        else window.print();
+    } else if (tabId === 'supervision-tab') {
+        if (typeof printSupervisionTable === 'function') printSupervisionTable();
+        else window.print();
+    } else if (tabId === 'class-mentors-tab') {
+        if (typeof printClassMentorsTable === 'function') printClassMentorsTable();
+        else window.print();
+    } else if (tabId === 'nisab-tab') {
+        if (typeof printNisabTable === 'function') printNisabTable();
+        else window.print();
+    } else if (tabId === 'milak-tab') {
+        if (typeof printMilakTable === 'function') printMilakTable();
+        else window.print();
+    } else if (tabId === 'statistics-tab') {
+        if (typeof printStatisticsTab === 'function') printStatisticsTab();
+        else window.print();
+    } else {
+        window.print();
+    }
+}
+window.printCurrentView = printCurrentView;
+
 function printDistributionTable() {
+    if (tableViewMode === 'official') {
+        const officialContainer = document.querySelector(".official-doc-container");
+        if (officialContainer) {
+            const clone = officialContainer.cloneNode(true);
+            clone.querySelectorAll(".no-print").forEach(el => el.remove());
+            clone.querySelectorAll("[contenteditable='true']").forEach(el => el.removeAttribute('contenteditable'));
+            printWithContent(
+                `خشتێ دابەشکرنا بەهرێن - ${activeScheduleName}`,
+                clone.outerHTML,
+                { orientation: 'landscape', isOfficialDoc: true }
+            );
+        }
+        return;
+    }
     const tableNode = document.querySelector("#tableContainer table");
     if (!tableNode) { showToast('هیچ خشتەیەک نیە بۆ چاپکردن.', 'error'); return; }
     const tableClone = tableNode.cloneNode(true);
@@ -3255,7 +4469,7 @@ function printDistributionTable() {
     const schoolName = schedule.settings?.globalSchoolName || schedule.milak?.schoolName || '';
     const titleText = `دابەشکرنا وانان - ${activeScheduleName}${schoolName ? ` - ${schoolName}` : ''}`;
 
-    printWithContent('چاپکرنا دابەشکرنێ', `<h3>${titleText}</h3>${tableClone.outerHTML}`);
+    printWithContent('چاپکرنا دابەشکرنێ', `<h3>${titleText}</h3>${tableClone.outerHTML}`, { orientation: 'landscape' });
 }
 
 function printComprehensiveDistribution() {
@@ -3321,7 +4535,7 @@ function printDistributionSimple() {
 async function createSchedule() {
     const existingCount = Object.keys(allSchedules).length;
     const defaultSuggestedName = `خشتێ ${existingCount + 1}`;
-    
+
     const { value: formValues, isConfirmed } = await Swal.fire({
         title: `<span style="font-size: 1.15rem; font-weight: 800;"><i class="fas fa-calendar-plus text-primary me-2"></i>${t('prompt_new_schedule_title') || 'دروستکرنا خشتەکێ نوی'}</span>`,
         html: `
@@ -3371,7 +4585,7 @@ async function createSchedule() {
     if (isConfirmed && formValues && formValues.name) {
         const scheduleName = formValues.name;
         const currentSch = allSchedules[activeScheduleName] || {};
-        
+
         let newSchedule;
         if (formValues.type === 'copy') {
             newSchedule = {
@@ -3879,8 +5093,8 @@ function updateClassInputsInModal(teacher = null) {
                 const isOtherAssigned = isSubjectAlreadyAssignedToClass(subName, colName, currentTeacherId);
                 const warningIcon = isOtherAssigned ? `<i class="fas fa-exclamation-triangle text-warning ms-1" title="ئه‌ڤ بابه‌ته‌ بۆ ڤێ پولێ ژلایێ ماموستایه‌كێ دی ڤه‌ هاتیه‌ دانان"></i>` : '';
                 const nisabVal = getNisabForSubjectAndClass(subName, colName);
-                const nisabBadge = nisabVal > 0 
-                    ? `<span class="badge rounded-pill bg-white text-primary border shadow-2xs px-1.5 py-0.5 ms-1" style="font-size: 0.72rem;" title="نصاب: ${nisabVal} وانە"><i class="fas fa-layer-group me-0.5" style="font-size: 0.65rem;"></i>${nisabVal}</span>` 
+                const nisabBadge = nisabVal > 0
+                    ? `<span class="badge rounded-pill bg-white text-primary border shadow-2xs px-1.5 py-0.5 ms-1" style="font-size: 0.72rem;" title="نصاب: ${nisabVal} وانە"><i class="fas fa-layer-group me-0.5" style="font-size: 0.65rem;"></i>${nisabVal}</span>`
                     : '';
                 const isAssignedClass = numValue > 0 ? 'is-assigned bg-primary-subtle border-primary' : 'bg-light border-light-subtle';
 
@@ -4378,20 +5592,117 @@ if (document.readyState === 'loading') {
 // Unchanged Functions (Statistics & Nisab Rendering)
 function getGradeFromClassName(className) { if (!className) return null; const match = className.match(/[٠-٩0-9]+/); return match ? match[0] : null; }
 function renderNisabTab() {
+    const isAr = currentLang === 'ar';
     const container = document.getElementById('nisab-tab-pane');
+    if (!container) return;
     const schedule = allSchedules[activeScheduleName];
+    if (!schedule) return;
+    if (!Array.isArray(schedule.teachers)) schedule.teachers = [];
+    if (!Array.isArray(schedule.columns)) schedule.columns = [];
     const schoolType = schedule?.settings?.milakData?.schoolType || 'سه‌ره‌تایی 1-6';
-    const stagePredefined = typeof getStageSpecializations === 'function' 
+    const stagePredefined = typeof getStageSpecializations === 'function'
         ? getStageSpecializations(schoolType).filter(s => s !== 'یێن دی' && s !== 'شتی تر' && s !== 'أخرى' && s !== 'Other')
         : PREDEFINED_SUBJECTS;
     let rawSubjects = [...stagePredefined, ...schedule.teachers.flatMap(t => (t.subjects || []).map(s => s.name))];
     let allSubjects = [...new Set(rawSubjects.map(s => translateSubjectName(s)))];
-    const allGrades = [...new Set(schedule.columns.map(getGradeFromClassName).filter(Boolean))].sort((a, b) => parseInt(a) - parseInt(b));
+    const allGrades = [...new Set((schedule?.columns || []).map(getGradeFromClassName).filter(Boolean))].sort((a, b) => parseInt(a) - parseInt(b));
+    let tableHTML = `
+        <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 distribution-toolbar-card no-print">
+            <!-- Row 1: Views & Status -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pb-2 mb-2 border-bottom toolbar-row-view">
+                <!-- View / Title (Right in RTL) -->
+                <div class="d-flex align-items-center gap-2 flex-wrap toolbar-group-views">
+                    <span class="toolbar-group-label ms-1">
+                        <i class="fas fa-th-large"></i> ${isAr ? 'عرض' : 'نیشاندان'}
+                    </span>
+                    <div class="tt-context-clay-badge" style="background: linear-gradient(145deg, #fef3c7, #fde68a) !important; color: #92400e !important; border-color: rgba(245, 158, 11, 0.3) !important;">
+                        <div class="tt-select-icon-badge" style="background: linear-gradient(145deg, #fbbf24, #d97706) !important; box-shadow: 0 3px 8px rgba(217, 119, 6, 0.35) !important;">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <span class="fw-bold">${t('tab_nisab')}</span>
+                    </div>
+                </div>
+
+                <!-- Center: School Type 3D Clay Capsule -->
+                <div class="tt-context-clay-badge">
+                    <div class="tt-select-icon-badge" style="background: linear-gradient(145deg, #38bdf8, #0284c7) !important; box-shadow: 0 3px 8px rgba(2, 132, 199, 0.35) !important;">
+                        <i class="fas fa-school"></i>
+                    </div>
+                    <span class="small text-muted fw-bold">${isAr ? 'المرحلة:' : 'قۆناغ:'}</span>
+                    <span class="badge bg-primary text-white rounded-pill px-2.5 py-1 fw-bold shadow-xs">
+                        ${schoolType}
+                    </span>
+                </div>
+
+                <!-- Left: Grades Count 3D Clay Capsule -->
+                <div>
+                    <div class="tt-context-clay-badge" style="background: linear-gradient(145deg, #ede9fe, #ddd6fe) !important; color: #5b21b6 !important; border-color: rgba(139, 92, 246, 0.25) !important;">
+                        <i class="fas fa-layer-group text-primary fs-6"></i>
+                        <span class="badge bg-primary text-white rounded-pill px-2.5 py-1 fw-bold shadow-xs">
+                            ${allGrades.length}
+                        </span>
+                        <span class="small fw-bold">${isAr ? 'مراحل دراسية' : 'قۆناغێن خواندنێ'}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Actions & Clear Button (Grouped with Dividers) -->
+            <div class="toolbar-row-actions">
+                <!-- Group 1: بناء (Build) -->
+                <div class="toolbar-group toolbar-group-build">
+                    <span class="toolbar-group-label ms-1">
+                        <i class="fas fa-wand-magic-sparkles"></i> ${isAr ? 'بناء' : 'ئاڤاکرن'}
+                    </span>
+
+                    <!-- Apply Nisab (Orange) -->
+                    <button type="button" class="btn btn-sm btn-tb-nisab" onclick="applyNisab()">
+                        <i class="fas fa-magic me-1"></i><span>${isAr ? 'تطبيق النصاب' : 'دابەشکرنا نصابی'}</span>
+                    </button>
+                </div>
+
+                <div class="toolbar-divider d-none d-md-block"></div>
+
+                <!-- Group 2: تصدير وطباعة (Export & Print) -->
+                <div class="toolbar-group toolbar-group-export">
+                    <!-- Print (Lilac) -->
+                    <button type="button" class="btn btn-sm btn-tb-print" onclick="window.print()">
+                        <i class="fas fa-print me-1"></i><span>${isAr ? 'طباعة' : 'چاپکرن'}</span>
+                    </button>
+                </div>
+
+                <div class="toolbar-divider d-none d-md-block"></div>
+
+                <!-- Group 3: تفريغ (Clear) -->
+                <div class="toolbar-group toolbar-group-system">
+                    <button type="button" class="btn btn-sm btn-tb-delete" onclick="clearAllNisabValues()" title="${isAr ? 'تفريغ نصاب المواد' : 'ڤالاکرنا نصابی'}">
+                        <i class="fas fa-trash-alt me-1"></i><span>${isAr ? 'تفريغ' : 'ڤالاکرن'}</span>
+                    </button>
+                </div>
+            </div>
+        </div>`;
+
     if (allGrades.length === 0) {
-        container.innerHTML = `<div class="empty-state"><i class="fas fa-tasks fa-3x mb-3"></i><h5>${t('tab_nisab')}</h5><p>${t('empty_table_desc')}</p></div>`;
+        tableHTML += `
+            <div class="empty-state p-5 bg-white rounded-4 shadow-sm border text-center my-3">
+                <i class="fas fa-tasks fa-3x mb-3 text-secondary"></i>
+                <h5 class="fw-bold">${t('tab_nisab')}</h5>
+                <p class="text-muted mb-0">${t('empty_table_desc', 'ماموستایەکێ زێدە بکە و پولان دیاربکە')}</p>
+            </div>`;
+        container.innerHTML = tableHTML;
         return;
     }
-    let tableHTML = `<div class="d-flex justify-content-between align-items-center my-3"><h5 class="mb-0 fw-bold text-dark">${t('tab_nisab')}</h5></div><div class="table-responsive"><table class="table table-bordered nisab-table"><thead class="table-light"><tr><th>${t('col_subject')} / ${t('col_class')}</th>${allGrades.map(g => `<th>${t('col_class')} ${g}</th>`).join('')}</tr></thead><tbody>${allSubjects.map(s => {
+
+    tableHTML += `
+        <div class="table-responsive">
+            <table class="table table-bordered nisab-table">
+                <thead class="table-light">
+                    <tr>
+                        <th>${t('col_subject')} / ${t('col_class')}</th>
+                        ${allGrades.map(g => `<th>${t('col_class')} ${g}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${allSubjects.map(s => {
         return `<tr><td class="fw-bold">${s}</td>${allGrades.map(g => {
             let nisabVal = '';
             if (schedule.nisab) {
@@ -4404,8 +5715,29 @@ function renderNisabTab() {
             }
             return `<td><input type="number" class="form-control form-control-sm mx-auto" min="0" data-subject="${s}" data-grade="${g}" value="${nisabVal}" onchange="saveNisabValue(this)"></td>`;
         }).join('')}</tr>`;
-    }).join('')}</tbody></table></div>`;
+    }).join('')}
+                </tbody>
+            </table>
+        </div>`;
     container.innerHTML = tableHTML;
+}
+
+function clearAllNisabValues() {
+    const isAr = currentLang === 'ar';
+    showConfirmModal(
+        isAr ? 'هل أنت متأكد من تفريغ كافة قيم النصاب؟' : 'ئەرێ تو پشتڕاستی ژ ڤالاکرنا هەمی نصابێ وانان؟',
+        () => {
+            const schedule = allSchedules[activeScheduleName];
+            if (schedule) {
+                schedule.nisab = {};
+                saveData();
+                renderNisabTab();
+                if (typeof showSuccessNotification === 'function') {
+                    showSuccessNotification(isAr ? 'تم تفريغ النصاب بنجاح' : 'نصاب ب سەرکەفتی هاتە ڤالاکرن');
+                }
+            }
+        }
+    );
 }
 function saveNisabValue(input) { const schedule = allSchedules[activeScheduleName]; const { subject, grade } = input.dataset; const value = parseInt(input.value); if (!schedule.nisab[subject]) schedule.nisab[subject] = {}; if (value > 0) schedule.nisab[subject][grade] = value; else delete schedule.nisab[subject][grade]; saveData(); }
 const SUBJECT_RELATED_GROUPS = [
@@ -4429,25 +5761,25 @@ function isSportsSubject(subj) {
     if (!subj) return false;
     const s = subj.trim();
     if (isMathSubject(s)) return false;
-    return s.includes('وەرزش') || s.includes('وه‌رزش') || 
-           s.includes('رياضة') || s.includes('الرياضة') || s.includes('بدنية') || s.includes('بدني') ||
-           s.includes('Sports') || s.includes('PE');
+    return s.includes('وەرزش') || s.includes('وه‌رزش') ||
+        s.includes('رياضة') || s.includes('الرياضة') || s.includes('بدنية') || s.includes('بدني') ||
+        s.includes('Sports') || s.includes('PE');
 }
 
 function isArtSubject(subj) {
     if (!subj) return false;
     const s = subj.trim();
-    return s.includes('هونەر') || s.includes('هونه‌ر') || s.includes('هۆنەر') || 
-           s.includes('فني') || s.includes('فنون') || s.includes('رسم') || 
-           s.includes('Art');
+    return s.includes('هونەر') || s.includes('هونه‌ر') || s.includes('هۆنەر') ||
+        s.includes('فني') || s.includes('فنون') || s.includes('رسم') ||
+        s.includes('Art');
 }
 
 function isSkillsSubject(subj) {
     if (!subj) return false;
     const s = subj.trim();
-    return s.includes('کارامەی') || s.includes('كارامه‌') || 
-           s.includes('كرامي') || s.includes('الكرامي') || s.includes('كراميه') || s.includes('كرامية') ||
-           s.includes('مهارات') || s.includes('المهارات') || s.includes('Skills');
+    return s.includes('کارامەی') || s.includes('كارامه‌') ||
+        s.includes('كرامي') || s.includes('الكرامي') || s.includes('كراميه') || s.includes('كرامية') ||
+        s.includes('مهارات') || s.includes('المهارات') || s.includes('Skills');
 }
 
 function isArtOrSkillsSubject(subj) {
@@ -4457,18 +5789,18 @@ function isArtOrSkillsSubject(subj) {
 function isEnglishSubject(subj) {
     if (!subj) return false;
     const s = subj.trim();
-    return s.includes('ئینگلیز') || s.includes('ئێنگلێز') || 
-           s.includes('إنكليز') || s.includes('إنجليز') || 
-           s.includes('انكليز') || s.includes('انجليز') || 
-           s.includes('English');
+    return s.includes('ئینگلیز') || s.includes('ئێنگلێز') ||
+        s.includes('إنكليز') || s.includes('إنجليز') ||
+        s.includes('انكليز') || s.includes('انجليز') ||
+        s.includes('English');
 }
 
 function isKurdishSubject(subj) {
     if (!subj) return false;
     const s = subj.trim();
-    return s.includes('کورد') || s.includes('كورد') || 
-           s.includes('کرد') || s.includes('كرد') || 
-           s.includes('Kurd');
+    return s.includes('کورد') || s.includes('كورد') ||
+        s.includes('کرد') || s.includes('كرد') ||
+        s.includes('Kurd');
 }
 
 function isArabicSubject(subj) {
@@ -4481,9 +5813,9 @@ function isScienceSubject(subj) {
     if (!subj) return false;
     const s = subj.trim();
     return s.includes('زانست') || s.includes('علوم') || s.includes('Science') ||
-           s.includes('فیزیا') || s.includes('فيزياء') || s.includes('Physics') ||
-           s.includes('كیمیا') || s.includes('کیمیا') || s.includes('كيمياء') || s.includes('Chemistry') ||
-           s.includes('زیندەوەر') || s.includes('زینده‌وه‌ر') || s.includes('أحياء') || s.includes('احياء') || s.includes('Biology');
+        s.includes('فیزیا') || s.includes('فيزياء') || s.includes('Physics') ||
+        s.includes('كیمیا') || s.includes('کیمیا') || s.includes('كيمياء') || s.includes('Chemistry') ||
+        s.includes('زیندەوەر') || s.includes('زینده‌وه‌ر') || s.includes('أحياء') || s.includes('احياء') || s.includes('Biology');
 }
 
 function isMathSubject(subj) {
@@ -4495,31 +5827,31 @@ function isMathSubject(subj) {
 function isReligionSubject(subj) {
     if (!subj) return false;
     const s = subj.trim();
-    return s.includes('ئاین') || s.includes('ئایین') || s.includes('إسلامية') || 
-           s.includes('اسلامية') || s.includes('اسلام') || s.includes('إسلام') ||
-           s.includes('الدين') || s.includes('دين') || s.includes('Religion');
+    return s.includes('ئاین') || s.includes('ئایین') || s.includes('إسلامية') ||
+        s.includes('اسلامية') || s.includes('اسلام') || s.includes('إسلام') ||
+        s.includes('الدين') || s.includes('دين') || s.includes('Religion');
 }
 
 function isSocialSubject(subj) {
     if (!subj) return false;
     const s = subj.trim();
-    return s.includes('کۆمەڵایەتی') || s.includes('كومه‌لایه‌تی') || 
-           s.includes('مێژوو') || s.includes('جوگرافیا') || 
-           s.includes('اجتماعيات') || s.includes('تاريخ') || s.includes('جغرافية') || 
-           s.includes('ئابووری') || s.includes('اقتصاد') || s.includes('Economics') ||
-           s.includes('کۆمەڵناسی') || s.includes('كومه‌ڵناسی') || s.includes('علم الاجتماع') || s.includes('Sociology') ||
-           s.includes('History') || s.includes('Geography') || (s.includes('Social') && !s.includes('Sociology'));
+    return s.includes('کۆمەڵایەتی') || s.includes('كومه‌لایه‌تی') ||
+        s.includes('مێژوو') || s.includes('جوگرافیا') ||
+        s.includes('اجتماعيات') || s.includes('تاريخ') || s.includes('جغرافية') ||
+        s.includes('ئابووری') || s.includes('اقتصاد') || s.includes('Economics') ||
+        s.includes('کۆمەڵناسی') || s.includes('كومه‌ڵناسی') || s.includes('علم الاجتماع') || s.includes('Sociology') ||
+        s.includes('History') || s.includes('Geography') || (s.includes('Social') && !s.includes('Sociology'));
 }
 
 function isGeneralSideSubject(subj) {
     if (!subj) return false;
     const s = subj.trim();
     return s.includes('مافی') || s.includes('مرۆڤ') || s.includes('حقوق') ||
-           s.includes('جینۆساید') || s.includes('جينوسايد') || s.includes('Genocide') ||
-           s.includes('کۆمەڵناسی') || s.includes('كومه‌ڵناسی') || s.includes('علم الاجتماع') || s.includes('Sociology') ||
-           s.includes('دەروونزانی') || s.includes('ده‌روونزانی') || s.includes('علم النفس') || s.includes('Psychology') ||
-           s.includes('ئابووری') || s.includes('اقتصاد') || s.includes('Economics') ||
-           s.includes('کۆمپیوتەر') || s.includes('كومپیوته‌ر') || s.includes('حاسوب') || s.includes('Computer');
+        s.includes('جینۆساید') || s.includes('جينوسايد') || s.includes('Genocide') ||
+        s.includes('کۆمەڵناسی') || s.includes('كومه‌ڵناسی') || s.includes('علم الاجتماع') || s.includes('Sociology') ||
+        s.includes('دەروونزانی') || s.includes('ده‌روونزانی') || s.includes('علم النفس') || s.includes('Psychology') ||
+        s.includes('ئابووری') || s.includes('اقتصاد') || s.includes('Economics') ||
+        s.includes('کۆمپیوتەر') || s.includes('كومپیوته‌ر') || s.includes('حاسوب') || s.includes('Computer');
 }
 
 function isSubsidiarySubject(subj) {
@@ -5512,7 +6844,7 @@ async function applyNisab() {
     if (assignedTeachersList.length > 0) {
         summaryHTML += `<div class="fw-bold text-dark mb-1.5 mt-1" style="font-size:0.82rem;"><i class="fas fa-users-cog me-1 text-primary"></i>${isAr ? 'ملخص توزيع الحصص المتعادل حسب المعلمين' : 'کورتیا دابەشکرنا هاوسەنگ یا وانان ل دیف ماموستایان'} (${assignedTeachersList.length}):</div>`;
         summaryHTML += `<div class="d-flex flex-column gap-1.5 mb-2">`;
-        
+
         assignedTeachersList.forEach(item => {
             const t = item.teacher;
             const limits = getTeacherQuotaLimits(t, schoolType, dynamicTarget);
@@ -5521,7 +6853,7 @@ async function applyNisab() {
             const isNear = Math.abs(load - dynamicTarget) <= 2;
             const badgeClass = isPerfect ? 'bg-success' : (isNear ? 'bg-primary' : (load < limits.min ? 'bg-warning text-dark' : 'bg-secondary'));
             const statusLabel = isPerfect ? (isAr ? 'متعادل' : 'هاوسەنگ') : (isNear ? (isAr ? 'متقارب' : 'نێزیك') : '');
-            
+
             let subjectBadgesHTML = '';
             for (const [sub, data] of Object.entries(item.subjects)) {
                 subjectBadgesHTML += `<span class="badge bg-light text-dark border px-1.5 py-1 fw-normal" style="font-size:0.72rem;"><strong class="text-primary">${sub}</strong> (${data.periods} ${isAr ? 'حصة' : 'وانە'}): ${data.classes.join('، ')}</span> `;
@@ -5567,8 +6899,8 @@ async function applyNisab() {
     }
     summaryHTML += `</div>`;
 
-    const dialogTitle = isAr 
-        ? 'نتيجة التوزيع التلقائي للنصاب' 
+    const dialogTitle = isAr
+        ? 'نتيجة التوزيع التلقائي للنصاب'
         : (currentLang === 'en' ? 'Nisab Distribution Result' : 'ئەنجامێ دابەشکرنا نصابی');
 
     Swal.fire({
@@ -5581,9 +6913,65 @@ async function applyNisab() {
     });
 }
 function renderStatisticsTab() {
-    const container = document.getElementById('statistics-tab-pane'); const schedule = allSchedules[activeScheduleName]; if (!schedule || schedule.teachers.length === 0 || schedule.columns.length === 0) { container.innerHTML = '<div class="p-4"><div class="alert alert-warning">هیچ داتایه‌ك نینه‌ بۆ نیشاندانێ. پێدڤیه‌ ماموستا و پولان و وانان دابه‌ش بكه‌ی.</div></div>'; return; }
+    const isAr = currentLang === 'ar';
+    const container = document.getElementById('statistics-tab-pane');
+    if (!container) return;
+    const schedule = allSchedules[activeScheduleName];
+    if (!schedule || !schedule.teachers || schedule.teachers.length === 0 || !schedule.columns || schedule.columns.length === 0) {
+        container.innerHTML = `
+        <div class="p-1 p-md-2">
+            <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 distribution-toolbar-card no-print">
+                <!-- Row 1: Views & Status -->
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pb-2 mb-2 border-bottom toolbar-row-view">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="toolbar-group-label ms-1">
+                            <i class="fas fa-th-large"></i> ${isAr ? 'عرض' : 'نیشاندان'}
+                        </span>
+                        <div class="d-inline-flex align-items-center gap-1.5 p-1 px-3 rounded-pill bg-light border shadow-xs">
+                            <i class="fas fa-chart-pie text-primary me-1"></i>
+                            <span class="fw-bold">${t('tab_statistics')}</span>
+                        </div>
+                    </div>
+
+                    <div class="d-inline-flex align-items-center gap-1.5 p-1 px-3 rounded-pill bg-light border shadow-xs">
+                        <i class="fas fa-chart-bar text-primary me-1"></i>
+                        <span class="fw-bold text-dark">0 / 0</span>
+                        <span class="small text-muted fw-bold">(0%)</span>
+                    </div>
+
+                    <div>
+                        <span class="badge bg-warning-subtle text-warning border-warning-subtle border rounded-pill px-3 py-1.5" style="font-size: 0.82rem;">
+                            <i class="fas fa-clock me-1"></i>${isAr ? 'لا توجد بيانات' : 'داتا بەردەست نینە'}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Row 2: Actions Group -->
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 toolbar-row-actions">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="toolbar-group-label ms-1">
+                            <i class="fas fa-share-square"></i> ${isAr ? 'تصدير' : 'هنارتن'}
+                        </span>
+                        <button type="button" class="btn btn-sm btn-tb-html shadow-xs" onclick="downloadStatisticsHTML()">
+                            <i class="fas fa-file-code me-1"></i><span>HTML</span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-tb-print shadow-xs" onclick="printStatistics()">
+                            <i class="fas fa-print me-1"></i><span>${t('btn_print')}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="empty-state p-5 bg-white rounded-4 shadow-sm border text-center my-3">
+                <i class="fas fa-chart-pie fa-3x mb-3 text-secondary"></i>
+                <h5 class="fw-bold">${t('tab_statistics')}</h5>
+                <p class="text-muted mb-0">${isAr ? 'لا توجد بيانات للعرض. يرجى إضافة المعلمين والشعب والمواد وتوزيعها أولاً.' : 'هیچ داتایه‌ك نینه‌ بۆ نیشاندانێ. پێدڤیه‌ ماموستا و پولان و وانان دابه‌ش بكه‌ی.'}</p>
+            </div>
+        </div>`;
+        return;
+    }
     const schoolType = schedule?.settings?.milakData?.schoolType || 'سه‌ره‌تایی 1-6';
-    const stagePredefined = typeof getStageSpecializations === 'function' 
+    const stagePredefined = typeof getStageSpecializations === 'function'
         ? getStageSpecializations(schoolType).filter(s => s !== 'یێن دی' && s !== 'شتی تر' && s !== 'أخرى' && s !== 'Other')
         : PREDEFINED_SUBJECTS;
     let rawSubjects = [...stagePredefined, ...schedule.teachers.flatMap(t => (t.subjects || []).map(s => s.name))];
@@ -5641,43 +7029,393 @@ function renderStatisticsTab() {
     distributionDetails.sort((a, b) => a.className.localeCompare(b.className) || a.subjectName.localeCompare(b.subjectName));
     const progressPercentage = totalNisabRequired > 0 ? (totalDistributed / totalNisabRequired) * 100 : 0;
     const selectHTML = `
-        <div class="card p-3 mb-4 shadow-sm border border-light-subtle rounded-3 bg-white no-print">
-            <div class="d-flex align-items-center gap-3 flex-wrap">
+        <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 distribution-toolbar-card no-print">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                 <div class="d-flex align-items-center gap-2">
-                    <div class="bg-primary-subtle text-primary rounded-circle p-2 d-inline-flex justify-content-center align-items-center" style="width: 40px; height: 40px;">
-                        <i class="fas fa-search fs-5"></i>
+                    <div class="header-app-icon-badge" style="width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(145deg, #a5b4fc, #6366f1); box-shadow: 0 4px 10px rgba(99, 102, 241, 0.35), inset 1.5px 1.5px 2px rgba(255, 255, 255, 0.8), inset -1.5px -1.5px 2px rgba(0, 0, 0, 0.15);">
+                        <i class="fas fa-magnifying-glass-chart"></i>
                     </div>
-                    <h6 class="mb-0 fw-bold text-dark-emphasis">${t('select_subject_to_track', 'اختر مادة للمتابعة')}</h6>
+                    <div>
+                        <h6 class="mb-0 fw-bold text-dark-emphasis" style="font-size: 0.96rem;">${t('select_subject_to_track', 'بابەتەکێ هەلبژێرە بۆ دویڤچوونێ')}</h6>
+                        <small class="text-secondary" style="font-size: 0.76rem;">${t('subject_tracker_desc', 'دویڤچوونا دابەشکرنا بابەتی ل سەر پۆل و مامۆستایان')}</small>
+                    </div>
                 </div>
-                <select class="form-select form-select-sm w-auto fs-6 py-2 px-3 fw-semibold border-secondary-subtle rounded-3 shadow-xs" id="subjectTrackerSelect" onchange="renderSubjectTracker(this.value)" style="min-width: 200px;">
-                    ${allSubjects.map(s => `<option value="${s}">${s}</option>`).join('')}
-                </select>
+                <div class="tt-select-clay-capsule">
+                    <div class="tt-select-icon-badge">
+                        <i class="fas fa-book-bookmark"></i>
+                    </div>
+                    <select class="form-select tt-clay-select" id="subjectTrackerSelect" onchange="renderSubjectTracker(this.value)" style="min-width: 180px;">
+                        ${allSubjects.map(s => `<option value="${s}">${s}</option>`).join('')}
+                    </select>
+                    <span class="tt-select-arrow-badge">
+                        <i class="fas fa-chevron-down"></i>
+                    </span>
+                </div>
             </div>
         </div>
     `;
 
-    let contentHTML = `<div class="p-2">
-    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 no-print">
-        <ul class="nav nav-tabs mb-0" role="tablist">
-            <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#stats-summary-pane" type="button"><i class="fas fa-tachometer-alt me-2"></i>${t('tab_statistics')}</button></li>
-            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#stats-teachers-pane" type="button"><i class="fas fa-chalkboard-teacher me-2"></i>${t('download_comp_dist')}</button></li>
-            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#stats-subjects-pane" type="button"><i class="fas fa-book me-2"></i>${t('tab_nisab')}</button></li>
-            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#stats-classes-pane" type="button"><i class="fas fa-school me-2"></i>${t('title_class_tt')}</button></li>
-            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#stats-subject-tracker-pane" type="button"><i class="fas fa-search me-2"></i>${t('tab_subject_tracker')}</button></li>
-        </ul>
-        <div class="d-flex gap-2 align-items-center">
-            <div class="btn-group btn-group-sm">
-                <button type="button" class="btn btn-success fw-bold" onclick="downloadStatisticsHTML()"><i class="fas fa-file-code me-1"></i>HTML</button>
+    let contentHTML = `<div class="p-1 p-md-2">
+    <!-- Statistics Control Toolbar -->
+    <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 distribution-toolbar-card no-print">
+        <!-- Row 1: Views (Sub-tabs) & Distribution Ratio -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pb-2 mb-2 border-bottom toolbar-row-view">
+            <!-- Sub Tabs (Right in RTL) -->
+            <div class="d-flex align-items-center gap-2 flex-wrap toolbar-group-views">
+                <span class="toolbar-group-label ms-1">
+                    <i class="fas fa-th-large"></i> ${isAr ? 'عرض' : 'نیشاندان'}
+                </span>
+                <ul class="tt-view-btn-group nav nav-pills p-0.5 rounded-pill shadow-xs mb-0" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#stats-summary-pane" type="button">
+                            <i class="fas fa-chart-line me-1"></i><span>${t('tab_statistics')}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#stats-teachers-pane" type="button">
+                            <i class="fas fa-user-tie me-1"></i><span>${t('download_comp_dist')}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#stats-subjects-pane" type="button">
+                            <i class="fas fa-clock me-1"></i><span>${t('tab_nisab')}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#stats-classes-pane" type="button">
+                            <i class="fas fa-chalkboard me-1"></i><span>${t('title_class_tt')}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#stats-subject-tracker-pane" type="button">
+                            <i class="fas fa-magnifying-glass-chart me-1"></i><span>${t('tab_subject_tracker')}</span>
+                        </button>
+                    </li>
+                </ul>
             </div>
-            <div class="btn-group btn-group-sm">
-                <button type="button" class="btn btn-primary fw-bold" onclick="printStatistics()"><i class="fas fa-print me-1"></i>${t('btn_print')}</button>
+
+            <!-- Center: Distribution Progress Ratio 3D Clay Capsule -->
+            <div class="tt-context-clay-badge">
+                <div class="tt-select-icon-badge" style="background: linear-gradient(145deg, #38bdf8, #0284c7) !important; box-shadow: 0 3px 8px rgba(2, 132, 199, 0.35) !important;">
+                    <i class="fas fa-chart-pie"></i>
+                </div>
+                <span class="fw-bold text-dark">${totalDistributed} / ${totalNisabRequired}</span>
+                <span class="badge bg-primary text-white rounded-pill px-2.5 py-1 fw-bold shadow-xs">
+                    (${Math.round(progressPercentage)}%)
+                </span>
+            </div>
+
+            <!-- Left: Completion 3D Clay Capsule -->
+            <div>
+                <div class="tt-context-clay-badge" style="background: ${progressPercentage >= 100 ? 'linear-gradient(145deg, #ecfdf5, #d1fae5)' : 'linear-gradient(145deg, #fffbeb, #fef3c7)'} !important; border-color: ${progressPercentage >= 100 ? 'rgba(16, 185, 129, 0.25)' : 'rgba(245, 158, 11, 0.25)'} !important; color: ${progressPercentage >= 100 ? '#065f46' : '#92400e'} !important;">
+                    <i class="fas ${progressPercentage >= 100 ? 'fa-check-double text-success' : 'fa-clock text-warning'} fs-6"></i>
+                    <span class="badge ${progressPercentage >= 100 ? 'bg-success' : 'bg-warning'} text-white rounded-pill px-2.5 py-1 fw-bold shadow-xs">
+                        ${progressPercentage >= 100 ? (isAr ? 'مكتمل' : 'تەواوکراو') : (isAr ? 'قيد التوزيع' : 'د دابەشکرنێ دایە')}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Export Group -->
+        <div class="toolbar-row-actions">
+            <!-- Export Actions Group (Right in RTL) -->
+            <div class="toolbar-group toolbar-group-export">
+                <span class="toolbar-group-label ms-1">
+                    <i class="fas fa-share-nodes"></i> ${isAr ? 'تصدير' : 'هنارتن'}
+                </span>
+
+                <!-- HTML (Mint) -->
+                <button type="button" class="btn btn-sm btn-tb-html" onclick="downloadStatisticsHTML()">
+                    <i class="fas fa-file-code me-1"></i><span>HTML</span>
+                </button>
+
+                <!-- Print (Lilac) -->
+                <button type="button" class="btn btn-sm btn-tb-print" onclick="printStatistics()">
+                    <i class="fas fa-print me-1"></i><span>${t('btn_print')}</span>
+                </button>
             </div>
         </div>
     </div>
-    <div class="tab-content p-2"><div class="tab-pane fade show active" id="stats-summary-pane" role="tabpanel"><h4 class="mb-3">${t('tab_statistics')}</h4><div class="row text-center"><div class="col-md-4 mb-3"><div class="card shadow-sm h-100"><div class="card-body"><h6 class="card-title text-uppercase text-secondary">${t('stat_total_periods')}</h6><p class="fs-1 fw-bold text-primary mb-0">${totalNisabRequired}</p></div></div></div><div class="col-md-4 mb-3"><div class="card shadow-sm h-100"><div class="card-body"><h6 class="card-title text-uppercase text-secondary">${t('col_assigned_total')}</h6><p class="fs-1 fw-bold text-success mb-0">${totalDistributed}</p></div></div></div><div class="col-md-4 mb-3"><div class="card shadow-sm h-100"><div class="card-body"><h6 class="card-title text-uppercase text-secondary">${t('nisab_diff')}</h6><p class="fs-1 fw-bold ${totalNisabRequired - totalDistributed < 0 ? 'text-warning' : 'text-danger'} mb-0">${totalNisabRequired - totalDistributed < 0 ? '+' + Math.abs(totalNisabRequired - totalDistributed) : totalNisabRequired - totalDistributed}</p></div></div></div></div><hr class="my-4"><div class="progress" style="height: 30px; font-size: 1rem;"><div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: ${Math.min(100, Math.max(0, progressPercentage))}%">${Math.round(progressPercentage)}%</div></div></div>
-    <div class="tab-pane fade" id="stats-teachers-pane" role="tabpanel"><h4 class="mb-3">${t('download_comp_dist')}</h4><div class="row">${schedule.teachers.map((tItem) => { const required = (tItem.subjects || []).reduce((sum, s) => sum + Number(s.periods), 0); const distributed = Object.values(tItem.classes || {}).reduce((subSum, classObj) => subSum + Object.values(classObj).reduce((pSum, p) => pSum + Number(p), 0), 0); const diff = distributed - required; let badgeClass = 'bg-success-subtle text-success-emphasis'; let statusText = 'OK'; if (diff < 0) { badgeClass = 'bg-warning-subtle text-warning-emphasis'; statusText = `(${diff})`; } else if (diff > 0) { badgeClass = 'bg-danger-subtle text-danger-emphasis'; statusText = `(+${diff})`; } const percentage = required > 0 ? Math.round((distributed / required) * 100) : (distributed > 0 ? 101 : 0); let progressClass = 'bg-success'; if (percentage > 100) progressClass = 'bg-danger'; else if (percentage < 100) progressClass = 'bg-warning'; const teacherAssignments = distributionDetails.filter(d => d.teacherName === tItem.name); let teacherDetailsHTML = teacherAssignments.length > 0 ? `<div class="mt-3"><div class="d-flex flex-wrap gap-2">${teacherAssignments.map(d => `<div class="d-flex align-items-center bg-light border border-secondary-subtle rounded-3 px-2 py-1 gap-2 shadow-xs"><span class="badge bg-primary-subtle text-primary-emphasis fw-bold">${d.className}</span><span class="small fw-semibold text-dark">${d.subjectName}</span><span class="badge bg-dark-subtle text-dark-emphasis fw-normal">${d.periods}</span></div>`).join('')}</div></div>` : ''; let diffBoxClass = 'bg-success-subtle text-success-emphasis border-success-subtle'; if (diff < 0) diffBoxClass = 'bg-warning-subtle text-warning-emphasis border-warning-subtle'; else if (diff > 0) diffBoxClass = 'bg-danger-subtle text-danger-emphasis border-danger-subtle'; return `<div class="col-xl-6 mb-4"><div class="card h-100 border border-light-subtle shadow-sm rounded-3"><div class="card-header bg-white border-bottom border-light d-flex justify-content-between align-items-center py-3"><h6 class="mb-0 fw-bold text-dark-emphasis"><i class="fas fa-user-circle me-2 text-primary fs-5"></i>${tItem.name}</h6><span class="badge rounded-pill ${badgeClass} px-3 py-2 fs-7">${statusText}</span></div><div class="card-body p-3 d-flex flex-column justify-content-between"><div><div class="d-flex flex-wrap gap-2 mb-3">${tItem.certificate ? `<span class="badge bg-secondary-subtle text-secondary-emphasis fw-normal py-1 px-2 rounded-2 d-inline-flex align-items-center gap-1"><i class="fas fa-graduation-cap"></i>${tItem.certificate}</span>` : ''}${tItem.jobTitle ? `<span class="badge bg-info-subtle text-info-emphasis fw-normal py-1 px-2 rounded-2 d-inline-flex align-items-center gap-1"><i class="fas fa-briefcase"></i>${tItem.jobTitle}</span>` : ''}${tItem.specialization ? `<span class="badge bg-success-subtle text-success-emphasis fw-normal py-1 px-2 rounded-2 d-inline-flex align-items-center gap-1"><i class="fas fa-book-reader"></i>${tItem.specialization}</span>` : ''}</div><div class="d-flex gap-2 mb-3"><div class="flex-fill text-center bg-light border border-light-subtle rounded-3 p-2"><div class="text-secondary small mb-1" style="font-size:0.75rem;">${t('nisab_quota')}</div><div class="fs-5 fw-bold text-dark">${required}</div></div><div class="flex-fill text-center bg-light border border-light-subtle rounded-3 p-2"><div class="text-secondary small mb-1" style="font-size:0.75rem;">${t('col_assigned_total')}</div><div class="fs-5 fw-bold text-primary">${distributed}</div></div><div class="flex-fill text-center border rounded-3 p-2 ${diffBoxClass}"><div class="text-secondary-emphasis small mb-1" style="font-size:0.75rem;">${t('nisab_diff')}</div><div class="fs-5 fw-bold">${diff > 0 ? `+${diff}` : diff}</div></div></div><div class="mb-3"><div class="progress rounded-pill" style="height: 8px;"><div class="progress-bar ${progressClass} rounded-pill" role="progressbar" style="width: ${Math.min(percentage, 100)}%"></div></div></div></div>${teacherDetailsHTML}</div></div></div>`; }).join('')}</div></div>
+    <div class="tab-content p-2">
+        <div class="tab-pane fade show active" id="stats-summary-pane" role="tabpanel">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <div class="tt-select-icon-badge" style="width: 32px; height: 32px; min-width: 32px; background: linear-gradient(145deg, #818cf8, #4f46e5) !important;">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h5 class="mb-0 fw-bold text-dark">${t('tab_statistics')}</h5>
+            </div>
+
+            <!-- 3D Claymorphism Stat Cards -->
+            <div class="row g-3 mb-4">
+                <!-- Card 1: Total Periods Required -->
+                <div class="col-md-4">
+                    <div class="mentor-stat-clay-card">
+                        <div>
+                            <div class="text-muted small fw-bold" style="font-size: 0.8rem;">${t('stat_total_periods')}</div>
+                            <div class="fw-bold text-primary mt-1" style="font-size: 1.8rem; line-height: 1.2;">${totalNisabRequired}</div>
+                        </div>
+                        <div class="mentor-stat-icon-badge" style="background: linear-gradient(145deg, #38bdf8, #0284c7) !important; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35) !important;">
+                            <i class="fas fa-layer-group"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Total Assigned Periods -->
+                <div class="col-md-4">
+                    <div class="mentor-stat-clay-card">
+                        <div>
+                            <div class="text-muted small fw-bold" style="font-size: 0.8rem;">${t('col_assigned_total')}</div>
+                            <div class="fw-bold text-success mt-1" style="font-size: 1.8rem; line-height: 1.2;">${totalDistributed}</div>
+                        </div>
+                        <div class="mentor-stat-icon-badge" style="background: linear-gradient(145deg, #34d399, #059669) !important; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35) !important;">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Difference -->
+                <div class="col-md-4">
+                    <div class="mentor-stat-clay-card">
+                        <div>
+                            <div class="text-muted small fw-bold" style="font-size: 0.8rem;">${t('nisab_diff')}</div>
+                            <div class="fw-bold ${totalNisabRequired - totalDistributed < 0 ? 'text-warning' : (totalNisabRequired === totalDistributed ? 'text-success' : 'text-danger')} mt-1" style="font-size: 1.8rem; line-height: 1.2;">
+                                ${totalNisabRequired - totalDistributed < 0 ? '+' + Math.abs(totalNisabRequired - totalDistributed) : totalNisabRequired - totalDistributed}
+                            </div>
+                        </div>
+                        <div class="mentor-stat-icon-badge" style="background: ${totalNisabRequired === totalDistributed ? 'linear-gradient(145deg, #34d399, #059669)' : (totalNisabRequired - totalDistributed < 0 ? 'linear-gradient(145deg, #fbbf24, #d97706)' : 'linear-gradient(145deg, #f87171, #dc2626)')} !important; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;">
+                            <i class="fas fa-scale-balanced"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Claymorphic Progress Capsule Bar -->
+            <div class="p-3 rounded-4" style="background: linear-gradient(145deg, #ffffff, #f8fafc); box-shadow: 0 4px 14px -2px rgba(100, 116, 139, 0.12), inset 2px 2px 4px rgba(255, 255, 255, 0.95), inset -2px -2px 4px rgba(0, 0, 0, 0.04); border: 1.5px solid rgba(255, 255, 255, 0.95);">
+                <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+                    <span class="small fw-bold text-muted"><i class="fas fa-percent me-1.5 text-primary"></i>${isAr ? 'نسبة الإنجاز الكلية للمواد والحصص' : 'رێژەیا تەمامکرنێ یا گشتی یا وانە و بەهران'}</span>
+                    <span class="badge ${progressPercentage >= 100 ? 'bg-success' : 'bg-primary'} rounded-pill px-3 py-1 fw-bold shadow-xs">${Math.round(progressPercentage)}%</span>
+                </div>
+                <div class="progress rounded-pill overflow-hidden" style="height: 22px; background: rgba(0, 0, 0, 0.05); box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.1);">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated rounded-pill fw-bold" role="progressbar" style="width: ${Math.min(100, Math.max(0, progressPercentage))}%; background: linear-gradient(145deg, #34d399, #059669) !important; font-size: 0.85rem; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.4);">
+                        ${Math.round(progressPercentage)}%
+                    </div>
+                </div>
+            </div>
+        </div>
+    <div class="tab-pane fade" id="stats-teachers-pane" role="tabpanel">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <div class="tt-select-icon-badge" style="width: 32px; height: 32px; min-width: 32px; background: linear-gradient(145deg, #38bdf8, #0284c7) !important;">
+                <i class="fas fa-chalkboard-user"></i>
+            </div>
+            <h5 class="mb-0 fw-bold text-dark">${t('download_comp_dist')}</h5>
+        </div>
+        <div class="row g-3">${schedule.teachers.map((tItem) => {
+        const required = (tItem.subjects || []).reduce((sum, s) => sum + Number(s.periods), 0);
+        const distributed = Object.values(tItem.classes || {}).reduce((subSum, classObj) => subSum + Object.values(classObj).reduce((pSum, p) => pSum + Number(p), 0), 0);
+        const diff = distributed - required;
+
+        let badgeBg = 'linear-gradient(145deg, #ecfdf5, #d1fae5)';
+        let badgeColor = '#065f46';
+        let badgeBorder = 'rgba(16, 185, 129, 0.25)';
+        let statusText = 'OK';
+        let statusIcon = 'fa-check';
+
+        if (diff < 0) {
+            badgeBg = 'linear-gradient(145deg, #fffbeb, #fef3c7)';
+            badgeColor = '#92400e';
+            badgeBorder = 'rgba(245, 158, 11, 0.25)';
+            statusText = `(${diff})`;
+            statusIcon = 'fa-minus';
+        } else if (diff > 0) {
+            badgeBg = 'linear-gradient(145deg, #fef2f2, #fee2e2)';
+            badgeColor = '#991b1b';
+            badgeBorder = 'rgba(239, 68, 68, 0.25)';
+            statusText = `(+${diff})`;
+            statusIcon = 'fa-plus';
+        }
+
+        const percentage = required > 0 ? Math.round((distributed / required) * 100) : (distributed > 0 ? 101 : 0);
+        let progressGradient = 'linear-gradient(145deg, #34d399, #059669)';
+        if (percentage > 100) progressGradient = 'linear-gradient(145deg, #f87171, #dc2626)';
+        else if (percentage < 100) progressGradient = 'linear-gradient(145deg, #fbbf24, #d97706)';
+
+        const teacherAssignments = distributionDetails.filter(d => d.teacherName === tItem.name);
+        let teacherDetailsHTML = teacherAssignments.length > 0 ? `
+                <div class="mt-3 pt-2 border-top">
+                    <div class="d-flex flex-wrap gap-1.5">
+                        ${teacherAssignments.map(d => `
+                            <div class="d-inline-flex align-items-center rounded-pill px-2.5 py-1 gap-1.5 shadow-xs" style="background: linear-gradient(145deg, #ffffff, #f1f5f9); border: 1px solid rgba(226, 232, 240, 0.9);">
+                                <span class="badge bg-primary text-white rounded-pill px-2 py-0.5 fw-bold" style="font-size: 0.72rem;">${d.className}</span>
+                                <span class="small fw-bold text-dark" style="font-size: 0.78rem;">${d.subjectName}</span>
+                                <span class="badge bg-light text-primary border rounded-pill px-1.5 py-0.5 fw-bold" style="font-size: 0.72rem;">${d.periods}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>` : '';
+
+        let diffTextColor = 'text-success';
+        let diffBgColor = 'linear-gradient(145deg, #ecfdf5, #d1fae5)';
+        if (diff < 0) {
+            diffTextColor = 'text-warning';
+            diffBgColor = 'linear-gradient(145deg, #fffbeb, #fef3c7)';
+        } else if (diff > 0) {
+            diffTextColor = 'text-danger';
+            diffBgColor = 'linear-gradient(145deg, #fef2f2, #fee2e2)';
+        }
+
+        return `
+            <div class="col-xl-6 mb-3">
+                <div class="teacher-report-clay-card">
+                    <div>
+                        <!-- Header: Teacher Avatar + Name + Status Badge -->
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex align-items-center gap-2.5">
+                                <div class="tt-select-icon-badge" style="width: 38px; height: 38px; min-width: 38px; background: linear-gradient(145deg, #38bdf8, #0284c7) !important; font-size: 1rem;">
+                                    <i class="fas fa-user-tie"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 fw-bold text-dark" style="font-size: 1.02rem;">${tItem.name}</h6>
+                                </div>
+                            </div>
+                            <div class="tt-context-clay-badge" style="background: ${badgeBg} !important; color: ${badgeColor} !important; border-color: ${badgeBorder} !important; height: 32px; min-height: 32px; padding: 0.2rem 0.8rem;">
+                                <i class="fas ${statusIcon} fs-7"></i>
+                                <span class="small fw-bold">${statusText}</span>
+                            </div>
+                        </div>
+
+                        <!-- Meta Tags: Degree, Role, Subject -->
+                        <div class="d-flex flex-wrap gap-1.5 mb-3">
+                            ${tItem.certificate ? `<span class="badge rounded-pill px-2.5 py-1 fw-bold" style="background: linear-gradient(145deg, #f1f5f9, #e2e8f0); color: #475569; border: 1px solid rgba(255,255,255,0.8); font-size: 0.74rem;"><i class="fas fa-graduation-cap text-primary me-1"></i>${tItem.certificate}</span>` : ''}
+                            ${tItem.jobTitle ? `<span class="badge rounded-pill px-2.5 py-1 fw-bold" style="background: linear-gradient(145deg, #e0f2fe, #bae6fd); color: #0369a1; border: 1px solid rgba(255,255,255,0.8); font-size: 0.74rem;"><i class="fas fa-briefcase text-info me-1"></i>${tItem.jobTitle}</span>` : ''}
+                            ${tItem.specialization ? `<span class="badge rounded-pill px-2.5 py-1 fw-bold" style="background: linear-gradient(145deg, #dcfce7, #bbf7d0); color: #15803d; border: 1px solid rgba(255,255,255,0.8); font-size: 0.74rem;"><i class="fas fa-book-reader text-success me-1"></i>${tItem.specialization}</span>` : ''}
+                        </div>
+
+                        <!-- 3 Mini Clay Stat Boxes: Quota, Assigned, Difference -->
+                        <div class="row g-2 mb-3">
+                            <div class="col-4">
+                                <div class="stat-mini-clay-box">
+                                    <div class="small fw-bold text-muted mb-0.5" style="font-size: 0.72rem;">${t('nisab_quota')}</div>
+                                    <div class="fs-5 fw-bold text-dark">${required}</div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="stat-mini-clay-box">
+                                    <div class="small fw-bold text-muted mb-0.5" style="font-size: 0.72rem;">${t('col_assigned_total')}</div>
+                                    <div class="fs-5 fw-bold text-primary">${distributed}</div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="stat-mini-clay-box" style="background: ${diffBgColor} !important;">
+                                    <div class="small fw-bold text-muted mb-0.5" style="font-size: 0.72rem;">${t('nisab_diff')}</div>
+                                    <div class="fs-5 fw-bold ${diffTextColor}">${diff > 0 ? `+${diff}` : diff}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Progress Bar Capsule -->
+                        <div class="mb-2 p-1 rounded-pill" style="background: rgba(0, 0, 0, 0.04); box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.08);">
+                            <div class="progress rounded-pill overflow-hidden" style="height: 9px; background: transparent;">
+                                <div class="progress-bar rounded-pill" role="progressbar" style="width: ${Math.min(percentage, 100)}%; background: ${progressGradient} !important; box-shadow: 0 2px 4px rgba(0,0,0,0.15);"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    ${teacherDetailsHTML}
+                </div>
+            </div>`;
+    }).join('')}</div>
+    </div>
     <div class="tab-pane fade" id="stats-subjects-pane" role="tabpanel"><h4 class="mb-3">${t('tab_nisab')}</h4><div class="table-responsive"><table class="table table-striped table-hover"><thead class="table-light"><tr><th>${t('col_subject')}</th><th>${t('nisab_quota')}</th><th>${t('col_assigned_total')}</th><th>${t('nisab_diff')}</th><th>%</th></tr></thead><tbody>${subjectStatus.map(s => { const diff = s.distributed - s.required; let diffClass = diff < 0 ? 'text-danger' : diff > 0 ? 'text-warning' : 'text-success'; const percentage = s.required > 0 ? Math.round((s.distributed / s.required) * 100) : (s.distributed > 0 ? 100 : 0); let progressClass = percentage < 50 ? 'bg-danger' : percentage < 100 ? 'bg-warning' : 'bg-success'; return `<tr><td>${s.name}</td><td>${s.required}</td><td>${s.distributed}</td><td class="fw-bold ${diffClass}">${diff > 0 ? '+' : ''}${diff}</td><td><div class="progress" style="height: 20px;"><div class="progress-bar ${progressClass}" role="progressbar" style="width: ${percentage}%">${percentage}%</div></div></td></tr>`; }).join('')}</tbody></table></div></div>
-    <div class="tab-pane fade" id="stats-classes-pane" role="tabpanel"><h4 class="mb-3">${t('title_class_tt')}</h4><div class="row">${Object.entries(classDetails).map(([className, classData]) => { const grade = getGradeFromClassName(className); const requiredSubjects = {}; if (grade && schedule.nisab) { for (const subject in schedule.nisab) { if (schedule.nisab[subject][grade]) requiredSubjects[subject] = schedule.nisab[subject][grade]; } } const allClassSubjects = [...new Set([...Object.keys(requiredSubjects), ...Object.keys(classData.subjects)])].sort(); let totalRequired = Object.values(requiredSubjects).reduce((a, b) => a + Number(b), 0); let totalDistributedInClass = classData.total; let statusBadge = ''; if (totalRequired > 0) { if (totalDistributedInClass === totalRequired) statusBadge = `<span class="badge bg-success-subtle text-success-emphasis rounded-pill">OK</span>`; else if (totalDistributedInClass > totalRequired) statusBadge = `<span class="badge bg-warning-subtle text-warning-emphasis rounded-pill">+</span>`; else statusBadge = `<span class="badge bg-danger-subtle text-danger-emphasis rounded-pill">-</span>`; } return `<div class="col-xl-4 col-md-6 mb-4"><div class="card h-100 shadow-sm"><div class="card-header d-flex justify-content-between align-items-center"><h6 class="mb-0 fw-bold"><i class="fas fa-school me-2"></i>${t('col_class')} ${className}</h6>${statusBadge}</div><div class="card-body p-0"><ul class="list-group list-group-flush"><li class="list-group-item d-flex justify-content-between fw-bold bg-light-subtle"><span>${t('grand_total')}</span><span>${totalDistributedInClass}</span></li>${allClassSubjects.length > 0 ? allClassSubjects.map(subject => { const required = requiredSubjects[subject] || 0; const distributed = classData.subjects[subject] || 0; let icon = ''; if (required > 0) { if (distributed === required) icon = '<i class="fas fa-check-circle text-success"></i>'; else if (distributed < required) icon = '<i class="fas fa-exclamation-circle text-warning"></i>'; else icon = '<i class="fas fa-arrow-alt-circle-up text-info"></i>'; } else if (distributed > 0) { icon = '<i class="fas fa-plus-circle text-primary"></i>'; } return `<li class="list-group-item d-flex justify-content-between align-items-center small"><div>${icon ? icon + ' ' : ''}${subject}</div><span><span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis fw-normal">${required}</span><span class="badge rounded-pill bg-primary-subtle text-primary-emphasis fw-normal">${distributed}</span></span></li>`; }).join('') : ''}</ul></div></div></div>`; }).join('')}</div></div>
+    <div class="tab-pane fade" id="stats-classes-pane" role="tabpanel">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <div class="tt-select-icon-badge" style="width: 32px; height: 32px; min-width: 32px; background: linear-gradient(145deg, #818cf8, #4f46e5) !important;">
+                <i class="fas fa-chalkboard"></i>
+            </div>
+            <h5 class="mb-0 fw-bold text-dark">${t('title_class_tt')}</h5>
+        </div>
+        <div class="row g-3">${Object.entries(classDetails).map(([className, classData]) => {
+        const grade = getGradeFromClassName(className);
+        const requiredSubjects = {};
+        if (grade && schedule.nisab) {
+            for (const subject in schedule.nisab) {
+                if (schedule.nisab[subject][grade]) requiredSubjects[subject] = schedule.nisab[subject][grade];
+            }
+        }
+        const allClassSubjects = [...new Set([...Object.keys(requiredSubjects), ...Object.keys(classData.subjects)])].sort();
+        let totalRequired = Object.values(requiredSubjects).reduce((a, b) => a + Number(b), 0);
+        let totalDistributedInClass = classData.total;
+
+        let statusBadge = '';
+        if (totalRequired > 0) {
+            if (totalDistributedInClass === totalRequired) {
+                statusBadge = `<div class="tt-context-clay-badge" style="background: linear-gradient(145deg, #ecfdf5, #d1fae5) !important; color: #065f46 !important; border-color: rgba(16, 185, 129, 0.25) !important; height: 30px; min-height: 30px; padding: 0.2rem 0.75rem;"><i class="fas fa-check fs-7"></i><span class="small fw-bold">OK</span></div>`;
+            } else if (totalDistributedInClass > totalRequired) {
+                statusBadge = `<div class="tt-context-clay-badge" style="background: linear-gradient(145deg, #fef2f2, #fee2e2) !important; color: #991b1b !important; border-color: rgba(239, 68, 68, 0.25) !important; height: 30px; min-height: 30px; padding: 0.2rem 0.75rem;"><i class="fas fa-plus fs-7"></i><span class="small fw-bold">+${totalDistributedInClass - totalRequired}</span></div>`;
+            } else {
+                statusBadge = `<div class="tt-context-clay-badge" style="background: linear-gradient(145deg, #fffbeb, #fef3c7) !important; color: #92400e !important; border-color: rgba(245, 158, 11, 0.25) !important; height: 30px; min-height: 30px; padding: 0.2rem 0.75rem;"><i class="fas fa-minus fs-7"></i><span class="small fw-bold">-${totalRequired - totalDistributedInClass}</span></div>`;
+            }
+        }
+
+        return `
+            <div class="col-xl-4 col-md-6 mb-3">
+                <div class="teacher-report-clay-card">
+                    <div>
+                        <!-- Header: Class Icon + Name + Status Badge -->
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex align-items-center gap-2.5">
+                                <div class="tt-select-icon-badge" style="width: 36px; height: 36px; min-width: 36px; background: linear-gradient(145deg, #818cf8, #6366f1) !important; font-size: 0.95rem;">
+                                    <i class="fas fa-school"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 fw-bold text-dark" style="font-size: 1.05rem;">${t('col_class')} ${className}</h6>
+                                </div>
+                            </div>
+                            ${statusBadge}
+                        </div>
+
+                        <!-- Grand Total Capsule -->
+                        <div class="d-flex justify-content-between align-items-center p-2 px-3 rounded-pill mb-3" style="background: linear-gradient(145deg, #f1f5f9, #e2e8f0); box-shadow: inset 1px 1px 3px rgba(255,255,255,0.9), inset -1px -1px 3px rgba(0,0,0,0.06); border: 1px solid rgba(255,255,255,0.8);">
+                            <span class="small fw-bold text-muted"><i class="fas fa-layer-group text-primary me-1.5"></i>${t('grand_total')}:</span>
+                            <span class="badge bg-primary text-white rounded-pill px-2.5 py-1 fw-bold fs-6 shadow-xs">${totalDistributedInClass}</span>
+                        </div>
+
+                        <!-- Subject List Items -->
+                        <div class="subject-list-container pe-1">
+                            ${allClassSubjects.length > 0 ? allClassSubjects.map(subject => {
+            const required = requiredSubjects[subject] || 0;
+            const distributed = classData.subjects[subject] || 0;
+
+            let dotColor = '#10b981';
+            if (required > 0) {
+                if (distributed === required) dotColor = '#10b981';
+                else if (distributed < required) dotColor = '#f59e0b';
+                else dotColor = '#0284c7';
+            } else if (distributed > 0) {
+                dotColor = '#6366f1';
+            }
+
+            const distBadgeBg = (distributed === required && required > 0)
+                ? 'background: #dcfce7; color: #15803d;'
+                : (distributed < required ? 'background: #fef3c7; color: #b45309;' : 'background: #e0f2fe; color: #0369a1;');
+
+            return `
+                                <div class="d-flex justify-content-between align-items-center subject-clay-row mb-1.5">
+                                    <div class="d-flex align-items-center gap-2 text-truncate pe-1">
+                                        <div class="tt-status-dot" style="background: ${dotColor}; box-shadow: 0 1px 3px ${dotColor}88;"></div>
+                                        <span class="small fw-bold text-dark text-truncate" style="font-size: 0.84rem;">${subject}</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-1.5 flex-shrink-0">
+                                        <span class="badge rounded-pill fw-bold" style="background: #e2e8f0; color: #475569; font-size: 0.72rem; min-width: 24px;" title="${t('nisab_quota')}">${required}</span>
+                                        <span class="badge rounded-pill fw-bold" style="${distBadgeBg} font-size: 0.72rem; min-width: 24px;" title="${t('col_assigned_total')}">${distributed}</span>
+                                    </div>
+                                </div>`;
+        }).join('') : '<div class="text-center text-muted py-3 small">هیچ وانه‌یه‌ك نه‌هاتیه‌ دانان</div>'}
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+    }).join('')}</div>
+    </div>
     <div class="tab-pane fade" id="stats-subject-tracker-pane" role="tabpanel"><h4 class="mb-3">${t('tab_subject_tracker')}</h4>${selectHTML}<div id="subjectTrackerContent"></div></div>
     </div></div>`;
     container.innerHTML = contentHTML;
@@ -5929,78 +7667,109 @@ function renderSubjectTracker(subjectName) {
     });
 
     let html = `
-        <div class="row mt-1">
-            <div class="col-md-6 mb-4">
-                <div class="card h-100 shadow-sm rounded-4 border-0 overflow-hidden" style="border-top: 5px solid var(--bs-success) !important;">
-                    <div class="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px;">
-                                <i class="fas fa-check fs-7"></i>
-                            </span>
-                            <h5 class="mb-0 fw-bold text-success-emphasis" style="font-size: 1.1rem;">${t('classes_distributed', 'الصفوف التي تم التوزيع فيها')}</h5>
+        <div class="row mt-1 g-3">
+            <!-- Distributed Classes Column -->
+            <div class="col-md-6 mb-3">
+                <div class="teacher-report-clay-card" style="padding: 1.25rem !important;">
+                    <div class="d-flex justify-content-between align-items-center pb-3 mb-3 border-bottom border-light-subtle">
+                        <div class="d-flex align-items-center gap-2.5">
+                            <div class="header-app-icon-badge" style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(145deg, #86efac, #10b981); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.35), inset 2px 2px 3px rgba(255, 255, 255, 0.8), inset -2px -2px 3px rgba(0, 0, 0, 0.12);">
+                                <i class="fas fa-check" style="font-size: 1rem;"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0 fw-bold text-success-emphasis" style="font-size: 1.05rem;">${t('classes_distributed', 'پۆلین هاتینە دابەشکرن')}</h5>
+                                <small class="text-secondary" style="font-size: 0.75rem;">${t('distributed_classes_desc', 'ئەو پۆلێن مامۆستا بۆ هاتیە دانان')}</small>
+                            </div>
                         </div>
-                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis px-3 py-1.5 fw-bold" style="font-size: 0.85rem;">${distributedClasses.length} ${t('col_class', 'پول')}</span>
+                        <span class="tt-context-clay-badge" style="height: 32px; min-height: 32px; padding: 0.2rem 0.85rem; font-size: 0.82rem; background: linear-gradient(145deg, #dcfce7, #bbf7d0); color: #166534; border-color: rgba(255, 255, 255, 0.9); box-shadow: 0 3px 8px -2px rgba(22, 163, 74, 0.25), inset 1.5px 1.5px 2px rgba(255, 255, 255, 0.9), inset -1.5px -1.5px 2px rgba(0, 0, 0, 0.05);">
+                            <i class="fas fa-circle-check ms-1" style="color: #16a34a;"></i>${distributedClasses.length} ${t('col_class', 'پول')}
+                        </span>
                     </div>
-                    <div class="card-body p-3 pt-0">
+                    <div>
                         ${distributedClasses.length > 0 ? `
-                            <div class="d-flex flex-column gap-2" style="max-height: 550px; overflow-y: auto; padding: 2px;">
+                            <div class="d-flex flex-column gap-2" style="max-height: 560px; overflow-y: auto; padding: 2px;">
                                 ${distributedClasses.map(c => `
-                                    <div class="d-flex justify-content-between align-items-center p-3 rounded-3 bg-light border border-light-subtle hover-shadow transition-all">
+                                    <div class="subject-clay-row d-flex justify-content-between align-items-center py-2.5 px-3">
                                         <div class="d-flex align-items-center gap-3">
-                                            <span class="badge bg-success text-white px-2.5 py-1.5 rounded-2 fw-bold" style="font-size: 0.85rem; min-width: 65px; text-align: center;">${t('col_class')} ${c.className}</span>
-                                            <div class="d-flex flex-column">
-                                                <span class="fw-bold text-dark-emphasis" style="font-size: 0.95rem;">${c.teacherName}</span>
-                                                <span class="text-secondary small" style="font-size: 0.8rem;">${subjectName}</span>
+                                            <span class="badge rounded-pill fw-bold text-white px-3 py-2 shadow-xs" style="background: linear-gradient(145deg, #4ade80, #16a34a); box-shadow: 0 3px 8px rgba(22, 163, 74, 0.25), inset 1px 1px 2px rgba(255, 255, 255, 0.5); font-size: 0.84rem; min-width: 75px; text-align: center;">
+                                                <i class="fas fa-graduation-cap ms-1"></i>${t('col_class')} ${c.className}
+                                            </span>
+                                            <div class="d-flex flex-column text-start">
+                                                <span class="fw-bold text-dark-emphasis d-flex align-items-center gap-1.5" style="font-size: 0.95rem;">
+                                                    <i class="fas fa-chalkboard-user text-primary opacity-75"></i>${c.teacherName}
+                                                </span>
+                                                <span class="text-secondary small fw-medium d-flex align-items-center gap-1 mt-0.5" style="font-size: 0.8rem;">
+                                                    <i class="fas fa-book-open opacity-50"></i>${subjectName}
+                                                </span>
                                             </div>
                                         </div>
-                                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis border border-success-subtle px-3 py-1.5 fw-bold" style="font-size: 0.85rem;">${c.periods} ${t('col_subject', 'وانە')}</span>
+                                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis border border-success-subtle px-3 py-2 fw-bold" style="font-size: 0.83rem; box-shadow: 0 2px 5px rgba(0,0,0,0.03);">
+                                            <i class="fas fa-clock ms-1"></i>${c.periods} ${t('col_subject', 'وانە')}
+                                        </span>
                                     </div>
                                 `).join('')}
                             </div>
                         ` : `
-                            <div class="text-center py-5 text-muted">
-                                <div class="bg-success-subtle text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
-                                    <i class="fas fa-check-double fa-2x"></i>
+                            <div class="text-center py-5">
+                                <div class="header-app-icon-badge mx-auto mb-3" style="width: 65px; height: 65px; border-radius: 50%; font-size: 1.8rem; background: linear-gradient(145deg, #e2e8f0, #cbd5e1); color: #64748b; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), inset 2px 2px 3px rgba(255, 255, 255, 0.9), inset -2px -2px 3px rgba(0, 0, 0, 0.1);">
+                                    <i class="fas fa-inbox"></i>
                                 </div>
-                                <p class="mb-0 fw-semibold">${t('no_classes_for_subject', 'لا توجد صفوف')}</p>
+                                <h6 class="fw-bold text-dark-emphasis mb-1">${t('no_classes_for_subject', 'هیچ پولەک نەهاتیە دیتن')}</h6>
+                                <p class="text-secondary small mb-0">${t('no_classes_assigned_yet', 'هێشتا چ پول بۆ ڤی بابەتی نەهاتینە دابەشکرن')}</p>
                             </div>
                         `}
                     </div>
                 </div>
             </div>
-            <div class="col-md-6 mb-4">
-                <div class="card h-100 shadow-sm rounded-4 border-0 overflow-hidden" style="border-top: 5px solid var(--bs-danger) !important;">
-                    <div class="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="bg-danger text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px;">
-                                <i class="fas fa-exclamation fs-7"></i>
-                            </span>
-                            <h5 class="mb-0 fw-bold text-danger-emphasis" style="font-size: 1.1rem;">${t('classes_not_distributed', 'الصفوف التي لم يتم التوزيع فيها')}</h5>
+
+            <!-- Not Distributed Classes Column -->
+            <div class="col-md-6 mb-3">
+                <div class="teacher-report-clay-card" style="padding: 1.25rem !important;">
+                    <div class="d-flex justify-content-between align-items-center pb-3 mb-3 border-bottom border-light-subtle">
+                        <div class="d-flex align-items-center gap-2.5">
+                            <div class="header-app-icon-badge" style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(145deg, #fca5a5, #ef4444); box-shadow: 0 4px 10px rgba(239, 68, 68, 0.35), inset 2px 2px 3px rgba(255, 255, 255, 0.8), inset -2px -2px 3px rgba(0, 0, 0, 0.12);">
+                                <i class="fas fa-exclamation" style="font-size: 1rem;"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0 fw-bold text-danger-emphasis" style="font-size: 1.05rem;">${t('classes_not_distributed', 'پۆلین نەهاتینە دابەشکرن')}</h5>
+                                <small class="text-secondary" style="font-size: 0.75rem;">${t('unassigned_classes_desc', 'پۆلێن پێتڤی ب دانانا مامۆستای')}</small>
+                            </div>
                         </div>
-                        <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis px-3 py-1.5 fw-bold" style="font-size: 0.85rem;">${notDistributedClasses.length} ${t('col_class', 'پول')}</span>
+                        <span class="tt-context-clay-badge" style="height: 32px; min-height: 32px; padding: 0.2rem 0.85rem; font-size: 0.82rem; background: linear-gradient(145deg, #fee2e2, #fecaca); color: #991b1b; border-color: rgba(255, 255, 255, 0.9); box-shadow: 0 3px 8px -2px rgba(239, 68, 68, 0.25), inset 1.5px 1.5px 2px rgba(255, 255, 255, 0.9), inset -1.5px -1.5px 2px rgba(0, 0, 0, 0.05);">
+                            <i class="fas fa-circle-exclamation ms-1" style="color: #ef4444;"></i>${notDistributedClasses.length} ${t('col_class', 'پول')}
+                        </span>
                     </div>
-                    <div class="card-body p-3 pt-0">
+                    <div>
                         ${notDistributedClasses.length > 0 ? `
-                            <div class="d-flex flex-column gap-2" style="max-height: 550px; overflow-y: auto; padding: 2px;">
+                            <div class="d-flex flex-column gap-2" style="max-height: 560px; overflow-y: auto; padding: 2px;">
                                 ${notDistributedClasses.map(c => `
-                                    <div class="d-flex justify-content-between align-items-center p-3 rounded-3 bg-light border border-light-subtle hover-shadow transition-all">
+                                    <div class="subject-clay-row d-flex justify-content-between align-items-center py-2.5 px-3">
                                         <div class="d-flex align-items-center gap-3">
-                                            <span class="badge bg-danger text-white px-2.5 py-1.5 rounded-2 fw-bold" style="font-size: 0.85rem; min-width: 65px; text-align: center;">${t('col_class')} ${c.className}</span>
-                                            <div class="d-flex flex-column">
-                                                <span class="fw-bold text-dark-emphasis" style="font-size: 0.95rem;">${t('stat_total_periods', 'نه‌هاتیه‌ دابه‌شكرن')}</span>
-                                                <span class="text-secondary small" style="font-size: 0.8rem;">${subjectName}</span>
+                                            <span class="badge rounded-pill fw-bold text-white px-3 py-2 shadow-xs" style="background: linear-gradient(145deg, #f87171, #dc2626); box-shadow: 0 3px 8px rgba(220, 38, 38, 0.25), inset 1px 1px 2px rgba(255, 255, 255, 0.5); font-size: 0.84rem; min-width: 75px; text-align: center;">
+                                                <i class="fas fa-graduation-cap ms-1"></i>${t('col_class')} ${c.className}
+                                            </span>
+                                            <div class="d-flex flex-column text-start">
+                                                <span class="fw-bold text-danger d-flex align-items-center gap-1.5" style="font-size: 0.95rem;">
+                                                    <i class="fas fa-triangle-exclamation text-danger opacity-75"></i>${t('stat_total_periods', 'نه‌هاتیه‌ دابه‌شكرن')}
+                                                </span>
+                                                <span class="text-secondary small fw-medium d-flex align-items-center gap-1 mt-0.5" style="font-size: 0.8rem;">
+                                                    <i class="fas fa-book-open opacity-50"></i>${subjectName}
+                                                </span>
                                             </div>
                                         </div>
-                                        <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis border border-danger-subtle px-3 py-1.5 fw-bold" style="font-size: 0.85rem;">${c.requiredPeriods} ${t('col_subject', 'وانە')} (${t('nisab_quota', 'نصاب')})</span>
+                                        <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis border border-danger-subtle px-3 py-2 fw-bold" style="font-size: 0.83rem; box-shadow: 0 2px 5px rgba(0,0,0,0.03);">
+                                            <i class="fas fa-hourglass-half ms-1"></i>${c.requiredPeriods} ${t('col_subject', 'وانە')} (${t('nisab_quota', 'نصاب')})
+                                        </span>
                                     </div>
                                 `).join('')}
                             </div>
                         ` : `
-                            <div class="text-center py-5 text-muted">
-                                <div class="bg-success-subtle text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
-                                    <i class="fas fa-check-circle fa-2x"></i>
+                            <div class="text-center py-5">
+                                <div class="header-app-icon-badge mx-auto mb-3" style="width: 65px; height: 65px; border-radius: 50%; font-size: 1.8rem; background: linear-gradient(145deg, #86efac, #10b981); color: #ffffff; box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35), inset 2px 2px 3px rgba(255, 255, 255, 0.8), inset -2px -2px 3px rgba(0, 0, 0, 0.12);">
+                                    <i class="fas fa-circle-check"></i>
                                 </div>
-                                <p class="mb-0 fw-semibold">${t('no_classes_for_subject', 'لا توجد صفوف')}</p>
+                                <h6 class="fw-bold text-success-emphasis mb-1">${t('all_classes_distributed', 'هەمی پۆل هاتینە دابەشکرن')}</h6>
+                                <p class="text-secondary small mb-0">${t('no_classes_for_subject', 'هیچ پولەک بۆ ڤی بابەتی نەهاتیە دیتن بێ دابەشکرن')}</p>
                             </div>
                         `}
                     </div>
@@ -6604,7 +8373,7 @@ function formatMasterCellContent(subjectText, teacherText) {
     if (subj === 'تربية إسلامية' || subj === 'تربية اسلامية') {
         subj = 'إسلامية';
     }
-    
+
     let subjFontSize = '6.5pt';
     let letterSpacing = 'normal';
     if (subj.length >= 9) {
@@ -8767,7 +10536,7 @@ function openSubstituteTeacherModal() {
 
     const isAr = (currentLang === 'ar');
     const allTeachers = Array.isArray(schedule.teachers) ? schedule.teachers : [];
-    
+
     // Default: if substituteSelectedTeacherIds is not defined, select all non-admin, non-leave teachers
     let selectedIds;
     if (Array.isArray(schedule.substituteSelectedTeacherIds) && schedule.substituteSelectedTeacherIds.length > 0) {
@@ -8821,10 +10590,10 @@ function openSubstituteTeacherModal() {
         confirmButtonColor: '#198754',
         cancelButtonColor: '#6c757d',
         didOpen: () => {
-            window.setAllSubstituteTeachers = function(check) {
+            window.setAllSubstituteTeachers = function (check) {
                 document.querySelectorAll('.sub-cand-check').forEach(chk => chk.checked = check);
             };
-            window.setSubstituteTeachersExcludeAdmin = function() {
+            window.setSubstituteTeachersExcludeAdmin = function () {
                 allTeachers.forEach(t => {
                     const chk = document.getElementById(`chkSubCand_${t.id}`);
                     if (!chk) return;
@@ -8925,7 +10694,7 @@ function renderSubstituteTab() {
 }
 window.renderSubstituteTab = renderSubstituteTab;
 
-window.selectAbsentTeacherQuick = function(tName) {
+window.selectAbsentTeacherQuick = function (tName) {
     const subTeacherSelect = document.getElementById('substituteTeacherSelect');
     if (subTeacherSelect) {
         subTeacherSelect.value = tName;
@@ -9085,29 +10854,35 @@ function renderSubstituteFinder(schedule, container, days, periodsCount) {
         days.map((dName, dIdx) => `<option value="${dIdx}" ${String(dIdx) === String(selectedDayVal) ? 'selected' : ''}>${dName}</option>`).join('');
 
     // Build the Top Sub-View Bar
+    // Build the Top Sub-View Bar
     const subViewBarHtml = `
-        <div class="substitute-header-card mb-3">
-            <!-- Tier 1: View Navigation Tabs (Right in RTL) & Status Context Badges (Left in RTL) -->
-            <div class="substitute-toolbar-tier1 d-flex justify-content-between align-items-center flex-wrap gap-2 pb-2.5 mb-2.5 border-bottom">
-                <!-- Segmented View Tabs -->
-                <div class="substitute-segmented-nav shadow-xs" role="group">
-                    <button type="button" class="substitute-segmented-tab ${substituteSubViewMode === 'weekly_master' ? 'active' : ''}" onclick="switchSubstituteSubView('weekly_master')">
-                        <i class="fas fa-users-rectangle ${substituteSubViewMode === 'weekly_master' ? 'text-warning' : 'text-primary'} me-1"></i>
-                        <span>${isAr ? 'جدول المعلمين' : 'خشتێ مامۆستایان'}</span>
-                    </button>
-                    <button type="button" class="substitute-segmented-tab ${substituteSubViewMode === 'weekly_master_classes' ? 'active' : ''}" onclick="switchSubstituteSubView('weekly_master_classes')">
-                        <i class="fas fa-chalkboard ${substituteSubViewMode === 'weekly_master_classes' ? 'text-warning' : 'text-success'} me-1"></i>
-                        <span>${isAr ? 'جدول الفصول' : 'خشتێ پۆلان'}</span>
-                    </button>
-                    <button type="button" class="substitute-segmented-tab ${substituteSubViewMode === 'grid' ? 'active' : ''}" onclick="switchSubstituteSubView('grid')">
-                        <i class="fas fa-table-cells ${substituteSubViewMode === 'grid' ? 'text-warning' : 'text-primary'} me-1"></i>
-                        <span>${isAr ? 'المصفوفة' : 'خشتێ مۆڵەتان'}</span>
-                    </button>
+        <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 distribution-toolbar-card no-print">
+            <!-- Row 1: View Navigation Tabs & Status -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pb-2 mb-2 border-bottom toolbar-row-view">
+                <!-- Segmented View Tabs (Right in RTL) -->
+                <div class="d-flex align-items-center gap-2 flex-wrap toolbar-group-views">
+                    <span class="toolbar-group-label ms-1">
+                        <i class="fas fa-th-large"></i> عرض
+                    </span>
+                    <div class="tt-view-btn-group btn-group p-0.5 rounded-pill" role="group">
+                        <button type="button" class="btn btn-sm rounded-pill px-3 fw-bold ${substituteSubViewMode === 'weekly_master' ? 'active' : ''}" onclick="switchSubstituteSubView('weekly_master')">
+                            <i class="fas fa-users-rectangle me-1"></i>
+                            <span>${isAr ? 'جدول المعلمين' : 'خشتێ مامۆستایان'}</span>
+                        </button>
+                        <button type="button" class="btn btn-sm rounded-pill px-3 fw-bold ${substituteSubViewMode === 'weekly_master_classes' ? 'active' : ''}" onclick="switchSubstituteSubView('weekly_master_classes')">
+                            <i class="fas fa-chalkboard me-1"></i>
+                            <span>${isAr ? 'جدول الفصول' : 'خشتێ پۆلان'}</span>
+                        </button>
+                        <button type="button" class="btn btn-sm rounded-pill px-3 fw-bold ${substituteSubViewMode === 'grid' ? 'active' : ''}" onclick="switchSubstituteSubView('grid')">
+                            <i class="fas fa-table-cells me-1"></i>
+                            <span>${isAr ? 'المصفوفة' : 'خشتێ مۆڵەتان'}</span>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Status Badges & Info Capsule -->
-                <div class="d-flex align-items-center gap-2 flex-wrap substitute-status-info">
-                    <div class="d-inline-flex align-items-center gap-1.5 py-1 px-2.5 rounded-pill bg-light border shadow-xs">
+                <!-- Status Badges & Info Capsule (Left in RTL) -->
+                <div class="d-flex align-items-center gap-2 flex-wrap ms-auto">
+                    <div class="tt-context-clay-badge">
                         <i class="fas ${!isAllTeachers ? 'fa-user-clock text-danger' : 'fa-calendar-check text-primary'}"></i>
                         <span class="small fw-bold text-muted">${isAr ? 'الجدول:' : 'خشتە:'}</span>
                         <span class="badge ${!isAllTeachers ? 'bg-danger text-white' : 'bg-primary text-white'} rounded-pill px-2.5 py-1 fw-bold shadow-xs">
@@ -9117,62 +10892,97 @@ function renderSubstituteFinder(schedule, container, days, periodsCount) {
 
                     <div class="d-inline-flex align-items-center gap-1.5 flex-wrap">
                         ${!isAllTeachers ? `
-                            <span class="badge bg-light text-secondary border rounded-pill py-1.5 px-2.5"><i class="fas fa-graduation-cap me-1 text-primary"></i>${translateSubjectName(absentSpec) || (isAr ? 'معلم' : 'مامۆستا')}</span>
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill py-1.5 px-2.5"><i class="fas fa-book-reader me-1"></i>${totalSlotsCount} ${isAr ? 'حصة' : 'وانە'}</span>
+                            <span class="badge bg-light text-secondary border rounded-pill py-1.5 px-2.5 shadow-xs"><i class="fas fa-graduation-cap me-1 text-primary"></i>${translateSubjectName(absentSpec) || (isAr ? 'معلم' : 'مامۆستا')}</span>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill py-1.5 px-2.5 shadow-xs"><i class="fas fa-book-reader me-1"></i>${totalSlotsCount} ${isAr ? 'حصة' : 'وانە'}</span>
                             <span class="badge ${assignedCount === totalSlotsCount && totalSlotsCount > 0 ? 'bg-success text-white' : 'bg-warning-subtle text-dark border border-warning-subtle'} rounded-pill py-1.5 px-2.5 shadow-xs">
                                 <i class="fas fa-user-check me-1"></i>${assignedCount} / ${totalSlotsCount} ${isAr ? 'تم البديل' : 'هاتنە دانان'}
                             </span>
                         ` : `
                             ${leaveNames.length > 0 ? `
-                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill py-1.5 px-2.5"><i class="fas fa-user-clock me-1"></i>${leaveNames.length} ${isAr ? 'مستحق إجازة' : 'مۆڵەتدار'}</span>
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill py-1.5 px-2.5 shadow-xs"><i class="fas fa-user-clock me-1"></i>${leaveNames.length} ${isAr ? 'مستحق إجازة' : 'مۆڵەتدار'}</span>
                                 <span class="badge ${assignedCount === totalSlotsCount && totalSlotsCount > 0 ? 'bg-success text-white' : 'bg-warning-subtle text-dark border border-warning-subtle'} rounded-pill py-1.5 px-2.5 shadow-xs">
                                     <i class="fas fa-user-check me-1"></i>${assignedCount} / ${totalSlotsCount} ${isAr ? 'بديل' : 'بەدیل'}
                                 </span>
                             ` : `
-                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill py-1.5 px-2.5"><i class="fas fa-check me-1"></i>${totalAssignedSubstitutes} ${isAr ? 'بديل مسند' : 'بەدیل'}</span>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill py-1.5 px-2.5 shadow-xs"><i class="fas fa-check me-1"></i>${totalAssignedSubstitutes} ${isAr ? 'بديل مسند' : 'بەدیل'}</span>
                             `}
                         `}
                     </div>
                 </div>
             </div>
 
-            <!-- Tier 2: Filters Capsule (Right in RTL) & Action Buttons Toolbar (Left in RTL) -->
-            <div class="substitute-toolbar-tier2 d-flex justify-content-between align-items-center flex-wrap gap-2.5">
-                <!-- Filters: Teacher & Day Selects Capsule -->
-                <div class="substitute-filters-group d-inline-flex align-items-center gap-1.5 p-1 px-2.5 rounded-pill bg-light border shadow-xs flex-wrap">
-                    <span class="text-muted small fw-bold px-1 d-inline-flex align-items-center gap-1">
-                        <i class="fas fa-filter text-primary" style="font-size: 0.78rem;"></i>
-                    </span>
-                    <select id="substituteTeacherSelect" class="form-select form-select-sm rounded-pill fw-bold substitute-select shadow-xs"
-                        style="min-width: 170px; max-width: 250px;" onchange="renderSubstituteTab()">
-                        ${teacherOptionsHtml}
-                    </select>
-                    <select id="substituteDaySelect" class="form-select form-select-sm rounded-pill fw-bold substitute-select shadow-xs"
-                        style="min-width: 140px; max-width: 210px;" onchange="renderSubstituteTab()">
-                        ${dayOptionsHtml}
-                    </select>
+            <!-- Row 2: Action Buttons (Right) & Filter Capsules (Left) -->
+            <div class="toolbar-row-actions d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <!-- Actions Group (Right in RTL) -->
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <!-- Group 1: بناء / تعيين البدلاء (Build & Assign) -->
+                    <div class="toolbar-group toolbar-group-build">
+                        <span class="toolbar-group-label ms-1">
+                            <i class="fas fa-wand-magic-sparkles"></i> بناء
+                        </span>
+
+                        <button type="button" class="btn btn-sm btn-tb-nisab" onclick="autoAssignAllSubstitutes()" title="${autoBtnTitle}">
+                            <i class="fas fa-magic me-1"></i><span>${isAr ? 'توزيع تلقائي' : 'دابەشکرنا زیرەك'}</span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-tb-teacher" onclick="openSubstituteTeacherModal()" title="${isAr ? 'تحديد المعلمين المؤهلين للبدلاء' : 'دەستنیشانکرنا مامۆستایێن جهگر'}">
+                            <i class="fas fa-user-check me-1"></i><span>${isAr ? 'تحديد المعلمين' : 'دەستنیشانکرن'}</span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-tb-cloud" onclick="promptSelectAbsentTeacher()" title="${isAr ? 'تغيير المعلم' : 'گوهورینا مامۆستایی'}">
+                            <i class="fas fa-exchange-alt me-1"></i><span>${isAr ? 'تغيير المعلم' : 'گوهورینا مامۆستایی'}</span>
+                        </button>
+                    </div>
+
+                    <div class="toolbar-divider d-none d-md-block"></div>
+
+                    <!-- Group 2: تصدير وطباعة (Export & Print) -->
+                    <div class="toolbar-group toolbar-group-export">
+                        <button type="button" class="btn btn-sm btn-tb-html" onclick="downloadSubstituteHTML('current')" title="${isAr ? 'تنزيل كملف HTML' : 'داونلودکرنا فایلی HTML'}">
+                            <i class="fas fa-file-code me-1"></i><span>HTML</span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-tb-print" onclick="printDailySubstitutionReport('current')" title="${isAr ? 'طباعة' : 'چاپکرن'}">
+                            <i class="fas fa-print me-1"></i><span>${isAr ? 'طباعة' : 'چاپکرن'}</span>
+                        </button>
+                    </div>
+
+                    <div class="toolbar-divider d-none d-md-block"></div>
+
+                    <!-- Group 3: تفريغ وإلغاء (Clear & Reset) -->
+                    <div class="toolbar-group toolbar-group-system">
+                        <button type="button" class="btn btn-sm btn-tb-delete" onclick="clearSubstituteAssignments()" title="${clearBtnTitle}">
+                            <i class="fas fa-trash-alt me-1"></i><span>${isAr ? 'تفريغ' : 'ڤالاکرن'}</span>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Action Buttons Toolbar -->
-                <div class="substitute-actions-toolbar d-flex align-items-center gap-1.5 flex-wrap">
-                    <button type="button" class="btn btn-warning btn-sm rounded-pill fw-bold shadow-xs text-dark substitute-btn-action substitute-btn-auto" onclick="autoAssignAllSubstitutes()" title="${autoBtnTitle}">
-                        <i class="fas fa-magic me-1"></i><span>${isAr ? 'توزيع تلقائي' : 'دابەشکرنا زیرەك'}</span>
-                    </button>
-                    <button type="button" class="btn btn-outline-primary btn-sm rounded-pill fw-bold shadow-xs substitute-btn-action substitute-btn-select" onclick="openSubstituteTeacherModal()" title="${isAr ? 'تحديد المعلمين المؤهلين للبدلاء' : 'دەستنیشانکرنا مامۆستایێن جهگر'}">
-                        <i class="fas fa-user-check me-1 text-primary"></i><span>${isAr ? 'تحديد المعلمين' : 'دەستنیشانکرن'}</span>
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill fw-bold shadow-xs substitute-btn-action substitute-btn-other" onclick="promptSelectAbsentTeacher()" title="${isAr ? 'تغيير المعلم' : 'گوهورینا مامۆستایی'}">
-                        <i class="fas fa-exchange-alt me-1 text-primary"></i><span>${isAr ? 'تغيير المعلم' : 'گوهورینا مامۆستایی'}</span>
-                    </button>
-                    <button type="button" class="btn btn-success btn-sm rounded-pill fw-bold shadow-xs text-white substitute-btn-action substitute-btn-html" onclick="downloadSubstituteHTML('current')" title="${isAr ? 'تنزيل كملف HTML' : 'داونلودکرنا فایلی HTML'}">
-                        <i class="fas fa-file-code me-1"></i><span>HTML</span>
-                    </button>
-                    <button type="button" class="btn btn-dark btn-sm rounded-pill fw-bold shadow-xs text-white substitute-btn-action substitute-btn-print" onclick="printDailySubstitutionReport('current')" title="${isAr ? 'طباعة' : 'چاپکرن'}">
-                        <i class="fas fa-print me-1 text-warning"></i><span>${isAr ? 'طباعة' : 'چاپکرن'}</span>
-                    </button>
-                    <button type="button" class="btn btn-outline-danger btn-sm rounded-pill fw-bold shadow-xs substitute-btn-action substitute-btn-clear" onclick="clearSubstituteAssignments()" title="${clearBtnTitle}">
-                        <i class="fas fa-trash-alt me-1"></i><span>${isAr ? 'تفريغ' : 'ڤالاکرن'}</span>
-                    </button>
+                <!-- Filters: Teacher & Day 3D Clay Select Capsules (Left in RTL / Row 2) -->
+                <div class="d-flex align-items-center gap-2 flex-wrap toolbar-sub-filters ms-auto">
+                    <!-- Teacher Select 3D Clay Capsule -->
+                    <div class="tt-select-clay-capsule">
+                        <div class="tt-select-icon-badge">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <select id="substituteTeacherSelect" class="tt-clay-select"
+                            style="min-width: 140px; max-width: 200px;" onchange="renderSubstituteTab()">
+                            ${teacherOptionsHtml}
+                        </select>
+                        <div class="tt-select-arrow-badge">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+
+                    <!-- Day Select 3D Clay Capsule -->
+                    <div class="tt-select-clay-capsule">
+                        <div class="tt-select-icon-badge" style="background: linear-gradient(145deg, #fcd34d, #f59e0b) !important; box-shadow: 0 3px 8px rgba(245, 158, 11, 0.35) !important;">
+                            <i class="fas fa-calendar-day"></i>
+                        </div>
+                        <select id="substituteDaySelect" class="tt-clay-select"
+                            style="min-width: 120px; max-width: 170px;" onchange="renderSubstituteTab()">
+                            ${dayOptionsHtml}
+                        </select>
+                        <div class="tt-select-arrow-badge">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -12999,8 +14809,8 @@ function autoDistributeTimetable() {
             const isAr = (currentLang === 'ar');
             const { isConfirmed: runNisab } = await Swal.fire({
                 title: t('result_title', 'ئەنجام'),
-                text: isAr 
-                    ? 'لا توجد حصص موزعة على الفصول والمعلمين حتى الآن. هل ترغب في إجراء التوزيع التلقائي للحصص وفق النصاب أولاً؟' 
+                text: isAr
+                    ? 'لا توجد حصص موزعة على الفصول والمعلمين حتى الآن. هل ترغب في إجراء التوزيع التلقائي للحصص وفق النصاب أولاً؟'
                     : 'هیچ وانەیەک نەهاتیە دابەشکرن هەتا نوکە. ئایا دتەڤێت پێشتر دابەشکرنا ئۆتۆماتیکی یا نصابی بهێتە ئەنجامدان؟',
                 icon: 'question',
                 showCancelButton: true,
@@ -13794,6 +15604,7 @@ function saveMilakTableRow(tableKey, rowIndex, colKey, value) {
 }
 
 function renderMilakTab() {
+    const isAr = currentLang === 'ar';
     const container = document.getElementById('milak-tab-pane');
     if (!container) return;
 
@@ -14118,12 +15929,58 @@ function renderMilakTab() {
 
     const html = `
     <div class="milak-form-container p-2 p-md-3">
-        <!-- Top Action Toolbar -->
-        <div class="d-flex flex-wrap justify-content-center justify-content-md-end gap-2 mb-3 no-print">
-            <button class="btn btn-secondary btn-sm fw-bold px-3 py-1 text-white border-0 shadow-sm flex-fill flex-md-grow-0" onclick="toggleMilakViewMode()"><i class="fas fa-exchange-alt me-1"></i>تغيير العرض (گۆڕینی شێوەی پیشاندان)</button>
-            <button class="btn btn-success btn-sm fw-bold px-3 py-1 text-white border-0 shadow-sm flex-fill flex-md-grow-0" onclick="exportMilakToExcel()" style="background-color: #28a745;"><i class="fas fa-file-excel me-1"></i>تصدير إكسل (Excel)</button>
-            <button class="btn btn-info btn-sm fw-bold px-3 py-1 text-white border-0 shadow-sm flex-fill flex-md-grow-0" onclick="downloadMilakHTML()" style="background-color: #17a2b8;"><i class="fas fa-file-code me-1"></i>تنزيل HTML</button>
-            <button class="btn btn-primary btn-sm fw-bold px-3 py-1 text-white border-0 shadow-sm flex-fill flex-md-grow-0" onclick="printMilakForm()" style="background-color: #007bff;"><i class="fas fa-print me-1"></i>چاپكرن (طباعة الاستمارة)</button>
+        <!-- Top Action Toolbar Card -->
+        <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 distribution-toolbar-card no-print">
+            <!-- Row 1: Views & Info -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pb-2 mb-2 border-bottom toolbar-row-view">
+                <!-- View Mode Button (Right in RTL) -->
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="toolbar-group-label ms-1">
+                        <i class="fas fa-th-large"></i> ${isAr ? 'عرض' : 'نیشاندان'}
+                    </span>
+                    <button class="btn btn-sm btn-tb-view rounded-pill px-3 fw-bold shadow-xs" onclick="toggleMilakViewMode()">
+                        <i class="fas fa-exchange-alt me-1"></i> ${isAr ? 'تغيير العرض' : 'گۆڕینی شێواز'}
+                    </button>
+                </div>
+
+                <!-- Center: Form Title Pill -->
+                <div class="d-inline-flex align-items-center gap-1.5 p-1 px-3 rounded-pill bg-light border shadow-xs">
+                    <i class="fas fa-file-invoice text-primary me-1"></i>
+                    <span class="fw-bold text-dark">${t('milak_form_title', 'فۆرما ڕێکخستنا ميلاکێ')}</span>
+                </div>
+
+                <!-- Left: Status / Year Badge -->
+                <div>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1.5" style="font-size: 0.82rem;">
+                        <i class="fas fa-calendar-alt me-1"></i>${new Date().getFullYear()} - ${new Date().getFullYear() + 1}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Row 2: Actions / Export Group -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 toolbar-row-actions">
+                <!-- Actions Group (Right in RTL) -->
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="toolbar-group-label ms-1">
+                        <i class="fas fa-share-square"></i> ${isAr ? 'تصدير' : 'هنارتن'}
+                    </span>
+
+                    <!-- Excel Button (Emerald) -->
+                    <button class="btn btn-sm btn-tb-excel shadow-xs" onclick="exportMilakToExcel()">
+                        <i class="fas fa-file-excel me-1"></i><span>${isAr ? 'إكسل' : 'ئەكسێل'}</span>
+                    </button>
+
+                    <!-- HTML Button (Mint) -->
+                    <button class="btn btn-sm btn-tb-html shadow-xs" onclick="downloadMilakHTML()">
+                        <i class="fas fa-file-code me-1"></i><span>HTML</span>
+                    </button>
+
+                    <!-- Print Button (Lilac) -->
+                    <button class="btn btn-sm btn-tb-print shadow-xs" onclick="printMilakForm()">
+                        <i class="fas fa-print me-1"></i><span>${isAr ? 'طباعة' : 'چاپکرن'}</span>
+                    </button>
+                </div>
+            </div>
         </div>
 
         <div id="milakFormPrintArea" class="${milakViewModeBorderless ? 'milak-borderless-mode' : ''}">
@@ -14546,6 +16403,8 @@ function renderMilakTab() {
     container.innerHTML = html;
     recalculateMilakTotals();
 }
+function initMilakTab() { renderMilakTab(); }
+
 
 function changeMilakLeaveRows(delta) {
     const schedule = allSchedules[activeScheduleName];
@@ -15082,6 +16941,9 @@ function getSupervisionData() {
     if (!schedule.settings.supervisionData.supervisorsPerPeriod) {
         schedule.settings.supervisionData.supervisorsPerPeriod = 1;
     }
+    if (!schedule.settings.supervisionData.dailyLayout) {
+        schedule.settings.supervisionData.dailyLayout = 'cards';
+    }
     return schedule.settings.supervisionData;
 }
 
@@ -15093,6 +16955,67 @@ function setSupervisionViewMode(mode) {
     renderSupervisionTab();
 }
 window.setSupervisionViewMode = setSupervisionViewMode;
+
+function setSupervisionDailyLayout(layout) {
+    const supData = getSupervisionData();
+    if (!supData) return;
+    supData.dailyLayout = layout;
+    saveData();
+    renderSupervisionTab();
+}
+window.setSupervisionDailyLayout = setSupervisionDailyLayout;
+
+// Location Meta Helper for Supervision
+function getSupervisionLocationMeta(locationName, isAr) {
+    const loc = (locationName || '').trim();
+    if (loc.includes('حەوشە') || loc.includes('الساحة') || loc.includes('ساحة')) {
+        return {
+            name: isAr ? 'الساحة' : 'حەوشە',
+            icon: 'fa-campground',
+            color: '#059669',
+            bg: 'rgba(16, 185, 129, 0.12)',
+            border: '#10b981',
+            badgeClass: 'badge-sup-courtyard'
+        };
+    } else if (loc.includes('نهۆم') || loc.includes('ڕێڕەو') || loc.includes('رێڕەو') || loc.includes('الممرات') || loc.includes('الطوابق')) {
+        return {
+            name: isAr ? 'الممرات' : 'ڕێڕەو',
+            icon: 'fa-walking',
+            color: '#4f46e5',
+            bg: 'rgba(99, 102, 241, 0.12)',
+            border: '#6366f1',
+            badgeClass: 'badge-sup-corridor'
+        };
+    } else if (loc.includes('دەرگەه') || loc.includes('البوابة')) {
+        return {
+            name: isAr ? 'البوابة' : 'دەرگەهـ',
+            icon: 'fa-door-open',
+            color: '#e11d48',
+            bg: 'rgba(244, 63, 94, 0.12)',
+            border: '#f43f5e',
+            badgeClass: 'badge-sup-gate'
+        };
+    } else if (loc.includes('کارگێر') || loc.includes('الإدارة') || loc.includes('الإداري')) {
+        return {
+            name: isAr ? 'الإدارة' : 'کارگێری',
+            icon: 'fa-briefcase',
+            color: '#0284c7',
+            bg: 'rgba(2, 132, 199, 0.12)',
+            border: '#0284c7',
+            badgeClass: 'badge-sup-admin'
+        };
+    } else {
+        return {
+            name: isAr ? 'عامة' : 'گشتی',
+            icon: 'fa-shield-halved',
+            color: '#d97706',
+            bg: 'rgba(245, 158, 11, 0.12)',
+            border: '#f59e0b',
+            badgeClass: 'badge-sup-general'
+        };
+    }
+}
+window.getSupervisionLocationMeta = getSupervisionLocationMeta;
 
 function changeSupervisorsPerPeriod(val) {
     const supData = getSupervisionData();
@@ -15248,67 +17171,104 @@ function renderSupervisionTab() {
     // -------------------------------------------------------------------------
     html += `
         <!-- Control Toolbar -->
-        <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 bg-white no-print supervision-header-card" style="position: relative; overflow: visible !important;">
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2.5 supervision-toolbar-row">
-                
-                <!-- Title, Mode Switcher, Badge & Quota selector -->
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 supervision-title-bar">
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <div class="d-inline-flex align-items-center gap-1.5 p-1.5 px-3 rounded-pill bg-light border shadow-xs">
-                            <i class="fas ${isPeriodMode ? 'fa-bell text-warning' : 'fa-shield-alt text-warning'} fa-lg"></i>
-                            <h5 class="mb-0 fw-bold text-dark" style="font-size: 1.02rem;">
-                                ${isPeriodMode ? (isAr ? 'مراقبة الحصص والأجراس' : 'چاڤدێریا وانە و زەنگان') : (isAr ? 'جدول المراقبة' : 'خشتێ چاڤدێریێ')}
-                            </h5>
-                        </div>
-
-                        <!-- Mode Switcher (Daily vs Period/Bell) -->
-                        <div class="btn-group btn-group-sm rounded-pill p-0.5 bg-light border shadow-xs" role="group">
-                            <button type="button" class="btn btn-xs rounded-pill px-2.5 fw-bold ${!isPeriodMode ? 'btn-primary text-white shadow-xs' : 'btn-light text-muted'}" onclick="setSupervisionViewMode('daily')" style="font-size: 0.76rem;">
-                                <i class="fas fa-calendar-day me-1"></i>${isAr ? 'يومية' : 'رۆژانە'}
-                            </button>
-                            <button type="button" class="btn btn-xs rounded-pill px-2.5 fw-bold ${isPeriodMode ? 'btn-primary text-white shadow-xs' : 'btn-light text-muted'}" onclick="setSupervisionViewMode('periods')" style="font-size: 0.76rem;">
-                                <i class="fas fa-bell me-1"></i>${isAr ? 'حصص وأجراس' : 'وانە و زەنگ'}
-                            </button>
-                        </div>
-
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1.5" style="font-size: 0.78rem;">
-                            <i class="fas fa-users me-1"></i>${selectedTeachers.length} ${isAr ? 'معلماً' : 'مامۆستا'}
-                        </span>
+        <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 distribution-toolbar-card no-print">
+            <!-- Row 1: Views & Quota -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pb-2 mb-2 border-bottom toolbar-row-view">
+                <!-- View Modes Group (Right in RTL) -->
+                <div class="d-flex align-items-center gap-2 flex-wrap toolbar-group-views">
+                    <span class="toolbar-group-label ms-1">
+                        <i class="fas fa-th-large"></i> ${isAr ? 'عرض' : 'نیشاندان'}
+                    </span>
+                    <div class="tt-view-btn-group btn-group p-0.5 rounded-pill" role="group">
+                        <button type="button" class="btn btn-sm rounded-pill px-3 fw-bold ${!isPeriodMode ? 'active' : ''}" onclick="setSupervisionViewMode('daily')">
+                            <i class="fas fa-calendar-day me-1"></i>
+                            <span>${isAr ? 'يومية' : 'رۆژانە'}</span>
+                        </button>
+                        <button type="button" class="btn btn-sm rounded-pill px-3 fw-bold ${isPeriodMode ? 'active' : ''}" onclick="setSupervisionViewMode('periods')">
+                            <i class="fas fa-bell me-1"></i>
+                            <span>${isAr ? 'حصص وأجراس' : 'وانە و زەنگ'}</span>
+                        </button>
                     </div>
 
-                    <!-- Quota Selector -->
-                    <div class="d-inline-flex align-items-center gap-1.5 bg-light p-1 px-2.5 rounded-pill border supervision-quota-box shadow-xs">
-                        <label class="small text-muted fw-bold mb-0 text-nowrap" style="font-size: 0.75rem;">
-                            <i class="fas ${isPeriodMode ? 'fa-bell text-warning' : 'fa-user-friends text-info'} me-1"></i>
-                            ${isPeriodMode ? (isAr ? 'لكل جرس:' : 'بۆ هەر زەنگەکێ:') : (isAr ? 'يومياً:' : 'رۆژانە:')}
-                        </label>
-                        ${isPeriodMode ? `
-                            <select class="form-select form-select-sm fw-bold border-0 bg-transparent py-0 px-1" id="selSupervisorsPerPeriod" onchange="changeSupervisorsPerPeriod(this.value)" style="width: 50px; font-size: 0.84rem; cursor: pointer;">
-                                ${[1, 2, 3, 4].map(n => `<option value="${n}" ${n === (supData.supervisorsPerPeriod || 1) ? 'selected' : ''}>${n}</option>`).join('')}
-                            </select>
-                        ` : `
-                            <select class="form-select form-select-sm fw-bold border-0 bg-transparent py-0 px-1" id="selSupervisorsPerDay" onchange="changeSupervisorsPerDay(this.value)" style="width: 50px; font-size: 0.84rem; cursor: pointer;">
-                                ${[1, 2, 3, 4, 5, 6].map(n => `<option value="${n}" ${n === (supData.supervisorsPerDay || 2) ? 'selected' : ''}>${n}</option>`).join('')}
-                            </select>
-                        `}
+                    ${!isPeriodMode ? `
+                    <!-- Daily Sub-layout Switcher: Cards / Table / Compact -->
+                    <div class="sup-layout-switcher btn-group p-0.5 rounded-pill border ms-1" role="group" style="padding: 2px; background: rgba(241, 245, 249, 0.85);">
+                        <button type="button" class="btn btn-xs rounded-pill px-2.5 py-1 fw-bold ${(supData.dailyLayout || 'cards') === 'cards' ? 'btn-primary text-white shadow-xs' : 'btn-light text-muted'}" onclick="setSupervisionDailyLayout('cards')" title="${isAr ? 'كروت عصرية فخمة' : 'کارتێن مۆدێرن'}">
+                            <i class="fas fa-id-card me-1"></i><span>${isAr ? 'كروت' : 'کارت'}</span>
+                        </button>
+                        <button type="button" class="btn btn-xs rounded-pill px-2.5 py-1 fw-bold ${(supData.dailyLayout || 'cards') === 'table' ? 'btn-primary text-white shadow-xs' : 'btn-light text-muted'}" onclick="setSupervisionDailyLayout('table')" title="${isAr ? 'جدول رسمي شبكي' : 'خشتێ فەرمی'}">
+                            <i class="fas fa-table me-1"></i><span>${isAr ? 'جدول' : 'خشتە'}</span>
+                        </button>
+                        <button type="button" class="btn btn-xs rounded-pill px-2.5 py-1 fw-bold ${(supData.dailyLayout || 'cards') === 'compact' ? 'btn-primary text-white shadow-xs' : 'btn-light text-muted'}" onclick="setSupervisionDailyLayout('compact')" title="${isAr ? 'عرض مدمج ومختصر' : 'کورتکری'}">
+                            <i class="fas fa-bars-staggered me-1"></i><span>${isAr ? 'مدمج' : 'کورت'}</span>
+                        </button>
+                    </div>
+                    ` : ''}
+                </div>
+
+                <!-- Center: Quota Selector 3D Clay Capsule -->
+                <div class="tt-select-clay-capsule">
+                    <div class="tt-select-icon-badge" style="${isPeriodMode ? 'background: linear-gradient(145deg, #fcd34d, #f59e0b) !important; box-shadow: 0 3px 8px rgba(245, 158, 11, 0.35) !important;' : 'background: linear-gradient(145deg, #38bdf8, #0284c7) !important; box-shadow: 0 3px 8px rgba(2, 132, 199, 0.35) !important;'}">
+                        <i class="fas ${isPeriodMode ? 'fa-bell' : 'fa-users-cog'}"></i>
+                    </div>
+                    <span class="small fw-bold text-muted px-1" style="font-size: 0.82rem;">
+                        ${isPeriodMode ? (isAr ? 'لكل جرس:' : 'بۆ هەر زەنگەکێ:') : (isAr ? 'يومياً:' : 'رۆژانە:')}
+                    </span>
+                    ${isPeriodMode ? `
+                        <select class="tt-clay-select" id="selSupervisorsPerPeriod" onchange="changeSupervisorsPerPeriod(this.value)" style="min-width: 50px; max-width: 70px; text-align: center;">
+                            ${[1, 2, 3, 4].map(n => `<option value="${n}" ${n === (supData.supervisorsPerPeriod || 1) ? 'selected' : ''}>${n}</option>`).join('')}
+                        </select>
+                    ` : `
+                        <select class="tt-clay-select" id="selSupervisorsPerDay" onchange="changeSupervisorsPerDay(this.value)" style="min-width: 50px; max-width: 70px; text-align: center;">
+                            ${[1, 2, 3, 4, 5, 6].map(n => `<option value="${n}" ${n === (supData.supervisorsPerDay || 2) ? 'selected' : ''}>${n}</option>`).join('')}
+                        </select>
+                    `}
+                    <div class="tt-select-arrow-badge">
+                        <i class="fas fa-chevron-down"></i>
                     </div>
                 </div>
 
-                <!-- Action Buttons Grid -->
-                <div class="supervision-actions-grid" style="position: relative; overflow: visible !important;">
-                    <button class="btn btn-sm btn-warning text-dark fw-bold rounded-pill px-3 shadow-xs supervision-btn-auto" onclick="${isPeriodMode ? 'autoDistributePeriodSupervision()' : 'autoDistributeSupervision()'}" title="${isAr ? 'توزيع تلقائي ذكي' : 'دابەشکرنا زیرەك'}">
+                <!-- Left: Teachers Count Badge 3D Clay Pill -->
+                <div>
+                    <div class="tt-context-clay-badge">
+                        <i class="fas fa-users text-primary"></i>
+                        <span class="small fw-bold text-muted">${isAr ? 'المعلمون:' : 'مامۆستا:'}</span>
+                        <span class="badge bg-primary text-white rounded-pill px-2.5 py-1 fw-bold shadow-xs">
+                            ${selectedTeachers.length}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Actions & Clear Button (Grouped with Dividers) -->
+            <div class="toolbar-row-actions">
+                <!-- Group 1: بناء (Build) -->
+                <div class="toolbar-group toolbar-group-build">
+                    <span class="toolbar-group-label ms-1">
+                        <i class="fas fa-wand-magic-sparkles"></i> ${isAr ? 'بناء' : 'ئاڤاکرن'}
+                    </span>
+
+                    <!-- Auto Distribute (Orange) -->
+                    <button type="button" class="btn btn-sm btn-tb-nisab" onclick="${isPeriodMode ? 'autoDistributePeriodSupervision()' : 'autoDistributeSupervision()'}" title="${isAr ? 'توزيع تلقائي ذكي' : 'دابەشکرنا زیرەك'}">
                         <i class="fas fa-magic me-1"></i><span>${isAr ? 'توزيع تلقائي' : 'دابەشکرنا زیرەك'}</span>
                     </button>
 
-                    <button class="btn btn-sm btn-outline-primary fw-bold rounded-pill px-3 shadow-xs supervision-btn-select" onclick="openSupervisionTeacherModal()">
+                    <!-- Select Teachers (Cyan) -->
+                    <button type="button" class="btn btn-sm btn-tb-teacher" onclick="openSupervisionTeacherModal()">
                         <i class="fas fa-user-check me-1"></i><span>${isAr ? 'تحديد المعلمين' : 'دەستنیشانکرن'}</span>
                     </button>
+                </div>
 
-                    <div class="dropdown no-print supervision-btn-html" style="position: relative;">
-                        <button class="btn btn-sm btn-outline-success fw-bold rounded-pill px-3 shadow-xs dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">
-                            <i class="fas fa-file-code me-1"></i><span>HTML</span>
+                <div class="toolbar-divider d-none d-md-block"></div>
+
+                <!-- Group 2: تصدير وطباعة (Export & Print) -->
+                <div class="toolbar-group toolbar-group-export">
+                    <!-- HTML (Yellow/Gold) -->
+                    <div class="btn-group dropdown">
+                        <button type="button" class="btn btn-sm btn-tb-html dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-file-code me-1"></i> HTML
                         </button>
-                        <ul class="dropdown-menu shadow-lg border-0 rounded-3 p-1.5" style="font-size: 0.8rem; min-width: 270px;">
+                        <ul class="dropdown-menu shadow border-0 rounded-4 p-1.5" style="font-size: 0.8rem; min-width: 270px;">
                             ${isPeriodMode ? `
                                 <li><a class="dropdown-item py-2 fw-bold text-dark rounded-2" href="#" onclick="downloadPeriodSupervisionHTML('grid')"><i class="fas fa-th text-primary me-2"></i>${isAr ? '١. حفظ جدول الأيام الخمسة (شبكة كاملة)' : '١. هەڵگرتنا خشتێ ٥ رۆژان (تەواو)'}</a></li>
                                 <li><a class="dropdown-item py-2 fw-bold text-dark rounded-2" href="#" onclick="downloadPeriodSupervisionHTML('master_cards')"><i class="fas fa-cubes text-success me-2"></i>${isAr ? '٢. حفظ تصميم بطاقات الأجراس (حديث وفاخر)' : '٢. هەڵگرتنا کارتێن زەنگان (مۆدێرن)'}</a></li>
@@ -15321,11 +17281,12 @@ function renderSupervisionTab() {
                         </ul>
                     </div>
 
-                    <div class="dropdown no-print supervision-btn-print" style="position: relative;">
-                        <button class="btn btn-sm btn-outline-dark fw-bold rounded-pill px-3 shadow-xs dropdown-toggle w-100" type="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">
-                            <i class="fas fa-print me-1"></i><span>${isAr ? 'طباعة' : 'چاپکرن'}</span>
+                    <!-- Print (Lilac/Purple) -->
+                    <div class="btn-group dropdown">
+                        <button type="button" class="btn btn-sm btn-tb-print dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-print me-1"></i> ${isAr ? 'طباعة' : 'چاپکرن'}
                         </button>
-                        <ul class="dropdown-menu shadow-lg border-0 rounded-3 p-1.5" style="font-size: 0.8rem; min-width: 270px;">
+                        <ul class="dropdown-menu shadow border-0 rounded-4 p-1.5" style="font-size: 0.8rem; min-width: 270px;">
                             ${isPeriodMode ? `
                                 <li><a class="dropdown-item py-2 fw-bold text-dark rounded-2" href="#" onclick="printPeriodSupervisionSchedule('grid')"><i class="fas fa-th text-primary me-2"></i>${isAr ? '١. طباعة جدول الأيام الخمسة (شبكة كاملة)' : '١. چاپکرنا خشتێ ٥ رۆژان (تەواو)'}</a></li>
                                 <li><a class="dropdown-item py-2 fw-bold text-dark rounded-2" href="#" onclick="printPeriodSupervisionSchedule('master_cards')"><i class="fas fa-cubes text-success me-2"></i>${isAr ? '٢. طباعة تصميم بطاقات الأجراس (حديث وفاخر)' : '٢. چاپکرنا کارتێن زەنگان (مۆدێرن)'}</a></li>
@@ -15337,8 +17298,13 @@ function renderSupervisionTab() {
                             `}
                         </ul>
                     </div>
+                </div>
 
-                    <button class="btn btn-sm btn-outline-danger fw-bold rounded-pill px-3 shadow-xs supervision-btn-clear" onclick="${isPeriodMode ? 'clearPeriodSupervisionSchedule()' : 'clearSupervisionSchedule()'}" title="${isAr ? 'تفريغ الجدول' : 'ڤالاکرنا خشتەی'}">
+                <div class="toolbar-divider d-none d-md-block"></div>
+
+                <!-- Group 3: تفريغ (Clear) -->
+                <div class="toolbar-group toolbar-group-system">
+                    <button type="button" class="btn btn-sm btn-tb-delete" onclick="${isPeriodMode ? 'clearPeriodSupervisionSchedule()' : 'clearSupervisionSchedule()'}" title="${isAr ? 'تفريغ الجدول' : 'ڤالاکرنا خشتەی'}">
                         <i class="fas fa-trash-alt me-1"></i><span>${isAr ? 'تفريغ' : 'ڤالاکرن'}</span>
                     </button>
                 </div>
@@ -15351,7 +17317,7 @@ function renderSupervisionTab() {
         // =====================================================================
         const pAssigns = supData.periodAssignments || {};
         const supervisorsPerPeriod = Number(supData.supervisorsPerPeriod) || 1;
-        
+
         let totalAssignedSlots = 0;
         days.forEach((_, dIdx) => {
             const dObj = pAssigns[dIdx] || {};
@@ -15438,13 +17404,13 @@ function renderSupervisionTab() {
                     <!-- Day Body: Period/Bell Blocks -->
                     <div class="card-body p-2 d-flex flex-column gap-2" style="min-height: 200px; overflow: visible;">
                         ${(() => {
-                            const hybridDaily = supData.hybridDailyTeachers?.[dayIndex] || [];
-                            if (hybridDaily.length > 0) {
-                                const names = hybridDaily.map(item => {
-                                    const t = allTeachers.find(x => x.id === item.teacherId);
-                                    return t ? t.name : (item.teacherName || '');
-                                }).join(', ');
-                                return `
+                    const hybridDaily = supData.hybridDailyTeachers?.[dayIndex] || [];
+                    if (hybridDaily.length > 0) {
+                        const names = hybridDaily.map(item => {
+                            const t = allTeachers.find(x => x.id === item.teacherId);
+                            return t ? t.name : (item.teacherName || '');
+                        }).join(', ');
+                        return `
                                 <div class="p-2 rounded-3 bg-warning-subtle border border-warning-subtle d-flex align-items-center justify-content-between shadow-xs mb-1" style="font-size: 0.78rem;">
                                     <div class="text-truncate">
                                         <i class="fas fa-sun text-warning me-1.5"></i>
@@ -15452,9 +17418,9 @@ function renderSupervisionTab() {
                                         <span class="badge bg-warning text-dark fw-bold ms-1" style="font-size: 0.76rem;">${names}</span>
                                     </div>
                                 </div>`;
-                            }
-                            return '';
-                        })()}`;
+                    }
+                    return '';
+                })()}`;
 
             for (let p = 1; p <= periodsCount; p++) {
                 const assignedInPeriod = dObj[p] || [];
@@ -15602,127 +17568,345 @@ function renderSupervisionTab() {
                 </div>
             </div>
         </div>
+        `;
 
-        <!-- Weekly Supervision Grid Cards -->
-        <div class="row g-2.5 mb-4" id="supervisionWeeklyGrid" style="position: relative; z-index: 1;">`;
+        // ---------------------------------------------------------------------
+        // 1. DESIGN 1: MODERN CLAY CARDS (كروت مۆدێرن)
+        // ---------------------------------------------------------------------
+        if ((supData.dailyLayout || 'cards') === 'cards') {
+            html += `<div class="row g-2.5 mb-4" id="supervisionWeeklyGrid" style="position: relative; z-index: 1;">`;
 
-        days.forEach((dayName, dayIndex) => {
-            const dayAssignments = assignments[dayIndex] || [];
-            const isCompleted = dayAssignments.length >= supervisorsPerDay;
+            days.forEach((dayName, dayIndex) => {
+                const dayAssignments = assignments[dayIndex] || [];
+                const isCompleted = dayAssignments.length >= supervisorsPerDay;
 
-            html += `
-            <div class="supervision-day-col mb-2">
-                <div class="card h-100 border-0 shadow-sm rounded-4 bg-white day-card" style="overflow: visible;">
-                    <!-- Day Header -->
-                    <div class="p-2.5 px-3 border-bottom d-flex justify-content-between align-items-center ${isCompleted ? 'bg-success-subtle text-success-emphasis' : 'bg-light text-dark'}">
-                        <div class="d-flex align-items-center gap-1.5">
-                            <i class="fas fa-calendar-day text-primary" style="font-size: 0.9rem;"></i>
-                            <strong style="font-size: 0.92rem;">${dayName}</strong>
-                        </div>
-                        <div class="d-flex align-items-center gap-1.5">
-                            <span class="badge ${isCompleted ? 'bg-success' : 'bg-warning text-dark'} rounded-pill" style="font-size: 0.71rem;">
-                                ${dayAssignments.length}/${supervisorsPerDay}
-                            </span>
-                            ${dayAssignments.length > 0 ? `
-                                <button class="btn btn-xs btn-link text-danger p-0 no-print" onclick="clearDaySupervision(${dayIndex})" title="${isAr ? 'حذف مراقبي هذا اليوم' : 'ڤالاکرنا چاڤدێرێن ڤێ رۆژێ'}" style="text-decoration: none; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-trash-alt" style="font-size: 0.72rem;"></i>
-                                </button>
-                            ` : ''}
-                        </div>
-                    </div>
-
-                    <!-- Day Body: List of Assigned Supervisors -->
-                    <div class="card-body p-2 d-flex flex-column gap-2" style="min-height: 180px; overflow: visible;">`;
-
-            if (dayAssignments.length === 0) {
                 html += `
-                <div class="text-center text-muted my-auto py-4">
-                    <i class="fas fa-user-slash fa-2x mb-2 opacity-25"></i>
-                    <div class="small">${isAr ? 'لا يوجد مراقبون لهذا اليوم' : 'چ چاڤدێر نینن'}</div>
-                    <button class="btn btn-xs btn-outline-primary mt-2 rounded-pill" onclick="addSupervisionSlot(${dayIndex})">
-                        <i class="fas fa-plus me-1"></i>${isAr ? 'تعيين مراقب' : 'دانانا چاڤدێری'}
-                    </button>
-                </div>`;
-            } else {
-                dayAssignments.forEach((item, slotIndex) => {
-                    const teacher = allTeachers.find(t => t.id === item.teacherId) || { name: item.teacherName || 'مراقب', specialization: '' };
-                    const dayStats = getTeacherFreePeriodsOnDay(teacher, dayIndex, schedule);
-                    let locationName = item.location || locations[slotIndex % locations.length];
-                    if (locationName.includes('حەوشە')) locationName = 'حەوشە';
-                    else if (locationName.includes('نهۆم') || locationName.includes('رێڕەو') || locationName.includes('ڕێڕەو')) locationName = 'ڕێڕەو';
-                    else if (locationName.includes('دەرگەه')) locationName = 'دەرگەهـ';
-                    else if (locationName.includes('کارگێر')) locationName = 'کارگێری';
-                    else if (locationName.includes('الساحة')) locationName = 'الساحة';
-                    else if (locationName.includes('الممرات') || locationName.includes('الطوابق')) locationName = 'الممرات';
-                    else if (locationName.includes('البوابة')) locationName = 'البوابة';
-                    else if (locationName.includes('الإداري')) locationName = 'الإدارة';
-
-                    html += `
-                    <div class="card border rounded-3 p-2 bg-light-subtle shadow-xs supervisor-slot-card">
-                        <div class="d-flex justify-content-between align-items-start mb-1.5">
+                <div class="supervision-day-col mb-2">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 bg-white day-card" style="overflow: visible;">
+                        <!-- Day Header -->
+                        <div class="p-2.5 px-3 border-bottom d-flex justify-content-between align-items-center ${isCompleted ? 'bg-success-subtle text-success-emphasis' : 'bg-light text-dark'}">
                             <div class="d-flex align-items-center gap-1.5">
-                                <span class="badge bg-primary rounded-circle p-1.5 text-white" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.7rem;">
-                                    ${slotIndex + 1}
+                                <i class="fas fa-calendar-day text-primary" style="font-size: 0.9rem;"></i>
+                                <strong style="font-size: 0.92rem;">${dayName}</strong>
+                            </div>
+                            <div class="d-flex align-items-center gap-1.5">
+                                <span class="badge ${isCompleted ? 'bg-success' : 'bg-warning text-dark'} rounded-pill" style="font-size: 0.71rem;">
+                                    ${dayAssignments.length}/${supervisorsPerDay}
                                 </span>
-                                <div>
-                                    <strong class="text-dark d-block" style="font-size: 0.83rem; line-height: 1.2;">
-                                        ${teacher.name}
-                                    </strong>
-                                    <small class="text-muted" style="font-size: 0.7rem;">
-                                        ${teacher.specialization || ''}
-                                    </small>
+                                ${dayAssignments.length > 0 ? `
+                                    <button class="btn btn-xs btn-link text-danger p-0 no-print" onclick="clearDaySupervision(${dayIndex})" title="${isAr ? 'حذف مراقبي هذا اليوم' : 'ڤالاکرنا چاڤدێرێن ڤێ رۆژێ'}" style="text-decoration: none; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-trash-alt" style="font-size: 0.72rem;"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Day Body: List of Assigned Supervisors -->
+                        <div class="card-body p-2 d-flex flex-column gap-2" style="min-height: 180px; overflow: visible;">`;
+
+                if (dayAssignments.length === 0) {
+                    html += `
+                    <div class="text-center text-muted my-auto py-4">
+                        <i class="fas fa-user-slash fa-2x mb-2 opacity-25"></i>
+                        <div class="small">${isAr ? 'لا يوجد مراقبون لهذا اليوم' : 'چ چاڤدێر نینن'}</div>
+                        <button class="btn btn-xs btn-outline-primary mt-2 rounded-pill" onclick="addSupervisionSlot(${dayIndex})">
+                            <i class="fas fa-plus me-1"></i>${isAr ? 'تعيين مراقب' : 'دانانا چاڤدێری'}
+                        </button>
+                    </div>`;
+                } else {
+                    dayAssignments.forEach((item, slotIndex) => {
+                        const teacher = allTeachers.find(t => t.id === item.teacherId) || { name: item.teacherName || 'مراقب', specialization: '' };
+                        const dayStats = getTeacherFreePeriodsOnDay(teacher, dayIndex, schedule);
+                        const locMeta = getSupervisionLocationMeta(item.location || locations[slotIndex % locations.length], isAr);
+
+                        html += `
+                        <div class="card border rounded-3 p-2 shadow-xs supervisor-slot-card sup-modern-card" style="border-inline-start: 4px solid ${locMeta.color} !important; background: #ffffff;">
+                            <div class="d-flex justify-content-between align-items-start mb-1.5">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge rounded-circle text-white shadow-xs" style="width: 24px; height: 24px; min-width: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; background: linear-gradient(135deg, ${locMeta.color}, #0284c7);">
+                                        ${slotIndex + 1}
+                                    </span>
+                                    <div>
+                                        <strong class="text-dark d-block text-truncate" style="font-size: 0.85rem; line-height: 1.25; max-width: 140px;" title="${teacher.name}">
+                                            ${teacher.name}
+                                        </strong>
+                                        <small class="text-muted" style="font-size: 0.7rem;">
+                                            ${teacher.specialization || ''}
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <!-- Action controls -->
+                                <div class="d-flex align-items-center gap-1 no-print">
+                                    <div class="dropdown">
+                                        <button class="btn btn-xs btn-light text-muted p-0 rounded-circle border shadow-xs" type="button" data-bs-toggle="dropdown" title="${isAr ? 'تغيير المعلم' : 'گوهورینا ماموستایی'}" style="text-decoration: none; width: 25px; height: 25px; display: inline-flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-cog" style="font-size: 0.72rem;"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 p-1" style="font-size: 0.78rem; min-width: 180px; max-height: 250px; overflow-y: auto; z-index: 1070;">
+                                            <li><h6 class="dropdown-header py-1" style="font-size: 0.68rem;">${isAr ? 'تغيير المعلم المراقب:' : 'گوهورینا ماموستایێ چاڤدێر:'}</h6></li>
+                                            ${selectedTeachers.map(st => `
+                                                <li><a class="dropdown-item py-1 ${st.id === teacher.id ? 'active' : ''}" href="#" onclick="changeSupervisionSlot(${dayIndex}, ${slotIndex}, ${st.id})">
+                                                    ${st.name}
+                                                </a></li>
+                                            `).join('')}
+                                            <li><hr class="dropdown-divider my-1"></li>
+                                            <li><a class="dropdown-item py-1 text-danger" href="#" onclick="removeSupervisionSlot(${dayIndex}, ${slotIndex})"><i class="fas fa-trash me-1"></i>${isAr ? 'حذف من هذا اليوم' : 'ژێبرن ژ ڤێ رۆژێ'}</a></li>
+                                        </ul>
+                                    </div>
+                                    <button class="btn btn-xs btn-light text-danger p-0 rounded-circle border shadow-xs" onclick="removeSupervisionSlot(${dayIndex}, ${slotIndex})" title="${isAr ? 'حذف هذا المراقب' : 'ژێبرنا ڤی چاڤدێری'}" style="width: 25px; height: 25px; display: inline-flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-trash-alt" style="font-size: 0.72rem;"></i>
+                                    </button>
                                 </div>
                             </div>
 
-                            <!-- Action controls -->
-                            <div class="d-flex align-items-center gap-1 no-print">
-                                <div class="dropdown">
-                                    <button class="btn btn-xs btn-light text-muted p-0 rounded-circle border" type="button" data-bs-toggle="dropdown" title="${isAr ? 'تغيير المعلم' : 'گوهورینا ماموستایی'}" style="text-decoration: none; width: 25px; height: 25px; display: inline-flex; align-items: center; justify-content: center;">
-                                        <i class="fas fa-cog" style="font-size: 0.75rem;"></i>
+                            <!-- Location & Free Periods Badges -->
+                            <div class="d-flex flex-wrap gap-1 align-items-center justify-content-between pt-1.5 border-top" style="border-color: rgba(226, 232, 240, 0.8) !important;">
+                                <span class="badge rounded-pill py-1 px-2 fw-bold" style="font-size: 0.68rem; background: ${locMeta.bg}; color: ${locMeta.color}; border: 1px solid ${locMeta.border};">
+                                    <i class="fas ${locMeta.icon} me-1"></i>${locMeta.name}
+                                </span>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill py-1 px-2 fw-bold" style="font-size: 0.68rem;" title="${isAr ? 'الحصص الشاغرة' : 'وانەیێن بەتاڵ'}">
+                                    <i class="fas fa-clock me-1"></i>${dayStats.freePeriods.length > 0 ? (isAr ? `حصص: ${dayStats.freePeriods.join('، ')}` : `وانە: ${dayStats.freePeriods.join('، ')}`) : (isAr ? 'مشغول' : 'مژویل')}
+                                </span>
+                            </div>
+                        </div>`;
+                    });
+                }
+
+                html += `
+                        </div>
+                        <!-- Day Card Footer -->
+                        <div class="card-footer bg-white border-top p-2 text-center no-print">
+                            <button class="btn btn-xs btn-outline-primary w-100 rounded-pill fw-bold" onclick="addSupervisionSlot(${dayIndex})" style="font-size: 0.74rem;">
+                                <i class="fas fa-plus me-1"></i>${isAr ? 'إضافة مراقب' : 'زێدەکرن'}
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+            });
+
+            html += `</div>`;
+
+            // ---------------------------------------------------------------------
+            // 2. DESIGN 2: OFFICIAL PROFESSIONAL TABLE (جدول شبكي فەرمی)
+            // ---------------------------------------------------------------------
+        } else if (supData.dailyLayout === 'table') {
+            let maxSlots = supervisorsPerDay;
+            days.forEach((_, dIdx) => {
+                const count = (assignments[dIdx] || []).length;
+                if (count > maxSlots) maxSlots = count;
+            });
+
+            html += `
+            <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white" style="position: relative; z-index: 1;">
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle text-center mb-0 sup-official-table" style="font-size: 0.8rem; border-color: #e2e8f0;">
+                        <thead>
+                            <tr class="bg-light text-dark">
+                                <th style="width: 50px; background: #f8fafc;">#</th>
+                                ${days.map((dayName, dayIndex) => {
+                const dayAssignments = assignments[dayIndex] || [];
+                const isCompleted = dayAssignments.length >= supervisorsPerDay;
+                return `
+                                    <th style="min-width: 180px; background: #f8fafc;">
+                                        <div class="d-flex align-items-center justify-content-between gap-1 px-1">
+                                            <div class="d-flex align-items-center gap-1.5">
+                                                <i class="fas fa-calendar-day text-primary"></i>
+                                                <strong class="text-dark" style="font-size: 0.88rem;">${dayName}</strong>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-1">
+                                                <span class="badge ${isCompleted ? 'bg-success' : 'bg-warning text-dark'} rounded-pill" style="font-size: 0.68rem;">
+                                                    ${dayAssignments.length}/${supervisorsPerDay}
+                                                </span>
+                                                ${dayAssignments.length > 0 ? `
+                                                    <button class="btn btn-xs btn-link text-danger p-0 no-print" onclick="clearDaySupervision(${dayIndex})" title="${isAr ? 'حذف اليوم' : 'ڤالاکرن'}">
+                                                        <i class="fas fa-trash-alt" style="font-size: 0.68rem;"></i>
+                                                    </button>
+                                                ` : ''}
+                                            </div>
+                                        </div>
+                                    </th>`;
+            }).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+            for (let slotIdx = 0; slotIdx < maxSlots; slotIdx++) {
+                html += `
+                <tr>
+                    <td class="fw-bold bg-light-subtle text-muted" style="font-size: 0.75rem;">${slotIdx + 1}</td>`;
+
+                days.forEach((_, dayIndex) => {
+                    const dayAssignments = assignments[dayIndex] || [];
+                    const item = dayAssignments[slotIdx];
+
+                    if (item) {
+                        const teacher = allTeachers.find(t => t.id === item.teacherId) || { name: item.teacherName || 'مراقب', specialization: '' };
+                        const dayStats = getTeacherFreePeriodsOnDay(teacher, dayIndex, schedule);
+                        const locMeta = getSupervisionLocationMeta(item.location || locations[slotIdx % locations.length], isAr);
+
+                        html += `
+                        <td class="p-2" style="background: #ffffff;">
+                            <div class="d-flex flex-column gap-1.5 p-1.5 rounded-3 border" style="border-inline-start: 3.5px solid ${locMeta.color} !important; background: #f8fafc;">
+                                <div class="d-flex align-items-center justify-content-between gap-1">
+                                    <strong class="text-dark text-truncate" style="font-size: 0.82rem;" title="${teacher.name}">${teacher.name}</strong>
+                                    <div class="d-flex align-items-center gap-1 no-print">
+                                        <div class="dropdown">
+                                            <button class="btn btn-xs btn-light text-muted p-0 rounded-circle border" type="button" data-bs-toggle="dropdown" style="width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center;">
+                                                <i class="fas fa-cog" style="font-size: 0.62rem;"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 p-1" style="font-size: 0.75rem; min-width: 170px; max-height: 240px; overflow-y: auto; z-index: 1070;">
+                                                <li><h6 class="dropdown-header py-1" style="font-size: 0.65rem;">${isAr ? 'تغيير المعلم:' : 'گوهورین:'}</h6></li>
+                                                ${selectedTeachers.map(st => `
+                                                    <li><a class="dropdown-item py-1 ${st.id === teacher.id ? 'active' : ''}" href="#" onclick="changeSupervisionSlot(${dayIndex}, ${slotIdx}, ${st.id})">
+                                                        ${st.name}
+                                                    </a></li>
+                                                `).join('')}
+                                                <li><hr class="dropdown-divider my-1"></li>
+                                                <li><a class="dropdown-item py-1 text-danger" href="#" onclick="removeSupervisionSlot(${dayIndex}, ${slotIdx})"><i class="fas fa-trash me-1"></i>${isAr ? 'حذف' : 'ژێبرن'}</a></li>
+                                            </ul>
+                                        </div>
+                                        <button class="btn btn-xs btn-light text-danger p-0 rounded-circle border" onclick="removeSupervisionSlot(${dayIndex}, ${slotIdx})" style="width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center;" title="${isAr ? 'حذف' : 'ژێبرن'}">
+                                            <i class="fas fa-trash-alt" style="font-size: 0.62rem;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between gap-1" style="font-size: 0.68rem;">
+                                    <span class="badge rounded-pill py-0.5 px-1.5" style="background: ${locMeta.bg}; color: ${locMeta.color}; border: 1px solid ${locMeta.border};">
+                                        <i class="fas ${locMeta.icon} me-1"></i>${locMeta.name}
+                                    </span>
+                                    <span class="text-success fw-bold">
+                                        <i class="fas fa-clock me-0.5"></i>${dayStats.freePeriods.length > 0 ? (isAr ? `ح: ${dayStats.freePeriods.join('،')}` : `و: ${dayStats.freePeriods.join('،')}`) : (isAr ? 'مشغول' : 'مژویل')}
+                                    </span>
+                                </div>
+                            </div>
+                        </td>`;
+                    } else {
+                        html += `
+                        <td class="p-2 text-center text-muted bg-white">
+                            <button class="btn btn-xs btn-outline-dashed w-100 rounded-3 py-2 no-print" onclick="addSupervisionSlot(${dayIndex})" style="font-size: 0.72rem; border: 1px dashed #cbd5e1; color: #64748b;">
+                                <i class="fas fa-plus me-1"></i>${isAr ? 'تعيين' : 'دانان'}
+                            </button>
+                        </td>`;
+                    }
+                });
+
+                html += `</tr>`;
+            }
+
+            html += `
+                        </tbody>
+                        <tfoot class="bg-light no-print">
+                            <tr>
+                                <td></td>
+                                ${days.map((_, dayIndex) => `
+                                    <td class="p-2">
+                                        <button class="btn btn-xs btn-primary w-100 rounded-pill fw-bold py-1" onclick="addSupervisionSlot(${dayIndex})" style="font-size: 0.74rem;">
+                                            <i class="fas fa-plus me-1"></i>${isAr ? 'إضافة مراقب' : 'زێدەکرن'}
+                                        </button>
+                                    </td>
+                                `).join('')}
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>`;
+
+            // ---------------------------------------------------------------------
+            // 3. DESIGN 3: ULTRA-COMPACT STREAMLINED LIST (کورت و چڕ)
+            // ---------------------------------------------------------------------
+        } else if (supData.dailyLayout === 'compact') {
+            html += `<div class="row g-2 mb-4" id="supervisionWeeklyGrid" style="position: relative; z-index: 1;">`;
+
+            days.forEach((dayName, dayIndex) => {
+                const dayAssignments = assignments[dayIndex] || [];
+                const isCompleted = dayAssignments.length >= supervisorsPerDay;
+
+                html += `
+                <div class="supervision-day-col mb-2">
+                    <div class="card h-100 border-0 shadow-sm rounded-3 bg-white day-card" style="overflow: visible;">
+                        <!-- Day Header -->
+                        <div class="p-2 px-2.5 border-bottom d-flex justify-content-between align-items-center ${isCompleted ? 'bg-success-subtle text-success-emphasis' : 'bg-light text-dark'}">
+                            <div class="d-flex align-items-center gap-1">
+                                <i class="fas fa-calendar-day text-primary" style="font-size: 0.82rem;"></i>
+                                <strong style="font-size: 0.85rem;">${dayName}</strong>
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="badge ${isCompleted ? 'bg-success' : 'bg-warning text-dark'} rounded-pill" style="font-size: 0.65rem;">
+                                    ${dayAssignments.length}/${supervisorsPerDay}
+                                </span>
+                                ${dayAssignments.length > 0 ? `
+                                    <button class="btn btn-xs btn-link text-danger p-0 no-print" onclick="clearDaySupervision(${dayIndex})" title="${isAr ? 'حذف' : 'ڤالاکرن'}" style="text-decoration: none; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-trash-alt" style="font-size: 0.65rem;"></i>
                                     </button>
-                                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 p-1" style="font-size: 0.78rem; min-width: 180px; max-height: 250px; overflow-y: auto; z-index: 1070;">
-                                        <li><h6 class="dropdown-header py-1" style="font-size: 0.68rem;">${isAr ? 'تغيير المعلم المراقب:' : 'گوهورینا ماموستایێ چاڤدێر:'}</h6></li>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Compact List Body -->
+                        <div class="card-body p-1.5 d-flex flex-column gap-1" style="min-height: 140px; overflow: visible;">`;
+
+                if (dayAssignments.length === 0) {
+                    html += `
+                    <div class="text-center text-muted my-auto py-3 small" style="font-size: 0.72rem;">
+                        ${isAr ? 'لا يوجد مراقبون' : 'چ چاڤدێر نینن'}
+                    </div>`;
+                } else {
+                    dayAssignments.forEach((item, slotIndex) => {
+                        const teacher = allTeachers.find(t => t.id === item.teacherId) || { name: item.teacherName || 'مراقب', specialization: '' };
+                        const dayStats = getTeacherFreePeriodsOnDay(teacher, dayIndex, schedule);
+                        const locMeta = getSupervisionLocationMeta(item.location || locations[slotIndex % locations.length], isAr);
+
+                        html += `
+                        <div class="sup-compact-item d-flex align-items-center justify-content-between p-1.5 rounded-2 border bg-light-subtle" style="font-size: 0.75rem; border-inline-start: 3px solid ${locMeta.color} !important;">
+                            <div class="d-flex align-items-center gap-1.5 overflow-hidden flex-grow-1">
+                                <span class="badge rounded-circle text-white p-0 flex-shrink-0" style="width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.62rem; background: ${locMeta.color};">
+                                    ${slotIndex + 1}
+                                </span>
+                                <strong class="text-dark text-truncate" style="font-size: 0.79rem;" title="${teacher.name}">${teacher.name}</strong>
+                                <span class="badge rounded-pill py-0.5 px-1.5 flex-shrink-0" style="font-size: 0.62rem; background: ${locMeta.bg}; color: ${locMeta.color};">
+                                    <i class="fas ${locMeta.icon}"></i>
+                                </span>
+                            </div>
+                            <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                                <span class="badge bg-success-subtle text-success py-0.5 px-1 rounded-pill" style="font-size: 0.62rem;" title="${isAr ? 'حصص الفراغ' : 'وانەیێن بەتاڵ'}">
+                                    ${dayStats.freePeriods.length > 0 ? `${dayStats.freePeriods.join(',')}` : '0'}
+                                </span>
+                                <div class="dropdown no-print">
+                                    <button class="btn btn-xs btn-light text-muted p-0 rounded-circle border" type="button" data-bs-toggle="dropdown" style="width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-cog" style="font-size: 0.58rem;"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 p-1" style="font-size: 0.74rem; min-width: 170px; max-height: 220px; overflow-y: auto; z-index: 1070;">
+                                        <li><h6 class="dropdown-header py-1" style="font-size: 0.64rem;">${isAr ? 'تغيير المعلم:' : 'گوهورین:'}</h6></li>
                                         ${selectedTeachers.map(st => `
                                             <li><a class="dropdown-item py-1 ${st.id === teacher.id ? 'active' : ''}" href="#" onclick="changeSupervisionSlot(${dayIndex}, ${slotIndex}, ${st.id})">
                                                 ${st.name}
                                             </a></li>
                                         `).join('')}
                                         <li><hr class="dropdown-divider my-1"></li>
-                                        <li><a class="dropdown-item py-1 text-danger" href="#" onclick="removeSupervisionSlot(${dayIndex}, ${slotIndex})"><i class="fas fa-trash me-1"></i>${isAr ? 'حذف من هذا اليوم' : 'ژێبرن ژ ڤێ رۆژێ'}</a></li>
+                                        <li><a class="dropdown-item py-1 text-danger" href="#" onclick="removeSupervisionSlot(${dayIndex}, ${slotIndex})"><i class="fas fa-trash me-1"></i>${isAr ? 'حذف' : 'ژێبرن'}</a></li>
                                     </ul>
                                 </div>
-                                <button class="btn btn-xs btn-light text-danger p-0 rounded-circle border" onclick="removeSupervisionSlot(${dayIndex}, ${slotIndex})" title="${isAr ? 'حذف هذا المراقب' : 'ژێبرنا ڤی چاڤدێری'}" style="width: 25px; height: 25px; display: inline-flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-trash-alt" style="font-size: 0.74rem;"></i>
+                                <button class="btn btn-xs btn-light text-danger p-0 rounded-circle border no-print" onclick="removeSupervisionSlot(${dayIndex}, ${slotIndex})" style="width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center;" title="${isAr ? 'حذف' : 'ژێبرن'}">
+                                    <i class="fas fa-times" style="font-size: 0.6rem;"></i>
                                 </button>
                             </div>
+                        </div>`;
+                    });
+                }
+
+                html += `
                         </div>
-
-                        <!-- Free Periods & Location Badges in One Clean Row -->
-                        <div class="d-flex flex-wrap gap-1 align-items-center justify-content-between pt-1 border-top border-light-subtle">
-                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill py-1 px-2 fw-bold" style="font-size: 0.69rem;" title="${isAr ? 'الحصص الشاغرة' : 'وانەیێن بەتاڵ'}">
-                                <i class="fas fa-clock me-1"></i>${dayStats.freePeriods.length > 0 ? (isAr ? `حصص: ${dayStats.freePeriods.join('، ')}` : `وانە: ${dayStats.freePeriods.join('، ')}`) : (isAr ? 'مشغول' : 'مژویل')}
-                            </span>
-                            <span class="badge bg-light text-secondary border rounded-pill py-1 px-2" style="font-size: 0.68rem;">
-                                <i class="fas fa-map-marker-alt me-1 text-danger"></i>${locationName}
-                            </span>
+                        <div class="card-footer bg-white border-top p-1.5 text-center no-print">
+                            <button class="btn btn-xs btn-outline-secondary w-100 rounded-pill py-0.5" onclick="addSupervisionSlot(${dayIndex})" style="font-size: 0.71rem;">
+                                <i class="fas fa-plus me-1"></i>${isAr ? 'إضافة' : 'زێدەکرن'}
+                            </button>
                         </div>
-                    </div>`;
-                });
-            }
-
-            html += `
                     </div>
-                    <!-- Day Card Footer -->
-                    <div class="card-footer bg-white border-top p-2 text-center no-print">
-                        <button class="btn btn-xs btn-outline-secondary w-100 rounded-pill" onclick="addSupervisionSlot(${dayIndex})" style="font-size: 0.74rem;">
-                            <i class="fas fa-plus me-1"></i>${isAr ? 'إضافة مراقب' : 'زێدەکرن'}
-                        </button>
-                    </div>
-                </div>
-            </div>`;
-        });
+                </div>`;
+            });
 
-        html += `</div>`;
+            html += `</div>`;
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -15773,7 +17957,7 @@ function renderSupervisionTab() {
                     }
                 }
             });
-            assignedSummaryHTML = periodList.length > 0 
+            assignedSummaryHTML = periodList.length > 0
                 ? periodList.map(item => `<span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5 m-0.5" style="font-size:0.68rem;">${item}</span>`).join(' ')
                 : `<span class="text-muted small">${isAr ? 'غير مسند' : 'نەهاتیە دانان'}</span>`;
         } else {
@@ -15784,7 +17968,7 @@ function renderSupervisionTab() {
                     assignedDaysNames.push(dName);
                 }
             });
-            assignedSummaryHTML = assignedDaysNames.length > 0 
+            assignedSummaryHTML = assignedDaysNames.length > 0
                 ? assignedDaysNames.map(dn => `<span class="badge bg-primary rounded-pill px-2 py-1">${dn}</span>`).join(' ')
                 : `<span class="text-muted small">${isAr ? 'غير مسند' : 'نەهاتیە دانان'}</span>`;
         }
@@ -15915,10 +18099,10 @@ function openSupervisionTeacherModal() {
         confirmButtonColor: '#198754',
         cancelButtonColor: '#6c757d',
         didOpen: () => {
-            window.setAllSupervisionTeachers = function(check) {
+            window.setAllSupervisionTeachers = function (check) {
                 document.querySelectorAll('.sup-teacher-check').forEach(chk => chk.checked = check);
             };
-            window.setSupervisionTeachersExcludeAdmin = function() {
+            window.setSupervisionTeachersExcludeAdmin = function () {
                 allTeachers.forEach(t => {
                     const chk = document.getElementById(`chkSup_${t.id}`);
                     if (!chk) return;
@@ -15953,9 +18137,9 @@ function getTeacherGender(teacher) {
 
     const name = (teacher.name || '').trim();
     const femaleKeywords = [
-        'فاتم', 'زينب', 'مريم', 'خديج', 'عائش', 'زهراء', 'نور', 'سارة', 'هدى', 'منى', 'آية', 'دعاء', 'روان', 
-        'شيرين', 'سميرة', 'كوردستان', 'ئەڤین', 'پەیمان', 'هێلان', 'هندستان', 'شيلان', 'ديلان', 'روژين', 'سوزان', 
-        'نارين', 'پرژين', 'ئاڤان', 'بيخال', 'سروشت', 'چنار', 'سروه', 'لاڤا', 'سوزدار', 'هێرۆ', 'کەژال', 'شەونم', 
+        'فاتم', 'زينب', 'مريم', 'خديج', 'عائش', 'زهراء', 'نور', 'سارة', 'هدى', 'منى', 'آية', 'دعاء', 'روان',
+        'شيرين', 'سميرة', 'كوردستان', 'ئەڤین', 'پەیمان', 'هێلان', 'هندستان', 'شيلان', 'ديلان', 'روژين', 'سوزان',
+        'نارين', 'پرژين', 'ئاڤان', 'بيخال', 'سروشت', 'چنار', 'سروه', 'لاڤا', 'سوزدار', 'هێرۆ', 'کەژال', 'شەونم',
         'گەلاوێژ', 'نیان', 'شلێر', 'بەیان', 'کویستان', 'چیمەن', 'بەناز', 'دڵسۆز', 'ڕێزان', 'ساهرة', 'نەرمین', 'سەیران'
     ];
     for (const kw of femaleKeywords) {
@@ -16845,7 +19029,7 @@ function autoDistributePeriodSupervision() {
         cancelButtonColor: '#6c757d',
         didOpen: () => {
             window.lastSelectedPeriodDistMode = 'gender_separated';
-            window.selectPeriodDistCard = function(mode) {
+            window.selectPeriodDistCard = function (mode) {
                 window.lastSelectedPeriodDistMode = mode;
                 document.querySelectorAll('.period-dist-card').forEach(c => {
                     c.classList.remove('border-success', 'bg-success-subtle', 'border-primary', 'bg-primary-subtle', 'border-warning', 'bg-warning-subtle', 'shadow-xs');
@@ -16893,7 +19077,7 @@ function openHybridSupervisionConfigModal() {
     const days = schedule.settings?.workDays || ['ئێك شەمب', 'دوو شەمب', 'سێ شەمب', 'چوار شەمب', 'پێنج شەمب'];
     const periodsCount = Number(schedule.settings?.periodsPerDay) || 7;
     const allTeachers = Array.isArray(schedule.teachers) ? schedule.teachers : [];
-    
+
     let selectedTeacherIds = new Set((supData.selectedTeacherIds || []).map(String));
     if (selectedTeacherIds.size === 0) {
         selectedTeacherIds = new Set(allTeachers.filter(t => !t.onLeave).map(t => String(t.id)));
@@ -16925,7 +19109,7 @@ function openHybridSupervisionConfigModal() {
     const defaultDailyIds = new Set();
     const sortedByFree = [...teacherStats].sort((a, b) => b.totalFree - a.totalFree);
     const assignedDays = new Set();
-    
+
     sortedByFree.forEach(item => {
         if (!assignedDays.has(item.bestDay) && defaultDailyIds.size < days.length) {
             defaultDailyIds.add(item.teacher.id);
@@ -16965,11 +19149,11 @@ function openHybridSupervisionConfigModal() {
 
         <div class="row g-2" style="max-height: 360px; overflow-y: auto; padding-right: 4px;" id="hybridTeacherRowsContainer">
             ${selectedTeachers.map(t => {
-                const isDaily = defaultDailyIds.has(t.id);
-                const stat = teacherStats.find(s => s.teacher.id === t.id);
-                const bestDayName = days[stat?.bestDay || 0] || '';
-                
-                return `
+        const isDaily = defaultDailyIds.has(t.id);
+        const stat = teacherStats.find(s => s.teacher.id === t.id);
+        const bestDayName = days[stat?.bestDay || 0] || '';
+
+        return `
                 <div class="col-12 col-md-6">
                     <div class="p-2 rounded-3 border bg-light d-flex align-items-center justify-content-between gap-2 shadow-xs teacher-hybrid-card">
                         <div style="min-width: 0;">
@@ -16991,7 +19175,7 @@ function openHybridSupervisionConfigModal() {
                         </div>
                     </div>
                 </div>`;
-            }).join('')}
+    }).join('')}
         </div>
     </div>`;
 
@@ -17005,7 +19189,7 @@ function openHybridSupervisionConfigModal() {
         confirmButtonColor: '#d97706',
         cancelButtonColor: '#6c757d',
         didOpen: () => {
-            window.refreshHybridCounters = function() {
+            window.refreshHybridCounters = function () {
                 const dailyCount = document.querySelectorAll('.hybrid-choice-radio[value="daily"]:checked').length;
                 const periodCount = document.querySelectorAll('.hybrid-choice-radio[value="period"]:checked').length;
                 const elD = document.getElementById('cntDaily');
@@ -17014,12 +19198,12 @@ function openHybridSupervisionConfigModal() {
                 if (elP) elP.innerText = periodCount;
             };
 
-            window.setAllHybridType = function(type) {
+            window.setAllHybridType = function (type) {
                 document.querySelectorAll(`.hybrid-choice-radio[value="${type}"]`).forEach(r => r.checked = true);
                 window.refreshHybridCounters();
             };
 
-            window.autoSplitHybridQuick = function(countDaily) {
+            window.autoSplitHybridQuick = function (countDaily) {
                 const dailySet = new Set();
                 const sorted = [...teacherStats].sort((a, b) => b.totalFree - a.totalFree);
                 const takenDays = new Set();
@@ -17256,7 +19440,7 @@ function executePeriodSupervisionDistribution(mode = 'gender_separated') {
     const days = schedule.settings?.workDays || ['ئێك شەمب', 'دوو شەمب', 'سێ شەمب', 'چوار شەمب', 'پێنج شەمب'];
     const periodsCount = Number(schedule.settings?.periodsPerDay) || 7;
     const allTeachers = Array.isArray(schedule.teachers) ? schedule.teachers : [];
-    
+
     // Safely retrieve selected teachers
     let selectedTeacherIds = new Set((supData.selectedTeacherIds || []).map(String));
     if (selectedTeacherIds.size === 0) {
@@ -17305,7 +19489,7 @@ function executePeriodSupervisionDistribution(mode = 'gender_separated') {
         // Calculate number of bells for males vs females
         let maleBellsCount = Math.round((males.length / selectedTeachers.length) * periodsCount);
         maleBellsCount = Math.max(1, Math.min(periodsCount - 1, maleBellsCount));
-        
+
         const maleBells = [];
         for (let p = 1; p <= maleBellsCount; p++) maleBells.push(p);
 
@@ -17412,9 +19596,9 @@ function executePeriodSupervisionDistribution(mode = 'gender_separated') {
         <div class="text-start" style="font-size: 0.84rem; line-height: 1.5;">
             <div class="alert ${isGenderMode ? 'alert-success' : 'alert-primary'} py-2 px-3 mb-2.5 rounded-3 border-0">
                 <i class="fas fa-check-circle me-1.5"></i>
-                <strong>${isGenderMode 
-                    ? (isAr ? 'تم الفصل حسب الجنس: (ذكر مع ذكر، وإناث مع إناث في نفس الجرس طوال الأسبوع)' : 'جوداکرن لدویڤ رەگەزی: نێر دگەل نێر، و مێ دگەل مێ د هەمان زەنگێ دا')
-                    : (isAr ? 'نفس المعلمين في نفس الجرس طوال الأسبوع من الأحد إلى الخميس' : 'هەمان ماموستا د هەمان زەنگێ دا د هەمی رۆژێن حەفتیێ دا')}</strong>
+                <strong>${isGenderMode
+                ? (isAr ? 'تم الفصل حسب الجنس: (ذكر مع ذكر، وإناث مع إناث في نفس الجرس طوال الأسبوع)' : 'جوداکرن لدویڤ رەگەزی: نێر دگەل نێر، و مێ دگەل مێ د هەمان زەنگێ دا')
+                : (isAr ? 'نفس المعلمين في نفس الجرس طوال الأسبوع من الأحد إلى الخميس' : 'هەمان ماموستا د هەمان زەنگێ دا د هەمی رۆژێن حەفتیێ دا')}</strong>
             </div>
             <div class="p-2.5 rounded-3 bg-light border mb-2">
                 <div class="text-success fw-bold mb-1">&bull; ${isAr ? 'المعلمون الموزعون بنسبة 100%:' : 'ماموستایێن هاتینە دانان (100%):'} <strong>${selectedTeachers.length} / ${selectedTeachers.length}</strong></div>
@@ -17486,11 +19670,11 @@ function generatePeriodSupervisionDocumentHTML(styleType = 'grid', forDownload =
         mainContentHTML = `
         <div class="cards-layout-grid" style="grid-template-columns: repeat(${periodsCount}, 1fr);">
             ${Array.from({ length: periodsCount }, (_, i) => {
-                const p = i + 1;
-                const teachersList = periodUniqueTeachers[p] || [];
-                const gradient = bellGradients[i % bellGradients.length];
+            const p = i + 1;
+            const teachersList = periodUniqueTeachers[p] || [];
+            const gradient = bellGradients[i % bellGradients.length];
 
-                return `
+            return `
                 <div class="modern-bell-card">
                     <div class="modern-bell-header" style="background: ${gradient};">
                         <div class="bell-icon-wrap"><i class="fas fa-bell"></i></div>
@@ -17511,7 +19695,7 @@ function generatePeriodSupervisionDocumentHTML(styleType = 'grid', forDownload =
                         <span class="footer-count-badge">${isAr ? `المراقبون: ${teachersList.length}` : `چاڤدێر: ${teachersList.length}`}</span>
                     </div>
                 </div>`;
-            }).join('')}
+        }).join('')}
         </div>`;
 
     } else if (styleType === 'official_table') {
@@ -17531,9 +19715,9 @@ function generatePeriodSupervisionDocumentHTML(styleType = 'grid', forDownload =
             </thead>
             <tbody>
                 ${Array.from({ length: periodsCount }, (_, i) => {
-                    const p = i + 1;
-                    const teachersList = periodUniqueTeachers[p] || [];
-                    return `
+            const p = i + 1;
+            const teachersList = periodUniqueTeachers[p] || [];
+            return `
                     <tr>
                         <td class="bell-num-cell">
                             <strong>${isAr ? `جرس ${p} (حصة ${p})` : `زەنگا ${p} (وانە ${p})`}</strong>
@@ -17550,7 +19734,7 @@ function generatePeriodSupervisionDocumentHTML(styleType = 'grid', forDownload =
                         </td>
                         <td class="days-cell">${isAr ? 'من الأحد إلى الخميس' : 'ژ ئێك شەمب تا پێنج شەمب'}</td>
                     </tr>`;
-                }).join('')}
+        }).join('')}
             </tbody>
         </table>`;
 
@@ -17572,13 +19756,13 @@ function generatePeriodSupervisionDocumentHTML(styleType = 'grid', forDownload =
                     tableRowsHTML += `<td>
                         <div class="supervisors-cell-list">
                             ${list.map((item, idx) => {
-                                const teacher = allTeachers.find(t => t.id === item.teacherId);
-                                const name = teacher ? teacher.name : (item.teacherName || '');
-                                return `<div class="teacher-print-pill">
+                        const teacher = allTeachers.find(t => t.id === item.teacherId);
+                        const name = teacher ? teacher.name : (item.teacherName || '');
+                        return `<div class="teacher-print-pill">
                                     <span class="t-bullet">${idx + 1}</span>
                                     <span class="t-name">${name}</span>
                                 </div>`;
-                            }).join('')}
+                    }).join('')}
                         </div>
                     </td>`;
                 }
@@ -19509,85 +21693,152 @@ function renderClassMentorsTab() {
     container.innerHTML = `
     <div class="class-mentors-dashboard" dir="rtl">
         <!-- Main Toolbar Card -->
-        <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 bg-white mentors-toolbar-card" style="position: relative; overflow: visible !important;">
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2.5">
-                <div class="d-flex align-items-center gap-2">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 40px; height: 40px; background: linear-gradient(135deg, #0284c7, #0369a1);">
-                        <i class="fas fa-user-graduate"></i>
-                    </div>
-                    <div>
-                        <h5 class="fw-bold text-dark mb-0" style="letter-spacing: -0.2px;">${isAr ? 'مرشدو الصفوف' : 'ڕێبەرێن پۆلان'}</h5>
-                        <div class="text-muted" style="font-size: 0.75rem;">${isAr ? 'تعيين وتوزيع مرشدي الشعب' : 'دیاریکرنا ڕێبەرێن پۆلان'}</div>
+        <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 distribution-toolbar-card no-print">
+            <!-- Row 1: Views & Status -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pb-2 mb-2 border-bottom toolbar-row-view">
+                <!-- View Modes Group (Right in RTL) -->
+                <div class="d-flex align-items-center gap-2 flex-wrap toolbar-group-views">
+                    <span class="toolbar-group-label ms-1">
+                        <i class="fas fa-th-large"></i> ${isAr ? 'عرض' : 'نیشاندان'}
+                    </span>
+                    <div class="tt-view-btn-group btn-group p-0.5 rounded-pill" role="group">
+                        <button type="button" class="btn btn-sm rounded-pill px-3 fw-bold ${viewMode === 'table' ? 'active' : ''}" onclick="setClassMentorsViewMode('table')">
+                            <i class="fas fa-table-list me-1"></i>
+                            <span>${isAr ? 'جدول' : 'خشتە'}</span>
+                        </button>
+                        <button type="button" class="btn btn-sm rounded-pill px-3 fw-bold ${viewMode === 'cards' ? 'active' : ''}" onclick="setClassMentorsViewMode('cards')">
+                            <i class="fas fa-id-card me-1"></i>
+                            <span>${isAr ? 'بطاقات' : 'کارت'}</span>
+                        </button>
                     </div>
                 </div>
 
-                <div class="mentors-actions-grid d-flex align-items-center flex-wrap gap-2">
-                    <!-- View Mode Switcher -->
-                    <div class="btn-group btn-group-sm p-0.5 bg-light rounded-pill border shadow-xs me-1" role="group">
-                        <button type="button" class="btn btn-sm rounded-pill px-3 fw-bold ${viewMode === 'table' ? 'btn-primary shadow-xs' : 'btn-light text-secondary'}" onclick="setClassMentorsViewMode('table')">
-                            <i class="fas fa-table me-1"></i>${isAr ? 'جدول' : 'خشتە'}
-                        </button>
-                        <button type="button" class="btn btn-sm rounded-pill px-3 fw-bold ${viewMode === 'cards' ? 'btn-primary shadow-xs' : 'btn-light text-secondary'}" onclick="setClassMentorsViewMode('cards')">
-                            <i class="fas fa-th-large me-1"></i>${isAr ? 'بطاقات' : 'کارت'}
-                        </button>
+                <!-- Center: Eligible Teachers 3D Clay Capsule -->
+                <div class="tt-context-clay-badge">
+                    <div class="tt-select-icon-badge" style="background: linear-gradient(145deg, #818cf8, #4f46e5) !important; box-shadow: 0 3px 8px rgba(79, 70, 229, 0.35) !important;">
+                        <i class="fas fa-user-graduate"></i>
                     </div>
+                    <span class="small fw-bold text-muted">${isAr ? 'المرشدون المؤهلون:' : 'ڕێبەرێن بەردەست:'}</span>
+                    <span class="badge bg-primary text-white rounded-pill px-2.5 py-1 fw-bold shadow-xs">
+                        ${eligibleCount}
+                    </span>
+                </div>
 
-                    <button class="btn btn-sm btn-outline-primary fw-bold rounded-pill px-3 shadow-xs" onclick="openMentorsTeacherModal()">
-                        <i class="fas fa-user-check me-1"></i>${isAr ? 'المعلمون' : 'مامۆستا'} (${eligibleCount})
+                <!-- Left: Status 3D Clay Capsule -->
+                <div>
+                    <div class="tt-context-clay-badge" style="background: linear-gradient(145deg, #ecfdf5, #d1fae5) !important; border-color: rgba(16, 185, 129, 0.25) !important; color: #065f46 !important;">
+                        <i class="fas fa-check-circle text-success fs-6"></i>
+                        <span class="small fw-bold">${assignedCount} / ${classes.length}</span>
+                        <span class="badge bg-success text-white rounded-pill px-2 py-0.5 fw-bold shadow-xs">
+                            ${isAr ? 'صفوف مكتملة' : 'پۆلێن تەمام'}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Actions & Clear Button (Grouped with Dividers) -->
+            <div class="toolbar-row-actions">
+                <!-- Group 1: بناء (Build) -->
+                <div class="toolbar-group toolbar-group-build">
+                    <span class="toolbar-group-label ms-1">
+                        <i class="fas fa-wand-magic-sparkles"></i> ${isAr ? 'بناء' : 'ئاڤاکرن'}
+                    </span>
+
+                    <!-- Auto Distribute (Orange) -->
+                    <button type="button" class="btn btn-sm btn-tb-nisab" onclick="autoDistributeClassMentors()" title="${isAr ? 'توزيع تلقائي يعتمد على أعلى حصص للمعلم في كل صف' : 'دابەشکرنا زیرەك ل دویڤ زۆرترین وانەیێن ماموستایی د هەر پۆلەکێ دا'}">
+                        <i class="fas fa-magic me-1"></i><span>${isAr ? 'توزيع تلقائي' : 'دابەشکرنا زیرەك'}</span>
                     </button>
 
-                    <button class="btn btn-sm btn-primary fw-bold rounded-pill px-3 shadow-xs" onclick="autoDistributeClassMentors()" title="${isAr ? 'توزيع تلقائي يعتمد على أعلى حصص للمعلم في كل صف' : 'دابەشکرنا زیرەك ل دویڤ زۆرترین وانەیێن ماموستایی د هەر پۆلەکێ دا'}">
-                        <i class="fas fa-magic me-1"></i>${isAr ? 'توزيع تلقائي' : 'دابەشکرنا زیرەك'}
+                    <!-- Teachers Select Modal (Cyan) -->
+                    <button type="button" class="btn btn-sm btn-tb-teacher" onclick="openMentorsTeacherModal()">
+                        <i class="fas fa-user-check me-1"></i><span>${isAr ? 'المعلمون' : 'مامۆستا'}</span>
+                    </button>
+                </div>
+
+                <div class="toolbar-divider d-none d-md-block"></div>
+
+                <!-- Group 2: تصدير وطباعة (Export & Print) -->
+                <div class="toolbar-group toolbar-group-export">
+                    <!-- HTML (Yellow/Gold) -->
+                    <button type="button" class="btn btn-sm btn-tb-html" onclick="downloadClassMentorsHTML()" title="${isAr ? 'حفظ جدول المرشدين كملف HTML يعمل بدون إنترنت' : 'هەڵگرتنا خشتێ ڕێبەران وەک HTML'}">
+                        <i class="fas fa-file-code me-1"></i><span>HTML</span>
                     </button>
 
-                    <div class="dropdown no-print" style="position: relative;">
-                        <button class="btn btn-sm btn-outline-dark fw-bold rounded-pill px-3 shadow-xs dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">
-                            <i class="fas fa-print me-1"></i>${isAr ? 'طباعة' : 'چاپکرن'}
+                    <!-- Print Dropdown (Lilac/Purple) -->
+                    <div class="btn-group dropdown">
+                        <button type="button" class="btn btn-sm btn-tb-print dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-print me-1"></i> ${isAr ? 'طباعة' : 'چاپکرن'}
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 p-1.5" style="font-size: 0.8rem; min-width: 275px;">
+                        <ul class="dropdown-menu shadow border-0 rounded-4 p-1.5" style="font-size: 0.8rem; min-width: 275px;">
                             <li><a class="dropdown-item py-2 fw-bold text-dark rounded-2" href="#" onclick="printClassMentors('cards')"><i class="fas fa-id-card text-indigo me-2" style="color: #6366f1;"></i>${isAr ? 'طبع كروت الصفوف (ورقة واحدة A4)' : 'چاپکرنا کارتان (ئێک پەڕ A4)'}</a></li>
                             <li><a class="dropdown-item py-2 fw-bold text-dark rounded-2" href="#" onclick="printClassMentors('table')"><i class="fas fa-table text-primary me-2"></i>${isAr ? 'طباعة الجدول الرسمي (A4 ورقة واحدة)' : 'چاپکرنا خشتێ فەرمی (A4)'}</a></li>
                             <li><a class="dropdown-item py-2 fw-bold text-dark rounded-2" href="#" onclick="printClassMentors('cards-large')"><i class="fas fa-th-large text-secondary me-2"></i>${isAr ? 'كروت كبيرة للقص والتعليق (4 بالصفحة)' : 'کارتێن مەزن بۆ بڕینێ'}</a></li>
-                            <li><hr class="dropdown-divider my-1"></li>
-                            <li><a class="dropdown-item py-2 fw-bold text-dark rounded-2" href="#" onclick="downloadClassMentorsHTML()"><i class="fas fa-file-code text-success me-2"></i>${isAr ? 'تنزيل كملف HTML مستقل' : 'داونلودکرن وەک فایلا HTML'}</a></li>
                         </ul>
                     </div>
+                </div>
 
-                    <button class="btn btn-sm btn-outline-success fw-bold rounded-pill px-3 shadow-xs" onclick="downloadClassMentorsHTML()" title="${isAr ? 'حفظ جدول المرشدين كملف HTML يعمل بدون إنترنت' : 'هەڵگرتنا خشتێ ڕێبەران وەک HTML'}">
-                        <i class="fas fa-file-code me-1"></i>HTML
-                    </button>
+                <div class="toolbar-divider d-none d-md-block"></div>
 
-                    <button class="btn btn-sm btn-outline-danger fw-bold rounded-pill px-3 shadow-xs" onclick="clearClassMentors()" title="${isAr ? 'تفريغ جميع تعيينات المرشدين' : 'ڤالاکرنا هەمی ڕێبەران'}">
-                        <i class="fas fa-trash-alt me-1"></i>${isAr ? 'تفريغ' : 'ڤالاکرن'}
+                <!-- Group 3: تفريغ (Clear) -->
+                <div class="toolbar-group toolbar-group-system">
+                    <button type="button" class="btn btn-sm btn-tb-delete" onclick="clearClassMentors()" title="${isAr ? 'تفريغ جميع تعيينات المرشدين' : 'ڤالاکرنا هەمی ڕێبەران'}">
+                        <i class="fas fa-trash-alt me-1"></i><span>${isAr ? 'تفريغ' : 'ڤالاکرن'}</span>
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Quick Stats Cards Row -->
-        <div class="row g-2 mb-3 mentors-stats-row" style="position: relative; z-index: 1;">
+        <!-- Quick Stats Cards Row (3D Claymorphism) -->
+        <div class="row g-2.5 mb-3 mentors-stats-row" style="position: relative; z-index: 1;">
+            <!-- Card 1: Total Classes -->
             <div class="col-6 col-md-3">
-                <div class="card border-0 shadow-sm rounded-4 p-2.5 bg-white text-center">
-                    <div class="text-muted small fw-bold" style="font-size: 0.72rem;">${isAr ? 'إجمالي الصفوف' : 'کۆی پۆلان'}</div>
-                    <div class="fw-bold text-dark" style="font-size: 1.4rem;">${classes.length}</div>
+                <div class="mentor-stat-clay-card">
+                    <div>
+                        <div class="text-muted small fw-bold" style="font-size: 0.76rem;">${isAr ? 'إجمالي الصفوف' : 'کۆی پۆلان'}</div>
+                        <div class="fw-bold text-dark mt-0.5" style="font-size: 1.5rem; line-height: 1.2;">${classes.length}</div>
+                    </div>
+                    <div class="mentor-stat-icon-badge" style="background: linear-gradient(145deg, #818cf8, #4f46e5) !important; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35) !important;">
+                        <i class="fas fa-chalkboard"></i>
+                    </div>
                 </div>
             </div>
+
+            <!-- Card 2: Assigned Mentors -->
             <div class="col-6 col-md-3">
-                <div class="card border-0 shadow-sm rounded-4 p-2.5 bg-white text-center border-start border-success border-4">
-                    <div class="text-muted small fw-bold" style="font-size: 0.72rem;">${isAr ? 'صفوف بمرشد' : 'پۆلێن ب ڕێبەر'}</div>
-                    <div class="fw-bold text-success" style="font-size: 1.4rem;">${assignedCount}</div>
+                <div class="mentor-stat-clay-card">
+                    <div>
+                        <div class="text-muted small fw-bold" style="font-size: 0.76rem;">${isAr ? 'صفوف بمرشد' : 'پۆلێن ب ڕێبەر'}</div>
+                        <div class="fw-bold text-success mt-0.5" style="font-size: 1.5rem; line-height: 1.2;">${assignedCount}</div>
+                    </div>
+                    <div class="mentor-stat-icon-badge" style="background: linear-gradient(145deg, #34d399, #059669) !important; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35) !important;">
+                        <i class="fas fa-user-check"></i>
+                    </div>
                 </div>
             </div>
+
+            <!-- Card 3: Vacant Classes -->
             <div class="col-6 col-md-3">
-                <div class="card border-0 shadow-sm rounded-4 p-2.5 bg-white text-center border-start border-warning border-4">
-                    <div class="text-muted small fw-bold" style="font-size: 0.72rem;">${isAr ? 'صفوف شاغرة' : 'پۆلێن بێ ڕێبەر'}</div>
-                    <div class="fw-bold text-warning" style="font-size: 1.4rem;">${unassignedCount}</div>
+                <div class="mentor-stat-clay-card">
+                    <div>
+                        <div class="text-muted small fw-bold" style="font-size: 0.76rem;">${isAr ? 'صفوف شاغرة' : 'پۆلێن بێ ڕێبەر'}</div>
+                        <div class="fw-bold text-warning mt-0.5" style="font-size: 1.5rem; line-height: 1.2;">${unassignedCount}</div>
+                    </div>
+                    <div class="mentor-stat-icon-badge" style="background: linear-gradient(145deg, #fbbf24, #d97706) !important; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35) !important;">
+                        <i class="fas fa-user-clock"></i>
+                    </div>
                 </div>
             </div>
+
+            <!-- Card 4: Eligible Teachers -->
             <div class="col-6 col-md-3">
-                <div class="card border-0 shadow-sm rounded-4 p-2.5 bg-white text-center border-start border-info border-4">
-                    <div class="text-muted small fw-bold" style="font-size: 0.72rem;">${isAr ? 'المعلمون المؤهلون' : 'ماموستایێن بەردەست'}</div>
-                    <div class="fw-bold text-info" style="font-size: 1.4rem;">${eligibleCount}</div>
+                <div class="mentor-stat-clay-card">
+                    <div>
+                        <div class="text-muted small fw-bold" style="font-size: 0.76rem;">${isAr ? 'المعلمون المؤهلون' : 'ماموستایێن بەردەست'}</div>
+                        <div class="fw-bold text-info mt-0.5" style="font-size: 1.5rem; line-height: 1.2;">${eligibleCount}</div>
+                    </div>
+                    <div class="mentor-stat-icon-badge" style="background: linear-gradient(145deg, #38bdf8, #0284c7) !important; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35) !important;">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
                 </div>
             </div>
         </div>
@@ -19628,7 +21879,7 @@ function setClassMentorsViewMode(mode) {
     window.classMentorsViewMode = mode;
     try {
         localStorage.setItem('class_mentors_view_mode', mode);
-    } catch (e) {}
+    } catch (e) { }
     renderClassMentorsTab();
 }
 window.setClassMentorsViewMode = setClassMentorsViewMode;
@@ -19697,12 +21948,12 @@ function openMentorsTeacherModal() {
         cancelButtonText: isAr ? 'إلغاء' : 'پاشگەزبوون',
         confirmButtonColor: '#0284c7',
         didOpen: () => {
-            window.setAllMentorsTeachers = function(selectAll) {
+            window.setAllMentorsTeachers = function (selectAll) {
                 document.querySelectorAll('.mentor-teacher-check').forEach(chk => {
                     chk.checked = selectAll;
                 });
             };
-            window.setMentorsTeachersExcludeAdmin = function() {
+            window.setMentorsTeachersExcludeAdmin = function () {
                 allTeachers.forEach(t => {
                     const chk = document.getElementById(`chkMentor_${t.id}`);
                     if (!chk) return;
@@ -21350,20 +23601,20 @@ window.downloadClassMentorsHTML = downloadClassMentorsHTML;
     document.addEventListener('show.bs.dropdown', function (e) {
         const toggle = e.target;
         if (!toggle) return;
-        
+
         let el = toggle.parentElement;
         while (el && el !== document.body) {
-            if (el.classList.contains('card') || 
-                el.classList.contains('timetable-toolbar-wrapper') || 
-                el.classList.contains('substitute-toolbar-card') || 
-                el.classList.contains('supervision-header-card') || 
-                el.classList.contains('mentors-toolbar-card') || 
-                el.classList.contains('tt-toolbar-tier1') || 
-                el.classList.contains('tt-toolbar-tier2') || 
-                el.classList.contains('btn-group') || 
-                el.classList.contains('dropdown') || 
+            if (el.classList.contains('card') ||
+                el.classList.contains('timetable-toolbar-wrapper') ||
+                el.classList.contains('substitute-toolbar-card') ||
+                el.classList.contains('supervision-header-card') ||
+                el.classList.contains('mentors-toolbar-card') ||
+                el.classList.contains('tt-toolbar-tier1') ||
+                el.classList.contains('tt-toolbar-tier2') ||
+                el.classList.contains('btn-group') ||
+                el.classList.contains('dropdown') ||
                 el.classList.contains('table-responsive')) {
-                
+
                 el.classList.add('dropdown-active-parent');
                 el.style.setProperty('z-index', '1060', 'important');
                 el.style.setProperty('overflow', 'visible', 'important');

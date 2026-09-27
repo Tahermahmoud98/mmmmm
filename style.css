@@ -55,6 +55,100 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
+/* ==========================================================================
+   BUILT-IN ROBUST DROPDOWN STYLES (Self-Contained Safety)
+   ========================================================================== */
+.dropdown,
+.btn-group {
+    position: relative;
+    display: inline-flex;
+    vertical-align: middle;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    left: auto;
+    z-index: 1050;
+    min-width: 12rem;
+    padding: 0.5rem;
+    margin: 0.25rem 0 0;
+    font-size: 0.88rem;
+    color: #1e293b;
+    text-align: right;
+    list-style: none !important;
+    background-color: #ffffff;
+    background-clip: padding-box;
+    border: 1px solid rgba(203, 213, 225, 0.8);
+    border-radius: 14px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-menu.show,
+.show>.dropdown-menu {
+    display: block !important;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 0.45rem 0.75rem;
+    clear: both;
+    font-weight: 500;
+    color: #334155;
+    text-align: right;
+    text-decoration: none;
+    white-space: nowrap;
+    background-color: transparent;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+    color: #1e293b;
+    background-color: #f1f5f9;
+}
+
+.dropdown-item.active,
+.dropdown-item:active {
+    color: #ffffff;
+    background-color: #4f46e5;
+}
+
+.dropdown-divider {
+    height: 0;
+    margin: 0.4rem 0;
+    overflow: hidden;
+    border-top: 1px solid #e2e8f0;
+}
+
+[data-bs-theme="dark"] .dropdown-menu {
+    background-color: #1e293b;
+    border-color: #334155;
+    color: #f8fafc;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+}
+
+[data-bs-theme="dark"] .dropdown-item {
+    color: #cbd5e1;
+}
+
+[data-bs-theme="dark"] .dropdown-item:hover,
+[data-bs-theme="dark"] .dropdown-item:focus {
+    color: #f8fafc;
+    background-color: #334155;
+}
+
+[data-bs-theme="dark"] .dropdown-divider {
+    border-top-color: #334155;
+}
+
 body.modal-open {
     overflow: hidden;
 }
@@ -165,30 +259,30 @@ body.modal-open {
     border: none !important;
 }
 
-/* Base Claymorphic Button */
+/* Base Button Styling with Claymorphism */
 .btn {
-    font-weight: 800;
+    font-weight: 700;
     border-radius: 50px;
     padding: 0.45rem 1.1rem;
-    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
     transition: all 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.4rem;
     cursor: pointer;
-    background: linear-gradient(145deg, #f1f5f9, #cbd5e1);
+    background: linear-gradient(145deg, #f8fafc, #e2e8f0);
     color: #1e293b;
-    box-shadow: 0 4px 10px -1px rgba(148, 163, 184, 0.45), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.95), 
-                inset -2px -2px 4px rgba(100, 116, 139, 0.25) !important;
+    box-shadow: 0 5px 12px -2px rgba(148, 163, 184, 0.4),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.9),
+        inset -2px -2px 4px rgba(100, 116, 139, 0.18) !important;
     text-shadow: none;
     user-select: none;
 }
 
 .btn-sm,
 .control-panel .btn,
-.control-panel .btn-group > .btn {
+.control-panel .btn-group>.btn {
     padding: 0.4rem 0.85rem !important;
     font-size: 0.82rem !important;
     min-height: 36px !important;
@@ -222,174 +316,170 @@ body.modal-open {
 
 .btn:hover {
     transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 9px 20px -1px rgba(148, 163, 184, 0.55), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.95), 
-                inset -2px -2px 4px rgba(100, 116, 139, 0.2) !important;
-    color: #0f172a;
+    box-shadow: 0 8px 18px -1px rgba(148, 163, 184, 0.5),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.95),
+        inset -2px -2px 4px rgba(100, 116, 139, 0.15) !important;
 }
 
 .btn:active,
 .btn.active,
 .show>.btn.dropdown-toggle {
     transform: translateY(1px) scale(0.98);
-    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25), 
-                inset -2px -2px 4px rgba(255, 255, 255, 0.15), 
-                0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.2),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.4),
+        0 2px 4px rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Primary (Indigo / Purple Clay) */
-.btn-primary,
-#stageSelectorBtn {
-    background: linear-gradient(145deg, #6366f1, #4f46e5) !important;
+/* Primary (Indigo Clay) */
+.btn-primary {
+    background: linear-gradient(145deg, #a5b4fc, #6366f1) !important;
     color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.28) !important;
-    box-shadow: 0 7px 16px -2px rgba(99, 102, 241, 0.48), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.45), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    box-shadow: 0 4px 12px -2px rgba(99, 102, 241, 0.28),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.65),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
 }
 
-.btn-primary:hover,
-#stageSelectorBtn:hover {
-    background: linear-gradient(145deg, #6d70f7, #574ef0) !important;
+.btn-primary:hover {
+    background: linear-gradient(145deg, #c7d2fe, #818cf8) !important;
     color: #ffffff !important;
-    box-shadow: 0 10px 22px -2px rgba(99, 102, 241, 0.6), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.55), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.2) !important;
+    box-shadow: 0 7px 16px -2px rgba(99, 102, 241, 0.38),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.10) !important;
 }
 
 .btn-primary:active,
 .btn-primary.active,
-#stageSelectorBtn:active,
 .show>.btn-primary.dropdown-toggle {
-    background: linear-gradient(145deg, #4f46e5, #4338ca) !important;
-    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.35), 
-                inset -2px -2px 4px rgba(255, 255, 255, 0.15), 
-                0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    background: linear-gradient(145deg, #818cf8, #4f46e5) !important;
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.25),
+        0 2px 4px rgba(0, 0, 0, 0.06) !important;
 }
 
-/* Success (Emerald / Mint Green Clay) */
+/* Success (Emerald Clay) */
 .btn-success {
-    background: linear-gradient(145deg, #10b981, #059669) !important;
+    background: linear-gradient(145deg, #86efac, #10b981) !important;
     color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.28) !important;
-    box-shadow: 0 7px 16px -2px rgba(16, 185, 129, 0.48), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.45), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    box-shadow: 0 4px 12px -2px rgba(16, 185, 129, 0.28),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.65),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
 }
 
 .btn-success:hover {
-    background: linear-gradient(145deg, #18c58d, #0ca678) !important;
+    background: linear-gradient(145deg, #bbf7d0, #22c55e) !important;
     color: #ffffff !important;
-    box-shadow: 0 10px 22px -2px rgba(16, 185, 129, 0.6), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.55), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.2) !important;
+    box-shadow: 0 7px 16px -2px rgba(16, 185, 129, 0.38),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.10) !important;
 }
 
 .btn-success:active,
 .btn-success.active,
 .show>.btn-success.dropdown-toggle {
-    background: linear-gradient(145deg, #059669, #047857) !important;
-    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.35), 
-                inset -2px -2px 4px rgba(255, 255, 255, 0.15), 
-                0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    background: linear-gradient(145deg, #4ade80, #059669) !important;
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.25),
+        0 2px 4px rgba(0, 0, 0, 0.06) !important;
 }
 
-/* Warning (Warm Amber / Golden Orange Clay) */
+/* Warning (Warm Amber Clay) */
 .btn-warning {
-    background: linear-gradient(145deg, #f59e0b, #d97706) !important;
+    background: linear-gradient(145deg, #fde68a, #f59e0b) !important;
     color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    box-shadow: 0 7px 16px -2px rgba(245, 158, 11, 0.48), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.45), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.38) !important;
+    box-shadow: 0 4px 12px -2px rgba(245, 158, 11, 0.28),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.65),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
 }
 
 .btn-warning:hover {
-    background: linear-gradient(145deg, #fbbf24, #ea580c) !important;
+    background: linear-gradient(145deg, #fef08a, #fbbf24) !important;
     color: #ffffff !important;
-    box-shadow: 0 10px 22px -2px rgba(245, 158, 11, 0.6), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.55), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.2) !important;
+    box-shadow: 0 7px 16px -2px rgba(245, 158, 11, 0.38),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.10) !important;
 }
 
 .btn-warning:active,
 .btn-warning.active,
 .show>.btn-warning.dropdown-toggle {
-    background: linear-gradient(145deg, #d97706, #b45309) !important;
-    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.35), 
-                inset -2px -2px 4px rgba(255, 255, 255, 0.15), 
-                0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    background: linear-gradient(145deg, #fcd34d, #d97706) !important;
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.25),
+        0 2px 4px rgba(0, 0, 0, 0.06) !important;
 }
 
-/* Danger (Coral / Ruby Red Clay) */
+/* Danger (Coral Red Clay) */
 .btn-danger {
-    background: linear-gradient(145deg, #ef4444, #dc2626) !important;
+    background: linear-gradient(145deg, #fecaca, #f87171) !important;
     color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.28) !important;
-    box-shadow: 0 7px 16px -2px rgba(239, 68, 68, 0.48), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.45), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    box-shadow: 0 4px 12px -2px rgba(239, 68, 68, 0.28),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.65),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
 }
 
 .btn-danger:hover {
-    background: linear-gradient(145deg, #f87171, #e11d48) !important;
+    background: linear-gradient(145deg, #fee2e2, #fca5a5) !important;
     color: #ffffff !important;
-    box-shadow: 0 10px 22px -2px rgba(239, 68, 68, 0.6), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.55), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.2) !important;
+    box-shadow: 0 7px 16px -2px rgba(239, 68, 68, 0.38),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.10) !important;
 }
 
 .btn-danger:active,
 .btn-danger.active,
 .show>.btn-danger.dropdown-toggle {
-    background: linear-gradient(145deg, #dc2626, #b91c1c) !important;
-    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.35), 
-                inset -2px -2px 4px rgba(255, 255, 255, 0.15), 
-                0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    background: linear-gradient(145deg, #fca5a5, #ef4444) !important;
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.25),
+        0 2px 4px rgba(0, 0, 0, 0.06) !important;
 }
 
-/* Info (Sky / Cyan Blue Clay) */
+/* Info (Sky Cyan Clay) */
 .btn-info {
-    background: linear-gradient(145deg, #06b6d4, #0284c7) !important;
+    background: linear-gradient(145deg, #67e8f9, #22d3ee) !important;
     color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.28) !important;
-    box-shadow: 0 7px 16px -2px rgba(6, 182, 212, 0.48), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.45), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    box-shadow: 0 4px 12px -2px rgba(6, 182, 212, 0.28),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.65),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
 }
 
 .btn-info:hover {
-    background: linear-gradient(145deg, #22d3ee, #0369a1) !important;
+    background: linear-gradient(145deg, #a5f3fc, #38e1fa) !important;
     color: #ffffff !important;
-    box-shadow: 0 10px 22px -2px rgba(6, 182, 212, 0.6), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.55), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.2) !important;
+    box-shadow: 0 7px 16px -2px rgba(6, 182, 212, 0.38),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.10) !important;
 }
 
 .btn-info:active,
 .btn-info.active,
 .show>.btn-info.dropdown-toggle {
     background: linear-gradient(145deg, #0891b2, #075985) !important;
-    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.35), 
-                inset -2px -2px 4px rgba(255, 255, 255, 0.15), 
-                0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.35),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.18),
+        0 2px 4px rgba(0, 0, 0, 0.1) !important;
 }
 
 /* Secondary / Light (Soft Slate Clay) */
 .btn-secondary,
 .btn-outline-secondary,
 .btn-light {
-    background: linear-gradient(145deg, #f1f5f9, #cbd5e1) !important;
+    background: linear-gradient(145deg, #f8fafc, #cbd5e1) !important;
     color: #1e293b !important;
     border: 1px solid rgba(255, 255, 255, 0.6) !important;
-    box-shadow: 0 7px 16px -2px rgba(148, 163, 184, 0.45), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.95), 
-                inset -2px -2px 4px rgba(100, 116, 139, 0.25) !important;
+    box-shadow: 0 6px 15px -2px rgba(148, 163, 184, 0.45),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.95),
+        inset -2px -2px 4px rgba(100, 116, 139, 0.2) !important;
     text-shadow: none !important;
 }
 
@@ -398,9 +488,9 @@ body.modal-open {
 .btn-light:hover {
     background: linear-gradient(145deg, #ffffff, #d8e2ed) !important;
     color: #0f172a !important;
-    box-shadow: 0 10px 22px -2px rgba(148, 163, 184, 0.55), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.95), 
-                inset -2px -2px 4px rgba(100, 116, 139, 0.2) !important;
+    box-shadow: 0 9px 20px -2px rgba(148, 163, 184, 0.55),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.95),
+        inset -2px -2px 4px rgba(100, 116, 139, 0.18) !important;
 }
 
 .btn-secondary:active,
@@ -409,94 +499,76 @@ body.modal-open {
 .show>.btn-secondary.dropdown-toggle,
 .show>.btn-outline-secondary.dropdown-toggle {
     background: linear-gradient(145deg, #cbd5e1, #94a3b8) !important;
-    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25), 
-                inset -2px -2px 4px rgba(255, 255, 255, 0.6), 
-                0 2px 4px rgba(0, 0, 0, 0.08) !important;
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.6),
+        0 2px 4px rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Dark (Charcoal Slate Clay) */
+/* Dark (Charcoal Slate Flat 2D) */
 .btn-dark {
-    background: linear-gradient(145deg, #334155, #1e293b) !important;
+    background: #1e293b !important;
     color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    box-shadow: 0 7px 16px -2px rgba(15, 23, 42, 0.5), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.25), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.5) !important;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+    border: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
 }
 
 .btn-dark:hover {
-    background: linear-gradient(145deg, #475569, #334155) !important;
+    background: #0f172a !important;
     color: #ffffff !important;
-    box-shadow: 0 10px 22px -2px rgba(15, 23, 42, 0.6), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.3), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.45) !important;
+    box-shadow: none !important;
 }
 
-/* Outline Buttons (Soft Frosted Clay with Tinted Accents) */
+/* Outline Buttons (Clean 2D Flat) */
 .btn-outline-primary {
-    background: linear-gradient(145deg, #eef2ff, #e0e7ff) !important;
+    background: transparent !important;
     color: #4f46e5 !important;
-    border: 1.5px solid rgba(99, 102, 241, 0.4) !important;
-    box-shadow: 0 6px 14px -1px rgba(99, 102, 241, 0.25), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.95), 
-                inset -2px -2px 4px rgba(99, 102, 241, 0.15) !important;
+    border: 1.5px solid #4f46e5 !important;
+    box-shadow: none !important;
 }
 
 .btn-outline-primary:hover {
-    background: linear-gradient(145deg, #6366f1, #4f46e5) !important;
+    background: #4f46e5 !important;
     color: #ffffff !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
-    box-shadow: 0 10px 22px -2px rgba(99, 102, 241, 0.55), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.5), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.2) !important;
+    border-color: #4f46e5 !important;
+    box-shadow: none !important;
 }
 
 .btn-outline-success {
-    background: linear-gradient(145deg, #ecfdf5, #d1fae5) !important;
+    background: transparent !important;
     color: #059669 !important;
-    border: 1.5px solid rgba(16, 185, 129, 0.4) !important;
-    box-shadow: 0 6px 14px -1px rgba(16, 185, 129, 0.25), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.95), 
-                inset -2px -2px 4px rgba(16, 185, 129, 0.15) !important;
+    border: 1.5px solid #059669 !important;
+    box-shadow: none !important;
 }
 
 .btn-outline-success:hover {
-    background: linear-gradient(145deg, #10b981, #059669) !important;
+    background: #059669 !important;
     color: #ffffff !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
-    box-shadow: 0 10px 22px -2px rgba(16, 185, 129, 0.55), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.5), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.2) !important;
+    border-color: #059669 !important;
+    box-shadow: none !important;
 }
 
 .btn-outline-danger {
-    background: linear-gradient(145deg, #fef2f2, #fee2e2) !important;
+    background: transparent !important;
     color: #dc2626 !important;
-    border: 1.5px solid rgba(239, 68, 68, 0.4) !important;
-    box-shadow: 0 6px 14px -1px rgba(239, 68, 68, 0.25), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.95), 
-                inset -2px -2px 4px rgba(239, 68, 68, 0.15) !important;
+    border: 1.5px solid #dc2626 !important;
+    box-shadow: none !important;
 }
 
 .btn-outline-danger:hover {
-    background: linear-gradient(145deg, #ef4444, #dc2626) !important;
+    background: #dc2626 !important;
     color: #ffffff !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
-    box-shadow: 0 10px 22px -2px rgba(239, 68, 68, 0.55), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.5), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.2) !important;
+    border-color: #dc2626 !important;
+    box-shadow: none !important;
 }
 
 .btn-check:checked+.btn,
 .btn-check:checked+.btn-outline-primary,
 .btn-check:checked+.btn-primary {
     color: #ffffff !important;
-    background: linear-gradient(145deg, #6366f1, #4f46e5) !important;
-    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.35), 
-                inset -2px -2px 4px rgba(255, 255, 255, 0.2), 
-                0 2px 4px rgba(0, 0, 0, 0.1) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    background: #4f46e5 !important;
+    box-shadow: none !important;
+    border: 1px solid #4f46e5 !important;
 }
 
 /* Circular Icon Clay Buttons */
@@ -526,141 +598,133 @@ body.modal-open {
     transform: scale(0.95);
 }
 
-/* SweetAlert2 Claymorphic Buttons */
+/* SweetAlert2 Flat Modern Buttons */
 .swal2-styled.swal2-confirm,
 .swal2-confirm {
     border-radius: 50px !important;
-    background: linear-gradient(145deg, #6366f1, #4f46e5) !important;
+    background: #4f46e5 !important;
     color: #ffffff !important;
-    box-shadow: 0 7px 16px -2px rgba(99, 102, 241, 0.48), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.45), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.25) !important;
-    font-weight: 800 !important;
-    border: 1px solid rgba(255, 255, 255, 0.28) !important;
+    box-shadow: none !important;
+    font-weight: 700 !important;
+    border: none !important;
     padding: 0.65rem 1.8rem !important;
-    transition: all 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    transition: opacity 0.15s ease !important;
 }
 
 .swal2-styled.swal2-confirm:hover,
 .swal2-confirm:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 10px 22px -2px rgba(99, 102, 241, 0.6), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.55), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.2) !important;
+    transform: none !important;
+    box-shadow: none !important;
+    opacity: 0.9 !important;
 }
 
 .swal2-styled.swal2-cancel,
 .swal2-cancel {
     border-radius: 50px !important;
-    background: linear-gradient(145deg, #f1f5f9, #cbd5e1) !important;
+    background: #e2e8f0 !important;
     color: #1e293b !important;
-    box-shadow: 0 7px 16px -2px rgba(148, 163, 184, 0.45), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.95), 
-                inset -2px -2px 4px rgba(100, 116, 139, 0.25) !important;
-    font-weight: 800 !important;
-    border: 1px solid rgba(255, 255, 255, 0.6) !important;
+    box-shadow: none !important;
+    font-weight: 700 !important;
+    border: 1px solid #cbd5e1 !important;
     padding: 0.65rem 1.8rem !important;
-    transition: all 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    transition: opacity 0.15s ease !important;
 }
 
 .swal2-styled.swal2-cancel:hover,
 .swal2-cancel:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 10px 22px -2px rgba(148, 163, 184, 0.55), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.95), 
-                inset -2px -2px 4px rgba(100, 116, 139, 0.2) !important;
+    transform: none !important;
+    box-shadow: none !important;
+    opacity: 0.9 !important;
 }
 
 .swal2-styled.swal2-deny,
 .swal2-deny {
     border-radius: 50px !important;
-    background: linear-gradient(145deg, #ef4444, #dc2626) !important;
+    background: #dc2626 !important;
     color: #ffffff !important;
-    box-shadow: 0 7px 16px -2px rgba(239, 68, 68, 0.48), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.45), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.25) !important;
-    font-weight: 800 !important;
-    border: 1px solid rgba(255, 255, 255, 0.28) !important;
+    box-shadow: none !important;
+    font-weight: 700 !important;
+    border: none !important;
     padding: 0.65rem 1.8rem !important;
-    transition: all 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    transition: opacity 0.15s ease !important;
 }
 
 /* ==========================================================
-   DARK MODE CLAYMORPHIC BUTTONS
+   DARK MODE FLAT 2D BUTTONS
    ========================================================== */
 [data-bs-theme="dark"] .btn {
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    background: linear-gradient(145deg, #2d3748, #1a202c);
+    border: 1px solid #334155 !important;
+    background: #1e293b;
     color: #f8fafc;
-    box-shadow: 0 7px 16px -2px rgba(0, 0, 0, 0.6), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.1), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.5) !important;
+    box-shadow: none !important;
+    transform: none !important;
 }
 
 [data-bs-theme="dark"] .btn:hover {
-    box-shadow: 0 10px 22px -2px rgba(0, 0, 0, 0.75), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.15), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.4) !important;
+    box-shadow: none !important;
+    transform: none !important;
+    opacity: 0.9 !important;
 }
 
 [data-bs-theme="dark"] .btn-secondary,
 [data-bs-theme="dark"] .btn-outline-secondary,
 [data-bs-theme="dark"] .btn-light {
-    background: linear-gradient(145deg, #334155, #1e293b) !important;
+    background: #334155 !important;
     color: #f8fafc !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 7px 16px -2px rgba(0, 0, 0, 0.5), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.1), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.5) !important;
+    border: 1px solid #475569 !important;
+    box-shadow: none !important;
 }
 
 [data-bs-theme="dark"] .btn-primary,
 [data-bs-theme="dark"] #stageSelectorBtn {
-    box-shadow: 0 8px 20px -2px rgba(99, 102, 241, 0.55), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.35), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.4) !important;
+    background: #4f46e5 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
 }
 
 [data-bs-theme="dark"] .btn-success {
-    box-shadow: 0 8px 20px -2px rgba(16, 185, 129, 0.55), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.35), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.4) !important;
+    background: #059669 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
 }
 
 [data-bs-theme="dark"] .btn-warning {
-    box-shadow: 0 8px 20px -2px rgba(245, 158, 11, 0.55), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.35), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.4) !important;
+    background: #d97706 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
 }
 
 [data-bs-theme="dark"] .btn-danger {
-    box-shadow: 0 8px 20px -2px rgba(239, 68, 68, 0.55), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.35), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.4) !important;
+    background: #dc2626 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
 }
 
 [data-bs-theme="dark"] .btn-info {
-    box-shadow: 0 8px 20px -2px rgba(6, 182, 212, 0.55), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.35), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.4) !important;
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
 }
 
 [data-bs-theme="dark"] .btn-outline-primary {
-    background: linear-gradient(145deg, #1e1b4b, #312e81) !important;
-    color: #a5b4fc !important;
-    border-color: rgba(99, 102, 241, 0.3) !important;
+    background: transparent !important;
+    color: #818cf8 !important;
+    border-color: #6366f1 !important;
+    box-shadow: none !important;
 }
 
 [data-bs-theme="dark"] .btn-outline-success {
-    background: linear-gradient(145deg, #064e3b, #065f46) !important;
-    color: #6ee7b7 !important;
-    border-color: rgba(16, 185, 129, 0.3) !important;
+    background: transparent !important;
+    color: #34d399 !important;
+    border-color: #10b981 !important;
+    box-shadow: none !important;
 }
 
 [data-bs-theme="dark"] .btn-outline-danger {
-    background: linear-gradient(145deg, #450a0a, #7f1d1d) !important;
-    color: #fca5a5 !important;
-    border-color: rgba(239, 68, 68, 0.3) !important;
+    background: transparent !important;
+    color: #f87171 !important;
+    border-color: #ef4444 !important;
+    box-shadow: none !important;
 }
 
 /* Hollowed Clay Inputs */
@@ -753,9 +817,9 @@ body.modal-open {
     opacity: 1;
     color: #ffffff !important;
     background: linear-gradient(145deg, #6366f1, #4f46e5) !important;
-    box-shadow: 0 7px 16px -2px rgba(99, 102, 241, 0.48), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.45), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.25) !important;
+    box-shadow: 0 7px 16px -2px rgba(99, 102, 241, 0.48),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.45),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.25) !important;
     border: 1px solid rgba(255, 255, 255, 0.28) !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
 }
@@ -1425,8 +1489,8 @@ body {
     }
 }
 
-/* 3. Tablets Portrait & Mobile Devices (max-width: 768px) */
-@media screen and (max-width: 768px) {
+/* 3. Mobile Devices (max-width: 767px) */
+@media screen and (max-width: 767px) {
     :root {
         --card-border-radius: 1.35rem;
         --elem-border-radius: 0.85rem;
@@ -1490,7 +1554,7 @@ body {
     }
 
     .control-panel .btn,
-    .control-panel .btn-group > .btn {
+    .control-panel .btn-group>.btn {
         padding: 0.38rem 0.65rem !important;
         font-size: 0.76rem !important;
         min-height: 34px !important;
@@ -1512,11 +1576,7 @@ body {
         gap: 0.5rem;
     }
 
-    #timetable-tab-pane .btn-group[role="group"] {
-        display: inline-flex !important;
-        width: auto !important;
-        flex-wrap: nowrap !important;
-    }
+    /* Legacy btn-group override neutralized to support 2x2 grid */
 
     #timetableClassSelect,
     #timetableTeacherSelect {
@@ -1740,9 +1800,9 @@ body {
         justify-content: center !important;
     }
 
-    .control-panel > .btn,
-    .control-panel > .btn-group,
-    .control-panel > .btn-group > .btn {
+    .control-panel>.btn,
+    .control-panel>.btn-group,
+    .control-panel>.btn-group>.btn {
         width: 100% !important;
         margin: 0 !important;
     }
@@ -2936,7 +2996,7 @@ body.rtl .subject-restrict-search .search-icon {
 }
 
 .tt-actions-tray .btn,
-.tt-actions-tray .btn-group > .btn {
+.tt-actions-tray .btn-group>.btn {
     height: 34px !important;
     border-radius: 50rem !important;
     font-size: 0.8rem !important;
@@ -2951,7 +3011,7 @@ body.rtl .subject-restrict-search .search-icon {
 }
 
 .tt-actions-tray .btn:hover,
-.tt-actions-tray .btn-group > .btn:hover {
+.tt-actions-tray .btn-group>.btn:hover {
     transform: translateY(-1px);
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
 }
@@ -3062,7 +3122,7 @@ body.rtl .subject-restrict-search .search-icon {
 
     .tt-actions-tray .btn,
     .tt-actions-tray .btn-group,
-    .tt-actions-tray .btn-group > .btn {
+    .tt-actions-tray .btn-group>.btn {
         width: 100% !important;
         height: 34px !important;
         padding: 4px 6px !important;
@@ -3133,7 +3193,7 @@ body.rtl .subject-restrict-search .search-icon {
 
     .supervision-actions-grid .btn,
     .supervision-actions-grid .dropdown,
-    .supervision-actions-grid .dropdown > .btn {
+    .supervision-actions-grid .dropdown>.btn {
         width: 100% !important;
         display: inline-flex !important;
         align-items: center !important;
@@ -3160,7 +3220,7 @@ body.rtl .subject-restrict-search .search-icon {
     gap: 7px;
 }
 
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 767px) {
     .mentors-toolbar-card .d-flex.justify-content-between {
         flex-direction: column !important;
         align-items: stretch !important;
@@ -3176,7 +3236,7 @@ body.rtl .subject-restrict-search .search-icon {
 
     .mentors-actions-grid .btn,
     .mentors-actions-grid .dropdown,
-    .mentors-actions-grid .dropdown > .btn {
+    .mentors-actions-grid .dropdown>.btn {
         width: 100% !important;
         display: inline-flex !important;
         align-items: center !important;
@@ -3245,8 +3305,15 @@ body.rtl .subject-restrict-search .search-icon {
 }
 
 @keyframes fadeInTab {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 #supervisionWeeklyGrid {
@@ -3279,8 +3346,8 @@ body.rtl .subject-restrict-search .search-icon {
     background: #94a3b8;
 }
 
-#supervisionWeeklyGrid > div,
-#supervisionWeeklyGrid > .supervision-day-col {
+#supervisionWeeklyGrid>div,
+#supervisionWeeklyGrid>.supervision-day-col {
     flex: 1 1 0% !important;
     min-width: 215px !important;
     max-width: 100% !important;
@@ -3337,6 +3404,106 @@ body.rtl .subject-restrict-search .search-icon {
     max-height: 250px;
     overflow-y: auto;
     box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* =========================================================================
+   Supervision Custom Layouts (Modern Cards, Official Table, Compact List)
+   ========================================================================= */
+
+/* 1. Layout Switcher Pill */
+.sup-layout-switcher {
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.sup-layout-switcher .btn {
+    font-size: 0.72rem !important;
+    transition: all 0.2s ease !important;
+}
+
+[data-bs-theme="dark"] .sup-layout-switcher {
+    background: rgba(30, 41, 59, 0.9) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 2. Modern Clay Cards */
+.sup-modern-card {
+    border-radius: 14px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease, border-color 0.2s ease !important;
+}
+
+.sup-modern-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08) !important;
+    border-color: #cbd5e1 !important;
+}
+
+[data-bs-theme="dark"] .sup-modern-card {
+    background: #1e293b !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-bs-theme="dark"] .sup-modern-card strong {
+    color: #f1f5f9 !important;
+}
+
+/* 3. Official Table View */
+.sup-official-table {
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.sup-official-table thead th {
+    font-weight: 700;
+    color: #334155;
+    border-bottom: 2px solid #cbd5e1 !important;
+}
+
+.sup-official-table td {
+    vertical-align: middle;
+}
+
+[data-bs-theme="dark"] .sup-official-table {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-bs-theme="dark"] .sup-official-table thead th {
+    background: #1e293b !important;
+    color: #f1f5f9 !important;
+    border-bottom-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-bs-theme="dark"] .sup-official-table tbody td {
+    background: #0f172a !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-bs-theme="dark"] .sup-official-table tfoot {
+    background: #1e293b !important;
+}
+
+/* 4. Ultra-Compact List */
+.sup-compact-item {
+    transition: background-color 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+
+.sup-compact-item:hover {
+    background-color: #e2e8f0 !important;
+    border-color: #94a3b8 !important;
+    transform: translateX(-1px);
+}
+
+[data-bs-theme="dark"] .sup-compact-item {
+    background: #1e293b !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-bs-theme="dark"] .sup-compact-item strong {
+    color: #f1f5f9 !important;
+}
+
+[data-bs-theme="dark"] .sup-compact-item:hover {
+    background: #334155 !important;
 }
 
 /* Period / Bell Supervision Styles */
@@ -3409,7 +3576,8 @@ body.rtl .subject-restrict-search .search-icon {
     display: inline-block;
 }
 
-#supervisionMatrixCard table td, #supervisionMatrixCard table th {
+#supervisionMatrixCard table td,
+#supervisionMatrixCard table th {
     vertical-align: middle;
 }
 
@@ -3418,11 +3586,12 @@ body.rtl .subject-restrict-search .search-icon {
     font-weight: 600;
 }
 
-.sup-teacher-check:checked + label {
+.sup-teacher-check:checked+label {
     color: #0f766e !important;
 }
 
 @media print {
+
     #supervision-tab-pane .no-print,
     .supervision-wrapper .no-print {
         display: none !important;
@@ -3576,10 +3745,10 @@ body.modal-open .dropdown-active-parent {
     background: linear-gradient(170deg, #ffffff 0%, #f7faff 100%);
     border-radius: 24px !important;
     border: 2.5px solid #ffffff !important;
-    box-shadow: 0 10px 25px -5px rgba(148, 163, 184, 0.28), 
-                0 6px 12px -3px rgba(148, 163, 184, 0.15),
-                inset 1px 1px 2px rgba(255, 255, 255, 0.9), 
-                inset -2px -2px 4px rgba(203, 213, 225, 0.2) !important;
+    box-shadow: 0 10px 25px -5px rgba(148, 163, 184, 0.28),
+        0 6px 12px -3px rgba(148, 163, 184, 0.15),
+        inset 1px 1px 2px rgba(255, 255, 255, 0.9),
+        inset -2px -2px 4px rgba(203, 213, 225, 0.2) !important;
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
     position: relative;
     overflow: hidden;
@@ -3594,22 +3763,22 @@ body.modal-open .dropdown-active-parent {
 [data-bs-theme="dark"] .mentor-clay-card {
     background: linear-gradient(170deg, #162033 0%, #0f172a 100%);
     border: 1.5px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 12px 28px -5px rgba(0, 0, 0, 0.6), 
-                inset 1px 1px 2px rgba(255, 255, 255, 0.04), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.4) !important;
+    box-shadow: 0 12px 28px -5px rgba(0, 0, 0, 0.6),
+        inset 1px 1px 2px rgba(255, 255, 255, 0.04),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.4) !important;
 }
 
 .mentor-clay-card:hover {
     transform: translateY(-6px);
-    box-shadow: 0 18px 35px -5px rgba(99, 102, 241, 0.22), 
-                0 10px 18px -4px rgba(148, 163, 184, 0.2),
-                inset 1px 1px 2px rgba(255, 255, 255, 0.9) !important;
+    box-shadow: 0 18px 35px -5px rgba(99, 102, 241, 0.22),
+        0 10px 18px -4px rgba(148, 163, 184, 0.2),
+        inset 1px 1px 2px rgba(255, 255, 255, 0.9) !important;
     border-color: #e0e7ff !important;
 }
 
 [data-bs-theme="dark"] .mentor-clay-card:hover {
-    box-shadow: 0 20px 38px -5px rgba(0, 0, 0, 0.75), 
-                0 0 20px rgba(99, 102, 241, 0.15) !important;
+    box-shadow: 0 20px 38px -5px rgba(0, 0, 0, 0.75),
+        0 0 20px rgba(99, 102, 241, 0.15) !important;
     border-color: rgba(99, 102, 241, 0.3) !important;
 }
 
@@ -3752,9 +3921,9 @@ body.modal-open .dropdown-active-parent {
     align-items: center;
     justify-content: center;
     font-size: 1.4rem;
-    box-shadow: 0 8px 18px -4px rgba(79, 70, 229, 0.45), 
-                inset 2px 2px 4px rgba(255, 255, 255, 0.5), 
-                inset -2px -2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 18px -4px rgba(79, 70, 229, 0.45),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.5),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.2);
     border: 2px solid rgba(255, 255, 255, 0.85);
     transition: transform 0.2s ease;
 }
@@ -4070,5 +4239,4770 @@ body.modal-open .dropdown-active-parent {
     box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
 }
 
+/* ==========================================================
+   HEADER, TABS & TOOLBAR EXACT SCREENSHOT LAYOUT & STYLES
+   ========================================================== */
 
-
+/* 1. Top Header Card */
+.top-header-card {
+    background-color: var(--bs-card-bg);
+    border: 1px solid rgba(226, 232, 240, 0.85) !important;
+    border-radius: 1.15rem !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    padding: 0.6rem 1.25rem !important;
+    margin-bottom: 0.65rem !important;
+    transform: none !important;
+}
+
+.top-header-card:hover {
+    transform: none !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-bs-theme="dark"] .top-header-card {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+}
+
+.header-app-title {
+    font-weight: 800;
+    font-size: 1.15rem;
+    color: var(--bs-body-color);
+    letter-spacing: -0.2px;
+}
+
+/* ==========================================================
+   TOP HEADER 3D CLAYMORPHISM CONTROLS (أدوات الهيدر ثلاثية الأبعاد)
+   ========================================================== */
+
+/* 1. Header Card Styling */
+.top-header-card {
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(14px) !important;
+    border: 1px solid rgba(226, 232, 240, 0.9) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05),
+        inset 1px 1px 2px rgba(255, 255, 255, 0.95) !important;
+    transition: all 0.25s ease !important;
+}
+
+[data-bs-theme="dark"] .top-header-card {
+    background: rgba(30, 41, 59, 0.85) !important;
+    border-color: rgba(255, 255, 255, 0.09) !important;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45),
+        inset 1px 1px 2px rgba(255, 255, 255, 0.08) !important;
+}
+
+/* 2. Branding App Icon 3D Badge */
+.header-app-icon-badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #c7d2fe, #6366f1);
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px -2px rgba(99, 102, 241, 0.35),
+        inset 2px 2px 3px rgba(255, 255, 255, 0.8),
+        inset -2px -2px 3px rgba(0, 0, 0, 0.12);
+    font-size: 1.05rem;
+    flex-shrink: 0;
+}
+
+.header-app-icon-badge i {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+}
+
+/* 3. Base 3D Claymorphism Circle Button */
+.header-circle-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.8) !important;
+    transition: all 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    text-decoration: none !important;
+}
+
+.header-circle-btn i {
+    font-size: 0.88rem !important;
+    transition: transform 0.22s ease !important;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+}
+
+.header-circle-btn:hover {
+    transform: translateY(-2px) scale(1.08) !important;
+}
+
+.header-circle-btn:hover i {
+    transform: scale(1.15) !important;
+}
+
+.header-circle-btn:active {
+    transform: translateY(1px) scale(0.95) !important;
+}
+
+/* 4. Rename Button (3D Sky Cyan Clay) */
+.header-circle-rename {
+    background: linear-gradient(145deg, #a5f3fc, #0ea5e9) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px -2px rgba(14, 165, 233, 0.38),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.8),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+}
+
+.header-circle-rename:hover {
+    box-shadow: 0 6px 16px -2px rgba(14, 165, 233, 0.48),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.9),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.header-circle-rename:active {
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.4),
+        0 2px 4px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* 5. Delete Button (3D Coral Ruby Red Clay) */
+.header-circle-delete {
+    background: linear-gradient(145deg, #fecaca, #f87171) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px -2px rgba(239, 68, 68, 0.38),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.8),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+}
+
+.header-circle-delete:hover {
+    box-shadow: 0 6px 16px -2px rgba(239, 68, 68, 0.48),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.9),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.header-circle-delete:active {
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.4),
+        0 2px 4px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* 6. Language Button (3D Soft Periwinkle Clay) */
+.header-circle-lang {
+    background: linear-gradient(145deg, #c7d2fe, #6366f1) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px -2px rgba(99, 102, 241, 0.38),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.8),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+}
+
+.header-circle-lang:hover {
+    box-shadow: 0 6px 16px -2px rgba(99, 102, 241, 0.48),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.9),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.header-circle-lang:active {
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.4),
+        0 2px 4px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* 7. Active Schedule 3D Claymorphism Pill Dropdown */
+.header-active-schedule-btn {
+    background: linear-gradient(145deg, #ffffff, #f8fafc) !important;
+    color: #1e293b !important;
+    border: 1.5px solid rgba(203, 213, 225, 0.9) !important;
+    min-width: 150px;
+    height: 36px !important;
+    padding: 0.35rem 0.9rem !important;
+    font-size: 0.84rem !important;
+    font-weight: 700 !important;
+    border-radius: 50px !important;
+    box-shadow: 0 4px 12px -2px rgba(100, 116, 139, 0.15),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.95),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.04) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 0.5rem !important;
+    transition: all 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+.header-active-schedule-btn:hover {
+    transform: translateY(-2px) scale(1.02) !important;
+    box-shadow: 0 7px 16px -2px rgba(100, 116, 139, 0.22),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.95),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.04) !important;
+}
+
+.header-active-schedule-btn:active {
+    transform: translateY(1px) scale(0.98) !important;
+}
+
+/* Calendar Icon 3D Badge inside Schedule Pill */
+.header-schedule-icon-badge {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #93c5fd, #3b82f6);
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.35),
+        inset 1px 1px 2px rgba(255, 255, 255, 0.75),
+        inset -1px -1px 2px rgba(0, 0, 0, 0.12);
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+.header-schedule-icon-badge i {
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+}
+
+/* 8. Header Divider */
+.header-divider {
+    width: 2px;
+    height: 24px;
+    background-color: #cbd5e1;
+    border-radius: 2px;
+    align-self: center;
+    margin: 0 0.2rem;
+}
+
+/* 9. Custom 3D Claymorphism Theme Toggle Switch */
+.header-theme-toggle-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    user-select: none;
+}
+
+.header-theme-checkbox {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+.header-theme-clay-track {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 66px;
+    height: 36px;
+    border-radius: 50px;
+    background: linear-gradient(145deg, #f1f5f9, #cbd5e1);
+    border: 1.5px solid rgba(255, 255, 255, 0.9);
+    box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.12),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.8),
+        0 3px 8px -2px rgba(100, 116, 139, 0.2);
+    cursor: pointer;
+    padding: 3px;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    margin-bottom: 0;
+}
+
+.theme-track-icons {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 9px;
+    pointer-events: none;
+}
+
+.theme-track-icons .track-icon-sun {
+    font-size: 0.78rem;
+    color: #f59e0b;
+    opacity: 0.35;
+    transition: opacity 0.25s ease;
+}
+
+.theme-track-icons .track-icon-moon {
+    font-size: 0.78rem;
+    color: #6366f1;
+    opacity: 0.75;
+    transition: opacity 0.25s ease;
+}
+
+/* Knob 3D Clay Sphere */
+.theme-knob-clay {
+    position: absolute;
+    left: 4px;
+    top: 3px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #fef08a, #f59e0b);
+    box-shadow: 0 3px 8px rgba(245, 158, 11, 0.4),
+        inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.9),
+        inset -1.5px -1.5px 3px rgba(0, 0, 0, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 0.82rem;
+    transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 2;
+}
+
+.theme-knob-clay i {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+}
+
+.theme-knob-icon-sun {
+    display: block;
+}
+
+.theme-knob-icon-moon {
+    display: none;
+}
+
+/* Checked State (Dark Mode Theme Toggle) */
+.header-theme-checkbox:checked+.header-theme-clay-track {
+    background: linear-gradient(145deg, #1e1b4b, #312e81);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.5),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.08),
+        0 3px 10px -2px rgba(0, 0, 0, 0.5);
+}
+
+.header-theme-checkbox:checked+.header-theme-clay-track .theme-knob-clay {
+    left: calc(100% - 32px);
+    background: linear-gradient(145deg, #c7d2fe, #6366f1);
+    box-shadow: 0 3px 10px rgba(99, 102, 241, 0.5),
+        inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.85),
+        inset -1.5px -1.5px 3px rgba(0, 0, 0, 0.15);
+}
+
+.header-theme-checkbox:checked+.header-theme-clay-track .theme-knob-icon-sun {
+    display: none;
+}
+
+.header-theme-checkbox:checked+.header-theme-clay-track .theme-knob-icon-moon {
+    display: block;
+}
+
+.header-theme-checkbox:checked+.header-theme-clay-track .track-icon-sun {
+    opacity: 0.75;
+}
+
+.header-theme-checkbox:checked+.header-theme-clay-track .track-icon-moon {
+    opacity: 0.3;
+}
+
+/* 10. Dark Mode Overrides for Header */
+[data-bs-theme="dark"] .header-circle-btn {
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-bs-theme="dark"] .header-circle-rename {
+    background: linear-gradient(145deg, #0369a1, #075985) !important;
+    color: #bae6fd !important;
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.5),
+        inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.3),
+        inset -1.5px -1.5px 3px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-bs-theme="dark"] .header-circle-delete {
+    background: linear-gradient(145deg, #b91c1c, #991b1b) !important;
+    color: #fecaca !important;
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.5),
+        inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.3),
+        inset -1.5px -1.5px 3px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-bs-theme="dark"] .header-circle-lang {
+    background: linear-gradient(145deg, #4338ca, #3730a3) !important;
+    color: #c7d2fe !important;
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.5),
+        inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.3),
+        inset -1.5px -1.5px 3px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-bs-theme="dark"] .header-active-schedule-btn {
+    background: linear-gradient(145deg, #334155, #1e293b) !important;
+    color: #f8fafc !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.4),
+        inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.15),
+        inset -1.5px -1.5px 3px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-bs-theme="dark"] .header-divider {
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+/* 2. Main Navigation Tabs Bar */
+.main-tabs-card {
+    background-color: var(--bs-card-bg);
+    border: 1px solid rgba(226, 232, 240, 0.85) !important;
+    border-radius: 1.15rem !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    padding: 0.35rem 0.65rem !important;
+    margin-bottom: 0.65rem !important;
+    transform: none !important;
+}
+
+.main-tabs-card:hover {
+    transform: none !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-bs-theme="dark"] .main-tabs-card {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+}
+
+.custom-main-tabs {
+    border: none !important;
+    gap: 0.25rem !important;
+}
+
+.custom-main-tabs .nav-link {
+    border: none !important;
+    border-radius: 0.65rem !important;
+    padding: 0.5rem 0.85rem !important;
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    color: #475569 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+}
+
+.custom-main-tabs .nav-link:hover {
+    color: #0f172a !important;
+    background: rgba(226, 232, 240, 0.6) !important;
+    transform: none !important;
+}
+
+.custom-main-tabs .nav-link.active {
+    background: #2563eb !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+
+.custom-main-tabs .nav-link.active i {
+    color: #ffffff !important;
+}
+
+[data-bs-theme="dark"] .custom-main-tabs .nav-link {
+    color: #94a3b8 !important;
+}
+
+[data-bs-theme="dark"] .custom-main-tabs .nav-link:hover {
+    color: #f8fafc !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-bs-theme="dark"] .custom-main-tabs .nav-link.active {
+    background: #2563eb !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+
+/* 3. Toolbar Container & Rows */
+.distribution-toolbar-card {
+    background-color: var(--bs-card-bg);
+    border: 1px solid rgba(226, 232, 240, 0.85) !important;
+    border-radius: 1.25rem !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04) !important;
+    padding: 0.75rem 1.25rem !important;
+    margin-bottom: 1rem !important;
+    transform: none !important;
+}
+
+.distribution-toolbar-card:hover {
+    transform: none !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-bs-theme="dark"] .distribution-toolbar-card {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Row 1: Views & Search */
+.toolbar-row-view {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.toolbar-group-views {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* Row 2: Responsive Actions Toolbar */
+.toolbar-row-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    width: 100%;
+}
+
+.toolbar-group {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.toolbar-group-label {
+    color: #64748b;
+    font-size: 0.84rem;
+    font-weight: 700;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+[data-bs-theme="dark"] .toolbar-group-label {
+    color: #94a3b8;
+}
+
+/* Toolbar Divider */
+.toolbar-divider {
+    width: 2px;
+    height: 24px;
+    background-color: #cbd5e1;
+    align-self: center;
+    border-radius: 2px;
+    margin: 0 0.25rem;
+}
+
+[data-bs-theme="dark"] .toolbar-divider {
+    background-color: #475569;
+}
+
+/* Ensure all toolbar buttons have soft, 10% lighter Claymorphism styling */
+.distribution-toolbar-card .btn {
+    border-radius: 50px !important;
+    font-weight: 700 !important;
+    font-size: 0.83rem !important;
+    min-height: 36px !important;
+    padding: 0.4rem 1rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.45rem !important;
+    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+    transition: all 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    user-select: none !important;
+    white-space: nowrap !important;
+}
+
+.distribution-toolbar-card .btn:hover {
+    transform: translateY(-2px) scale(1.02) !important;
+    opacity: 1 !important;
+}
+
+.distribution-toolbar-card .btn:active {
+    transform: translateY(1px) scale(0.98) !important;
+}
+
+/* 1. Stage Selector (سەرەتایی - Soft Pastel Royal Indigo Clay) */
+.btn-tb-stage,
+#stageSelectorBtn {
+    background: linear-gradient(145deg, #a5b4fc, #6366f1) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px -2px rgba(99, 102, 241, 0.28),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.65),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+}
+
+.btn-tb-stage:hover,
+#stageSelectorBtn:hover {
+    background: linear-gradient(145deg, #c7d2fe, #818cf8) !important;
+    box-shadow: 0 7px 16px -2px rgba(99, 102, 241, 0.38),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.10) !important;
+}
+
+.btn-tb-stage:active,
+#stageSelectorBtn:active {
+    background: linear-gradient(145deg, #818cf8, #4f46e5) !important;
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.25),
+        0 2px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* 2. View Toggle (ديمەنێ خشتەی - Soft Pastel Electric Sky Blue Clay) */
+.btn-tb-view {
+    background: linear-gradient(145deg, #7dd3fc, #0ea5e9) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px -2px rgba(14, 165, 233, 0.28),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.65),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+}
+
+.btn-tb-view:hover {
+    background: linear-gradient(145deg, #bae6fd, #38bdf8) !important;
+    box-shadow: 0 7px 16px -2px rgba(14, 165, 233, 0.38),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.10) !important;
+}
+
+.btn-tb-view:active {
+    background: linear-gradient(145deg, #38bdf8, #0284c7) !important;
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.25),
+        0 2px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* 3. Sort (رێزبەندی - Soft Pastel Marine Teal Clay) */
+.btn-tb-sort {
+    background: linear-gradient(145deg, #5eead4, #14b8a6) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px -2px rgba(13, 148, 136, 0.28),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.65),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+}
+
+.btn-tb-sort:hover {
+    background: linear-gradient(145deg, #99f6e4, #2dd4bf) !important;
+    box-shadow: 0 7px 16px -2px rgba(13, 148, 136, 0.38),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.10) !important;
+}
+
+.btn-tb-sort:active {
+    background: linear-gradient(145deg, #2dd4bf, #0d9488) !important;
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.25),
+        0 2px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* 4. New Schedule (خشتێ نوی - Soft Pastel Mint Emerald Clay) */
+.btn-tb-new {
+    background: linear-gradient(145deg, #86efac, #10b981) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px -2px rgba(16, 185, 129, 0.28),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.65),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+}
+
+.btn-tb-new:hover {
+    background: linear-gradient(145deg, #bbf7d0, #22c55e) !important;
+    box-shadow: 0 7px 16px -2px rgba(16, 185, 129, 0.38),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.10) !important;
+}
+
+.btn-tb-new:active {
+    background: linear-gradient(145deg, #4ade80, #059669) !important;
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.25),
+        0 2px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* 5. Teachers (ماموستا - Soft Pastel Ocean Cyan Clay) */
+.btn-tb-teacher {
+    background: linear-gradient(145deg, #67e8f9, #22d3ee) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px -2px rgba(6, 182, 212, 0.28),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.65),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+}
+
+.btn-tb-teacher:hover {
+    background: linear-gradient(145deg, #a5f3fc, #38e1fa) !important;
+    box-shadow: 0 7px 16px -2px rgba(6, 182, 212, 0.38),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.10) !important;
+}
+
+.btn-tb-teacher:active {
+    background: linear-gradient(145deg, #22d3ee, #0891b2) !important;
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.25),
+        0 2px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* 6. Classes / Columns (پول - Soft Pastel Amethyst Purple Clay) */
+.btn-tb-class {
+    background: linear-gradient(145deg, #d8b4fe, #9333ea) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px -2px rgba(124, 58, 237, 0.28),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.65),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+}
+
+.btn-tb-class:hover {
+    background: linear-gradient(145deg, #e9d5ff, #a855f7) !important;
+    box-shadow: 0 7px 16px -2px rgba(124, 58, 237, 0.38),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.10) !important;
+}
+
+.btn-tb-class:active {
+    background: linear-gradient(145deg, #c084fc, #7c3aed) !important;
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.25),
+        0 2px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* 7. Auto Quota (دابەشکرنا نصابی - Soft Pastel Tangerine Orange Clay) */
+.btn-tb-nisab {
+    background: linear-gradient(145deg, #fed7aa, #f97316) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px -2px rgba(249, 115, 22, 0.28),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.65),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+}
+
+.btn-tb-nisab:hover {
+    background: linear-gradient(145deg, #ffedd5, #fb923c) !important;
+    box-shadow: 0 7px 16px -2px rgba(249, 115, 22, 0.38),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.10) !important;
+}
+
+.btn-tb-nisab:active {
+    background: linear-gradient(145deg, #fdba74, #ea580c) !important;
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.25),
+        0 2px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* 8. Save & Cloud (هیلان و هەور - Soft Pastel Sapphire Sky Blue Clay) */
+.btn-tb-cloud {
+    background: linear-gradient(145deg, #bfdbfe, #3b82f6) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px -2px rgba(37, 99, 235, 0.28),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.65),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+}
+
+.btn-tb-cloud:hover {
+    background: linear-gradient(145deg, #dbeafe, #60a5fa) !important;
+    box-shadow: 0 7px 16px -2px rgba(37, 99, 235, 0.38),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.10) !important;
+}
+
+.btn-tb-cloud:active {
+    background: linear-gradient(145deg, #93c5fd, #2563eb) !important;
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.25),
+        0 2px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* 9. Excel Export (ئێكسێل - Soft Pastel Forest Excel Green Clay) */
+.btn-tb-excel {
+    background: linear-gradient(145deg, #86efac, #22c55e) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px -2px rgba(22, 163, 74, 0.28),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.65),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+}
+
+.btn-tb-excel:hover {
+    background: linear-gradient(145deg, #bbf7d0, #4ade80) !important;
+    box-shadow: 0 7px 16px -2px rgba(22, 163, 74, 0.38),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.10) !important;
+}
+
+.btn-tb-excel:active {
+    background: linear-gradient(145deg, #4ade80, #16a34a) !important;
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.25),
+        0 2px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* 10. HTML Export (HTML - Soft Pastel Warm Honey Amber Clay) */
+.btn-tb-html {
+    background: linear-gradient(145deg, #fde68a, #f59e0b) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px -2px rgba(245, 158, 11, 0.28),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.65),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+}
+
+.btn-tb-html:hover {
+    background: linear-gradient(145deg, #fef08a, #fbbf24) !important;
+    box-shadow: 0 7px 16px -2px rgba(245, 158, 11, 0.38),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.10) !important;
+}
+
+.btn-tb-html:active {
+    background: linear-gradient(145deg, #fcd34d, #d97706) !important;
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.25),
+        0 2px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* 11. Print (چاپكرن - Soft Pastel Orchid Fuchsia Clay) */
+.btn-tb-print {
+    background: linear-gradient(145deg, #f0abfc, #c084fc) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px -2px rgba(192, 38, 211, 0.28),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.65),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+}
+
+.btn-tb-print:hover {
+    background: linear-gradient(145deg, #f5d0fe, #d8b4fe) !important;
+    box-shadow: 0 7px 16px -2px rgba(192, 38, 211, 0.38),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.10) !important;
+}
+
+.btn-tb-print:active {
+    background: linear-gradient(145deg, #e879f9, #a855f7) !important;
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.25),
+        0 2px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* 12. Settings (رێكخستن - Soft Pastel Slate Steel Graphite Clay) */
+.btn-tb-settings {
+    background: linear-gradient(145deg, #cbd5e1, #64748b) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px -2px rgba(71, 85, 105, 0.28),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.55),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.15) !important;
+}
+
+.btn-tb-settings:hover {
+    background: linear-gradient(145deg, #e2e8f0, #94a3b8) !important;
+    box-shadow: 0 7px 16px -2px rgba(71, 85, 105, 0.38),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.65),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+}
+
+.btn-tb-settings:active {
+    background: linear-gradient(145deg, #94a3b8, #475569) !important;
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.25),
+        0 2px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* 13. Delete / Clear (ژێبرن - Soft Pastel Coral Ruby Red Clay) */
+.btn-tb-delete {
+    background: linear-gradient(145deg, #fecaca, #f87171) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px -2px rgba(239, 68, 68, 0.28),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.65),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+}
+
+.btn-tb-delete:hover {
+    background: linear-gradient(145deg, #fee2e2, #fca5a5) !important;
+    box-shadow: 0 7px 16px -2px rgba(239, 68, 68, 0.38),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.10) !important;
+}
+
+.btn-tb-delete:active {
+    background: linear-gradient(145deg, #fca5a5, #ef4444) !important;
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25),
+        inset -2px -2px 4px rgba(255, 255, 255, 0.25),
+        0 2px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Responsive Rules for Desktop, Tablet, and Mobile */
+@media (max-width: 1200px) {
+    .distribution-toolbar-card {
+        padding: 0.65rem 1rem !important;
+    }
+
+    .distribution-toolbar-card .btn {
+        padding: 0.35rem 0.85rem !important;
+        font-size: 0.8rem !important;
+        min-height: 34px !important;
+        gap: 0.35rem !important;
+    }
+
+    .toolbar-row-actions {
+        gap: 0.5rem !important;
+    }
+
+    .toolbar-group {
+        gap: 0.35rem !important;
+    }
+}
+
+@media (max-width: 991px) {
+    .toolbar-divider {
+        display: none !important;
+    }
+
+    .toolbar-group {
+        gap: 0.4rem !important;
+    }
+
+    .toolbar-row-view {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.5rem !important;
+    }
+
+    .toolbar-group-views {
+        justify-content: flex-start !important;
+    }
+
+    .search-panel {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .distribution-toolbar-card .btn {
+        padding: 0.3rem 0.65rem !important;
+        font-size: 0.76rem !important;
+        min-height: 32px !important;
+    }
+}
+
+/* Dark Mode Claymorphic Overrides */
+[data-bs-theme="dark"] .distribution-toolbar-card .btn {
+    border-color: rgba(255, 255, 255, 0.18) !important;
+    box-shadow: 0 5px 14px -2px rgba(0, 0, 0, 0.55),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.25),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.45) !important;
+}
+
+[data-bs-theme="dark"] .distribution-toolbar-card .btn:hover {
+    box-shadow: 0 8px 20px -2px rgba(0, 0, 0, 0.65),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.32),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Timetable View Radio Button Group - Claymorphism */
+.tt-view-btn-group {
+    background: rgba(241, 245, 249, 0.9) !important;
+    padding: 3px !important;
+    border-radius: 50px !important;
+    border: 1px solid rgba(226, 232, 240, 0.95) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+    box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-bs-theme="dark"] .tt-view-btn-group {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+.tt-view-btn-group label.btn,
+.tt-view-btn-group button.btn,
+.tt-view-btn-group .nav-link {
+    border-radius: 50px !important;
+    font-size: 0.81rem !important;
+    font-weight: 700 !important;
+    padding: 0.38rem 0.95rem !important;
+    min-height: 33px !important;
+    border: none !important;
+    color: #64748b !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    transition: all 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.35rem !important;
+}
+
+.tt-view-btn-group label.btn:hover,
+.tt-view-btn-group button.btn:hover,
+.tt-view-btn-group .nav-link:hover {
+    color: #1e293b !important;
+    background: rgba(255, 255, 255, 0.7) !important;
+}
+
+[data-bs-theme="dark"] .tt-view-btn-group label.btn,
+[data-bs-theme="dark"] .tt-view-btn-group button.btn,
+[data-bs-theme="dark"] .tt-view-btn-group .nav-link {
+    color: #94a3b8 !important;
+}
+
+[data-bs-theme="dark"] .tt-view-btn-group label.btn:hover,
+[data-bs-theme="dark"] .tt-view-btn-group button.btn:hover,
+[data-bs-theme="dark"] .tt-view-btn-group .nav-link:hover {
+    color: #f8fafc !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Checked or Active state: Soft pastel claymorphic pill */
+.tt-view-btn-group .btn-check:checked+label.btn,
+.tt-view-btn-group button.btn.active,
+.tt-view-btn-group .nav-link.active {
+    background: linear-gradient(145deg, #7dd3fc, #0ea5e9) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px -2px rgba(14, 165, 233, 0.35),
+        inset 1px 1px 3px rgba(255, 255, 255, 0.7),
+        inset -1px -1px 3px rgba(0, 0, 0, 0.12) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* ==========================================================
+   TIMETABLE SELECTOR & CONTEXT BADGE - 3D CLAYMORPHISM
+   ========================================================== */
+
+/* 1. Main Selector 3D Clay Capsule */
+.tt-select-clay-capsule {
+    height: 38px !important;
+    min-height: 38px !important;
+    border-radius: 50px !important;
+    background: linear-gradient(145deg, #ffffff, #f1f5f9) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.95) !important;
+    box-shadow: 0 4px 14px -2px rgba(100, 116, 139, 0.16),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.95),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.05) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    padding: 3px 5px !important;
+    gap: 6px !important;
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    user-select: none !important;
+}
+
+.tt-select-clay-capsule:hover {
+    transform: translateY(-2px) scale(1.02) !important;
+    box-shadow: 0 7px 18px -2px rgba(100, 116, 139, 0.24),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.95),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-bs-theme="dark"] .tt-select-clay-capsule {
+    background: linear-gradient(145deg, #1e293b, #0f172a) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.5),
+        inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.1),
+        inset -1.5px -1.5px 3px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* 2. 3D Clay Filter Icon Sphere Badge */
+.tt-select-icon-badge {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(145deg, #7dd3fc, #0284c7) !important;
+    color: #ffffff !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 3px 8px rgba(2, 132, 199, 0.35),
+        inset 1.5px 1.5px 2px rgba(255, 255, 255, 0.8),
+        inset -1.5px -1.5px 2px rgba(0, 0, 0, 0.15) !important;
+    font-size: 0.8rem !important;
+    flex-shrink: 0 !important;
+}
+
+.tt-select-icon-badge i {
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25)) !important;
+}
+
+/* 3. Clean Native Select (No ugly default borders or duplicate arrows) */
+.tt-clay-select {
+    border: none !important;
+    background: transparent !important;
+    background-image: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    font-size: 0.86rem !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    cursor: pointer !important;
+    padding: 0 6px !important;
+    min-width: 140px !important;
+    max-width: 230px !important;
+    outline: none !important;
+    box-shadow: none !important;
+    line-height: 1.4 !important;
+}
+
+[data-bs-theme="dark"] .tt-clay-select {
+    color: #f8fafc !important;
+}
+
+.tt-clay-select option {
+    background-color: #ffffff !important;
+    color: #1e293b !important;
+    font-weight: 600 !important;
+    padding: 8px 12px !important;
+}
+
+[data-bs-theme="dark"] .tt-clay-select option {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+}
+
+/* 4. 3D Clay Arrow Badge Indicator */
+.tt-select-arrow-badge {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    min-height: 22px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(145deg, #f8fafc, #e2e8f0) !important;
+    border: 1px solid rgba(255, 255, 255, 0.9) !important;
+    box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.9),
+        inset -1px -1px 2px rgba(0, 0, 0, 0.08),
+        0 2px 4px rgba(0, 0, 0, 0.04) !important;
+    color: #0284c7 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.68rem !important;
+    pointer-events: none !important;
+    flex-shrink: 0 !important;
+}
+
+[data-bs-theme="dark"] .tt-select-arrow-badge {
+    background: linear-gradient(145deg, #334155, #1e293b) !important;
+    color: #38bdf8 !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.15),
+        inset -1px -1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 5. Context Badge 3D Clay Pill (خشتێ حەفتیانە) */
+.tt-context-clay-badge {
+    height: 38px !important;
+    min-height: 38px !important;
+    padding: 0.35rem 1rem !important;
+    border-radius: 50px !important;
+    background: linear-gradient(145deg, #e0f2fe, #bae6fd) !important;
+    color: #0369a1 !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.85) !important;
+    box-shadow: 0 4px 10px -2px rgba(2, 132, 199, 0.22),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.85),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.08) !important;
+    font-size: 0.83rem !important;
+    font-weight: 700 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.45rem !important;
+    white-space: nowrap !important;
+    user-select: none !important;
+}
+
+.tt-context-clay-badge i {
+    font-size: 0.88rem !important;
+    filter: drop-shadow(0 1px 1px rgba(2, 132, 199, 0.3)) !important;
+}
+
+[data-bs-theme="dark"] .tt-context-clay-badge {
+    background: linear-gradient(145deg, #075985, #0c4a6e) !important;
+    color: #bae6fd !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.4),
+        inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.15),
+        inset -1.5px -1.5px 3px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* ==========================================================
+   HOMEROOM MENTORS STAT CARDS - 3D CLAYMORPHISM
+   ========================================================== */
+.mentor-stat-clay-card {
+    background: linear-gradient(145deg, #ffffff, #f8fafc) !important;
+    border-radius: 20px !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.95) !important;
+    padding: 0.75rem 1.1rem !important;
+    box-shadow: 0 4px 14px -2px rgba(100, 116, 139, 0.12),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.95),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.04) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 0.75rem !important;
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+.mentor-stat-clay-card:hover {
+    transform: translateY(-2px) scale(1.02) !important;
+    box-shadow: 0 8px 20px -2px rgba(100, 116, 139, 0.2),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.95),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.03) !important;
+}
+
+[data-bs-theme="dark"] .mentor-stat-clay-card {
+    background: linear-gradient(145deg, #1e293b, #0f172a) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.5),
+        inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.1),
+        inset -1.5px -1.5px 3px rgba(0, 0, 0, 0.4) !important;
+}
+
+.mentor-stat-icon-badge {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    border-radius: 14px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #ffffff !important;
+    font-size: 1.15rem !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15),
+        inset 2px 2px 3px rgba(255, 255, 255, 0.7),
+        inset -2px -2px 3px rgba(0, 0, 0, 0.15) !important;
+    flex-shrink: 0 !important;
+}
+
+.mentor-stat-icon-badge i {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3)) !important;
+}
+
+/* ==========================================================
+   TEACHER REPORT STAT CARDS - 3D CLAYMORPHISM
+   ========================================================== */
+.teacher-report-clay-card {
+    background: linear-gradient(145deg, #ffffff, #f8fafc) !important;
+    border-radius: 20px !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.95) !important;
+    box-shadow: 0 5px 16px -2px rgba(100, 116, 139, 0.12),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.95),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.03) !important;
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    padding: 1.15rem !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+}
+
+.teacher-report-clay-card:hover {
+    transform: translateY(-2px) scale(1.01) !important;
+    box-shadow: 0 8px 24px -2px rgba(100, 116, 139, 0.2),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.95),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.03) !important;
+}
+
+[data-bs-theme="dark"] .teacher-report-clay-card {
+    background: linear-gradient(145deg, #1e293b, #0f172a) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 5px 16px -2px rgba(0, 0, 0, 0.5),
+        inset 1.5px 1.5px 3px rgba(255, 255, 255, 0.1),
+        inset -1.5px -1.5px 3px rgba(0, 0, 0, 0.4) !important;
+}
+
+.stat-mini-clay-box {
+    border-radius: 14px !important;
+    padding: 0.6rem 0.5rem !important;
+    text-align: center !important;
+    background: linear-gradient(145deg, #f8fafc, #edf2f7) !important;
+    border: 1px solid rgba(255, 255, 255, 0.9) !important;
+    box-shadow: inset 1px 1px 3px rgba(255, 255, 255, 0.9),
+        inset -1px -1px 3px rgba(0, 0, 0, 0.05),
+        0 2px 4px rgba(0, 0, 0, 0.03) !important;
+    transition: all 0.2s ease !important;
+}
+
+[data-bs-theme="dark"] .stat-mini-clay-box {
+    background: linear-gradient(145deg, #1e293b, #151e2e) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.08),
+        inset -1px -1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+.subject-clay-row {
+    border-radius: 12px !important;
+    padding: 0.45rem 0.75rem !important;
+    background: rgba(248, 250, 252, 0.75) !important;
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+.subject-clay-row:hover {
+    background: #ffffff !important;
+    transform: translateX(-3px) !important;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05),
+        inset 1px 1px 2px rgba(255, 255, 255, 0.9) !important;
+}
+
+[data-bs-theme="dark"] .subject-clay-row {
+    background: rgba(30, 41, 59, 0.6) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-bs-theme="dark"] .subject-clay-row:hover {
+    background: rgba(30, 41, 59, 0.95) !important;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+.tt-status-dot {
+    width: 9px !important;
+    height: 9px !important;
+    min-width: 9px !important;
+    min-height: 9px !important;
+    border-radius: 50% !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
+    flex-shrink: 0 !important;
+}
+
+/* ==========================================================================
+   MAIN NAVIGATION TABS - CLAYMORPHISM & UNIQUE CALM COLOR PALETTES
+   ========================================================================== */
+
+/* 1. Main Navigation Card Container */
+.main-tabs-card {
+    background: rgba(255, 255, 255, 0.88) !important;
+    backdrop-filter: blur(14px) !important;
+    border: 1px solid rgba(226, 232, 240, 0.9) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05),
+        inset 1px 1px 2px rgba(255, 255, 255, 0.95) !important;
+    padding: 0.45rem 0.6rem !important;
+    transition: all 0.25s ease !important;
+}
+
+[data-bs-theme="dark"] .main-tabs-card {
+    background: rgba(30, 41, 59, 0.85) !important;
+    border-color: rgba(255, 255, 255, 0.09) !important;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45),
+        inset 1px 1px 2px rgba(255, 255, 255, 0.08) !important;
+}
+
+/* 2. Responsive Grid for Navigation Tabs */
+.custom-main-tabs {
+    display: grid !important;
+    grid-template-columns: repeat(8, 1fr) !important;
+    gap: 0.45rem !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+    width: 100% !important;
+}
+
+.custom-main-tabs .nav-item {
+    display: flex !important;
+    width: 100% !important;
+    min-width: 0 !important;
+}
+
+.custom-main-tabs .nav-link {
+    width: 100% !important;
+    border-radius: 50px !important;
+    font-size: 0.82rem !important;
+    font-weight: 700 !important;
+    padding: 0.42rem 0.6rem !important;
+    min-height: 38px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.4rem !important;
+    white-space: nowrap !important;
+    text-decoration: none !important;
+    transition: all 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    user-select: none !important;
+    cursor: pointer !important;
+    border: 1.5px solid transparent !important;
+}
+
+.custom-main-tabs .nav-link i {
+    font-size: 0.88rem !important;
+    transition: transform 0.22s ease !important;
+}
+
+.custom-main-tabs .nav-link:hover i {
+    transform: scale(1.15) !important;
+}
+
+.custom-main-tabs .nav-link:active {
+    transform: translateY(1px) scale(0.97) !important;
+}
+
+/* ==========================================================================
+   EACH SECTION (TAB) UNIQUE CALM PASTEL CLAYMORPHISM PALETTE
+   ========================================================================== */
+
+/* --- 1. دابەشکرنا وانان (Distribution: Soft Royal Iris / Slate Periwinkle) --- */
+.custom-main-tabs .nav-link.tab-distribution {
+    background: rgba(99, 102, 241, 0.08) !important;
+    color: #4f46e5 !important;
+    border-color: rgba(99, 102, 241, 0.22) !important;
+    box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.8), 0 2px 5px rgba(99, 102, 241, 0.06) !important;
+}
+
+.custom-main-tabs .nav-link.tab-distribution:hover {
+    background: rgba(99, 102, 241, 0.16) !important;
+    color: #3730a3 !important;
+    border-color: rgba(99, 102, 241, 0.38) !important;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.18), inset 1px 1px 2px rgba(255, 255, 255, 0.9) !important;
+    transform: translateY(-2px) scale(1.02) !important;
+}
+
+.custom-main-tabs .nav-link.tab-distribution.active {
+    background: linear-gradient(145deg, #a5b4fc, #6366f1) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.45) !important;
+    box-shadow: 0 6px 16px -2px rgba(99, 102, 241, 0.42),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* --- 2. خشتێ حەفتیانە (Timetable: Soft Cerulean / Deep Sky Blue) --- */
+.custom-main-tabs .nav-link.tab-timetable {
+    background: rgba(14, 165, 233, 0.08) !important;
+    color: #0284c7 !important;
+    border-color: rgba(14, 165, 233, 0.22) !important;
+    box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.8), 0 2px 5px rgba(14, 165, 233, 0.06) !important;
+}
+
+.custom-main-tabs .nav-link.tab-timetable:hover {
+    background: rgba(14, 165, 233, 0.16) !important;
+    color: #0369a1 !important;
+    border-color: rgba(14, 165, 233, 0.38) !important;
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.18), inset 1px 1px 2px rgba(255, 255, 255, 0.9) !important;
+    transform: translateY(-2px) scale(1.02) !important;
+}
+
+.custom-main-tabs .nav-link.tab-timetable.active {
+    background: linear-gradient(145deg, #7dd3fc, #0284c7) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.45) !important;
+    box-shadow: 0 6px 16px -2px rgba(2, 132, 199, 0.42),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* --- 3. ماموستایێن جێگر (Substitute: Soft Lavender Plum / Amethyst) --- */
+.custom-main-tabs .nav-link.tab-substitute {
+    background: rgba(168, 85, 247, 0.08) !important;
+    color: #7e22ce !important;
+    border-color: rgba(168, 85, 247, 0.22) !important;
+    box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.8), 0 2px 5px rgba(168, 85, 247, 0.06) !important;
+}
+
+.custom-main-tabs .nav-link.tab-substitute:hover {
+    background: rgba(168, 85, 247, 0.16) !important;
+    color: #6b21a8 !important;
+    border-color: rgba(168, 85, 247, 0.38) !important;
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.18), inset 1px 1px 2px rgba(255, 255, 255, 0.9) !important;
+    transform: translateY(-2px) scale(1.02) !important;
+}
+
+.custom-main-tabs .nav-link.tab-substitute.active {
+    background: linear-gradient(145deg, #d8b4fe, #9333ea) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.45) !important;
+    box-shadow: 0 6px 16px -2px rgba(147, 51, 234, 0.42),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* --- 4. خشتێ چاڤدێریێ (Supervision: Soft Sage Mint / Emerald Green) --- */
+.custom-main-tabs .nav-link.tab-supervision {
+    background: rgba(16, 185, 129, 0.08) !important;
+    color: #047857 !important;
+    border-color: rgba(16, 185, 129, 0.22) !important;
+    box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.8), 0 2px 5px rgba(16, 185, 129, 0.06) !important;
+}
+
+.custom-main-tabs .nav-link.tab-supervision:hover {
+    background: rgba(16, 185, 129, 0.16) !important;
+    color: #065f46 !important;
+    border-color: rgba(16, 185, 129, 0.38) !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.18), inset 1px 1px 2px rgba(255, 255, 255, 0.9) !important;
+    transform: translateY(-2px) scale(1.02) !important;
+}
+
+.custom-main-tabs .nav-link.tab-supervision.active {
+    background: linear-gradient(145deg, #86efac, #10b981) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.45) !important;
+    box-shadow: 0 6px 16px -2px rgba(16, 185, 129, 0.42),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* --- 5. ڕێبەرێن پۆلان (Class Mentors: Soft Strawberry Rose / Coral Pink) --- */
+.custom-main-tabs .nav-link.tab-mentors {
+    background: rgba(244, 63, 94, 0.08) !important;
+    color: #be123c !important;
+    border-color: rgba(244, 63, 94, 0.22) !important;
+    box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.8), 0 2px 5px rgba(244, 63, 94, 0.06) !important;
+}
+
+.custom-main-tabs .nav-link.tab-mentors:hover {
+    background: rgba(244, 63, 94, 0.16) !important;
+    color: #9f1239 !important;
+    border-color: rgba(244, 63, 94, 0.38) !important;
+    box-shadow: 0 4px 12px rgba(244, 63, 94, 0.18), inset 1px 1px 2px rgba(255, 255, 255, 0.9) !important;
+    transform: translateY(-2px) scale(1.02) !important;
+}
+
+.custom-main-tabs .nav-link.tab-mentors.active {
+    background: linear-gradient(145deg, #fda4af, #f43f5e) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.45) !important;
+    box-shadow: 0 6px 16px -2px rgba(244, 63, 94, 0.42),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* --- 6. نصاب وانان (Quotas / Nisab: Soft Golden Amber / Honey) --- */
+.custom-main-tabs .nav-link.tab-nisab {
+    background: rgba(245, 158, 11, 0.08) !important;
+    color: #b45309 !important;
+    border-color: rgba(245, 158, 11, 0.22) !important;
+    box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.8), 0 2px 5px rgba(245, 158, 11, 0.06) !important;
+}
+
+.custom-main-tabs .nav-link.tab-nisab:hover {
+    background: rgba(245, 158, 11, 0.16) !important;
+    color: #92400e !important;
+    border-color: rgba(245, 158, 11, 0.38) !important;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.18), inset 1px 1px 2px rgba(255, 255, 255, 0.9) !important;
+    transform: translateY(-2px) scale(1.02) !important;
+}
+
+.custom-main-tabs .nav-link.tab-nisab.active {
+    background: linear-gradient(145deg, #fcd34d, #f59e0b) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.45) !important;
+    box-shadow: 0 6px 16px -2px rgba(245, 158, 11, 0.42),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* --- 7. فۆڕما ڕێکخستنا میلاکی (Staff Cadre / Milak: Soft Marine Teal / Turquoise) --- */
+.custom-main-tabs .nav-link.tab-milak {
+    background: rgba(20, 184, 166, 0.08) !important;
+    color: #0f766e !important;
+    border-color: rgba(20, 184, 166, 0.22) !important;
+    box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.8), 0 2px 5px rgba(20, 184, 166, 0.06) !important;
+}
+
+.custom-main-tabs .nav-link.tab-milak:hover {
+    background: rgba(20, 184, 166, 0.16) !important;
+    color: #115e59 !important;
+    border-color: rgba(20, 184, 166, 0.38) !important;
+    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.18), inset 1px 1px 2px rgba(255, 255, 255, 0.9) !important;
+    transform: translateY(-2px) scale(1.02) !important;
+}
+
+.custom-main-tabs .nav-link.tab-milak.active {
+    background: linear-gradient(145deg, #5eead4, #14b8a6) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.45) !important;
+    box-shadow: 0 6px 16px -2px rgba(20, 184, 166, 0.42),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* --- 8. ئامار و داتا (Statistics & Data: Soft Orchid Magenta / Pink Pearl) --- */
+.custom-main-tabs .nav-link.tab-statistics {
+    background: rgba(217, 70, 239, 0.08) !important;
+    color: #a21caf !important;
+    border-color: rgba(217, 70, 239, 0.22) !important;
+    box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.8), 0 2px 5px rgba(217, 70, 239, 0.06) !important;
+}
+
+.custom-main-tabs .nav-link.tab-statistics:hover {
+    background: rgba(217, 70, 239, 0.16) !important;
+    color: #86198f !important;
+    border-color: rgba(217, 70, 239, 0.38) !important;
+    box-shadow: 0 4px 12px rgba(217, 70, 239, 0.18), inset 1px 1px 2px rgba(255, 255, 255, 0.9) !important;
+    transform: translateY(-2px) scale(1.02) !important;
+}
+
+.custom-main-tabs .nav-link.tab-statistics.active {
+    background: linear-gradient(145deg, #f0abfc, #d946ef) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.45) !important;
+    box-shadow: 0 6px 16px -2px rgba(217, 70, 239, 0.42),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.75),
+        inset -2px -2px 4px rgba(0, 0, 0, 0.12) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* ==========================================================================
+   DARK MODE OVERRIDES FOR NAVIGATION TABS
+   ========================================================================== */
+[data-bs-theme="dark"] .custom-main-tabs .nav-link.tab-distribution {
+    background: rgba(99, 102, 241, 0.18) !important;
+    color: #c7d2fe !important;
+    border-color: rgba(99, 102, 241, 0.35) !important;
+}
+
+[data-bs-theme="dark"] .custom-main-tabs .nav-link.tab-timetable {
+    background: rgba(14, 165, 233, 0.18) !important;
+    color: #bae6fd !important;
+    border-color: rgba(14, 165, 233, 0.35) !important;
+}
+
+[data-bs-theme="dark"] .custom-main-tabs .nav-link.tab-substitute {
+    background: rgba(168, 85, 247, 0.18) !important;
+    color: #e9d5ff !important;
+    border-color: rgba(168, 85, 247, 0.35) !important;
+}
+
+[data-bs-theme="dark"] .custom-main-tabs .nav-link.tab-supervision {
+    background: rgba(16, 185, 129, 0.18) !important;
+    color: #a7f3d0 !important;
+    border-color: rgba(16, 185, 129, 0.35) !important;
+}
+
+[data-bs-theme="dark"] .custom-main-tabs .nav-link.tab-mentors {
+    background: rgba(244, 63, 94, 0.18) !important;
+    color: #fecdd3 !important;
+    border-color: rgba(244, 63, 94, 0.35) !important;
+}
+
+[data-bs-theme="dark"] .custom-main-tabs .nav-link.tab-nisab {
+    background: rgba(245, 158, 11, 0.18) !important;
+    color: #fde68a !important;
+    border-color: rgba(245, 158, 11, 0.35) !important;
+}
+
+[data-bs-theme="dark"] .custom-main-tabs .nav-link.tab-milak {
+    background: rgba(20, 184, 166, 0.18) !important;
+    color: #99f6e4 !important;
+    border-color: rgba(20, 184, 166, 0.35) !important;
+}
+
+[data-bs-theme="dark"] .custom-main-tabs .nav-link.tab-statistics {
+    background: rgba(217, 70, 239, 0.18) !important;
+    color: #f5d0fe !important;
+    border-color: rgba(217, 70, 239, 0.35) !important;
+}
+
+/* ==========================================================================
+   COMPREHENSIVE UNIVERSAL RESPONSIVE SYSTEM (متناسب مع جميع مقاييس الشاشات)
+   Desktops (4K, 2K, 1080p), Laptops, iPads & Tablets, and Mobile Devices
+   ========================================================================== */
+
+/* 1. Global Fluid Layout Container */
+.main-container {
+    width: 100% !important;
+    max-width: 1920px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: clamp(8px, 1.6vw, 24px) !important;
+    padding-right: clamp(8px, 1.6vw, 24px) !important;
+    box-sizing: border-box !important;
+}
+
+/* 2. Universal Navigation Tabs Grid Breakpoints */
+/* Desktops & Ultrawide (> 1360px): 1 Row of 8 Tabs */
+@media (min-width: 1361px) {
+    .custom-main-tabs {
+        grid-template-columns: repeat(8, 1fr) !important;
+        gap: 0.45rem !important;
+    }
+}
+
+/* Laptops, MacBooks, Tablets & iPads (768px - 1360px): Exactly 2 balanced Rows of 4 Tabs */
+@media (max-width: 1360px) and (min-width: 768px) {
+    .custom-main-tabs {
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 0.45rem !important;
+    }
+
+    .custom-main-tabs .nav-link {
+        font-size: clamp(0.76rem, 0.95vw, 0.82rem) !important;
+        padding: 0.42rem 0.55rem !important;
+        min-height: 38px !important;
+    }
+}
+
+/* Mobile Devices & Small Tablets (<= 767px): Native App-Like Horizontal Swipeable Ribbon */
+@media (max-width: 767px) {
+    .main-tabs-card {
+        padding: 0.35rem 0.4rem !important;
+        border-radius: 16px !important;
+        margin-bottom: 0.5rem !important;
+        overflow: hidden !important;
+    }
+
+    .custom-main-tabs {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+        gap: 0.35rem !important;
+        padding: 2px 2px !important;
+        width: 100% !important;
+    }
+
+    .custom-main-tabs::-webkit-scrollbar {
+        display: none !important;
+    }
+
+    .custom-main-tabs .nav-item {
+        flex: 0 0 auto !important;
+        width: auto !important;
+    }
+
+    .custom-main-tabs .nav-link {
+        white-space: nowrap !important;
+        font-size: 0.79rem !important;
+        font-weight: 700 !important;
+        padding: 0.4rem 0.85rem !important;
+        min-height: 36px !important;
+        gap: 0.4rem !important;
+        border-radius: 50px !important;
+    }
+
+    .custom-main-tabs .nav-link i {
+        font-size: 0.82rem !important;
+    }
+}
+
+/* 3. Top Header Bar Mobile Architecture */
+@media (max-width: 991px) {
+    .top-header-card {
+        padding: 0.55rem 0.85rem !important;
+        border-radius: 16px !important;
+    }
+
+    .header-app-title {
+        font-size: 1.05rem !important;
+    }
+}
+
+@media (max-width: 767px) {
+    .top-header-card {
+        padding: 0.5rem 0.75rem !important;
+        border-radius: 18px !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .top-header-card>div {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.5rem !important;
+    }
+
+    .app-branding {
+        justify-content: center !important;
+        text-align: center !important;
+    }
+
+    .header-app-title {
+        font-size: 1.05rem !important;
+    }
+
+    .header-divider {
+        display: none !important;
+    }
+
+    .header-controls {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        gap: 6px !important;
+    }
+
+    .header-group-schedule {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+    }
+
+    #scheduleDropdownContainer {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+    }
+
+    .header-active-schedule-btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        height: 34px !important;
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.78rem !important;
+        gap: 0.35rem !important;
+    }
+
+    .header-active-schedule-btn span#activeScheduleLabel {
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        display: inline-block !important;
+        max-width: 80px !important;
+    }
+
+    .header-schedule-icon-badge {
+        width: 20px !important;
+        height: 20px !important;
+        font-size: 0.7rem !important;
+    }
+
+    .header-circle-btn {
+        width: 33px !important;
+        height: 33px !important;
+        min-width: 33px !important;
+        min-height: 33px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .header-group-system {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .header-theme-clay-track {
+        width: 56px !important;
+        height: 32px !important;
+    }
+
+    .theme-knob-clay {
+        width: 24px !important;
+        height: 24px !important;
+        top: 3px !important;
+    }
+
+    .header-theme-checkbox:checked+.header-theme-clay-track .theme-knob-clay {
+        left: calc(100% - 28px) !important;
+    }
+}
+
+/* 4. Toolbars & Action Buttons Universal Responsiveness */
+.distribution-toolbar-card {
+    transition: all 0.25s ease;
+}
+
+@media (max-width: 1200px) {
+    .distribution-toolbar-card {
+        padding: 0.65rem 0.95rem !important;
+    }
+
+    .distribution-toolbar-card .btn {
+        padding: 0.35rem 0.8rem !important;
+        font-size: 0.8rem !important;
+        min-height: 34px !important;
+        gap: 0.35rem !important;
+    }
+
+    .toolbar-row-actions {
+        gap: 0.5rem !important;
+    }
+
+    .toolbar-group {
+        gap: 0.35rem !important;
+    }
+}
+
+/* ==========================================================
+   DEDICATED TABLET LAYOUT (ALL iPad Models & Tablets: 768px - 1024px)
+   (iPad Mini 768px, iPad 9.7"/10.2"/10.5", iPad Air 820px, iPad Pro 11" 834px, iPad Pro 12.9" portrait / standard iPad landscape 1024px)
+   ========================================================== */
+@media (min-width: 768px) and (max-width: 1024px) {
+
+    /* 1. Base Tablet Toolbar Card */
+    .distribution-toolbar-card {
+        padding: 0.65rem 0.95rem !important;
+        border-radius: 18px !important;
+        margin-bottom: 0.75rem !important;
+    }
+
+    /* All buttons on iPad maintain compact, natural pill proportions - NO stretched giant blocks! */
+    .distribution-toolbar-card .btn,
+    .distribution-toolbar-card .btn-group>.btn {
+        width: auto !important;
+        min-width: 0 !important;
+        padding: 0.32rem 0.68rem !important;
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
+        border-radius: 50px !important;
+        min-height: 33px !important;
+        height: auto !important;
+        white-space: nowrap !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0.3rem !important;
+    }
+
+    .distribution-toolbar-card .btn i,
+    .distribution-toolbar-card .btn-group>.btn i {
+        font-size: 0.8rem !important;
+    }
+
+    /* Elegant subtle vertical divider between functional clusters */
+    .toolbar-divider {
+        display: inline-block !important;
+        width: 1.5px !important;
+        height: 20px !important;
+        background: rgba(148, 163, 184, 0.4) !important;
+        margin: 0 0.25rem !important;
+        align-self: center !important;
+    }
+
+    [data-bs-theme="dark"] .toolbar-divider {
+        background: rgba(255, 255, 255, 0.2) !important;
+    }
+
+    /* Labels inside groups */
+    .toolbar-group-label {
+        font-size: 0.77rem !important;
+        font-weight: 700 !important;
+        margin-inline-end: 0.2rem !important;
+        white-space: nowrap !important;
+    }
+
+    /* Universal tablet actions row: strictly flex-start, cohesive grouping, NO stray floating buttons */
+    .toolbar-row-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        flex-wrap: wrap !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+    }
+
+    .toolbar-group,
+    .toolbar-group-build,
+    .toolbar-group-export,
+    .toolbar-group-system {
+        display: inline-flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+        gap: 0.3rem !important;
+        width: auto !important;
+        margin: 0 !important;
+        border: none !important;
+        padding: 0 !important;
+    }
+
+    /* Prevent system/clear group from pushing to the far edge */
+    .toolbar-group-system {
+        margin-inline-start: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    /* Select clay capsules on tablet */
+    .tt-select-clay-capsule {
+        height: 33px !important;
+        min-height: 33px !important;
+        padding: 2px 8px !important;
+        border-radius: 50px !important;
+    }
+
+    .tt-context-clay-badge {
+        height: 33px !important;
+        min-height: 33px !important;
+        padding: 2px 8px !important;
+        border-radius: 50px !important;
+        font-size: 0.78rem !important;
+        gap: 4px !important;
+    }
+
+    /* --------------------------------------------------
+       1. DISTRIBUTION TAB (iPad)
+       -------------------------------------------------- */
+    #distribution-tab-pane .toolbar-row-view {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-wrap: nowrap !important;
+        gap: 0.45rem !important;
+        width: 100% !important;
+        padding-bottom: 0.45rem !important;
+        margin-bottom: 0.45rem !important;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.9) !important;
+    }
+
+    #distribution-tab-pane .toolbar-group-views {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.3rem !important;
+        flex: 1 1 auto !important;
+        flex-wrap: nowrap !important;
+    }
+
+    #distribution-tab-pane #stageSelectorBtn {
+        max-width: 175px !important;
+        text-overflow: ellipsis !important;
+        overflow: hidden !important;
+        white-space: nowrap !important;
+    }
+
+    #distribution-tab-pane .search-panel {
+        max-width: 200px !important;
+        min-width: 140px !important;
+        flex: 0 1 200px !important;
+        margin: 0 !important;
+    }
+
+    #distribution-tab-pane .search-panel input {
+        height: 33px !important;
+        min-height: 33px !important;
+        font-size: 0.79rem !important;
+        border-radius: 50px !important;
+    }
+
+    /* Actions 2-Row Architecture: Row 1 = Build, Row 2 = Export + System */
+    #distribution-tab-pane .toolbar-row-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        flex-wrap: wrap !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+    }
+
+    #distribution-tab-pane .toolbar-group-build {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        flex-wrap: nowrap !important;
+        gap: 0.35rem !important;
+        padding-bottom: 0.4rem !important;
+        margin-bottom: 0.15rem !important;
+        border-bottom: 1px dashed rgba(226, 232, 240, 0.8) !important;
+    }
+
+    [data-bs-theme="dark"] #distribution-tab-pane .toolbar-group-build {
+        border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    #distribution-tab-pane .toolbar-group-build+.toolbar-divider {
+        display: none !important;
+    }
+
+    #distribution-tab-pane .toolbar-group-export,
+    #distribution-tab-pane .toolbar-group-system {
+        display: inline-flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+        gap: 0.3rem !important;
+        width: auto !important;
+        margin: 0 !important;
+    }
+
+    /* --------------------------------------------------
+       2. TIMETABLE TAB (iPad: Balanced Luxury Shelf)
+       -------------------------------------------------- */
+    #timetable-tab-pane .toolbar-row-view {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-wrap: nowrap !important;
+        gap: 0.5rem !important;
+        width: 100% !important;
+        padding: 0 4px 0.45rem 4px !important;
+        margin-bottom: 0.45rem !important;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.9) !important;
+    }
+
+    [data-bs-theme="dark"] #timetable-tab-pane .toolbar-row-view {
+        border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    #timetable-tab-pane .toolbar-group-views {
+        display: inline-flex !important;
+        width: auto !important;
+        flex: 0 1 auto !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        gap: 0.35rem !important;
+    }
+
+    #timetable-tab-pane .tt-view-btn-group {
+        display: inline-flex !important;
+        width: auto !important;
+        flex-wrap: nowrap !important;
+        gap: 2px !important;
+    }
+
+    #timetable-tab-pane .tt-view-btn-group .btn {
+        padding: 0.28rem 0.52rem !important;
+        font-size: 0.76rem !important;
+        white-space: nowrap !important;
+    }
+
+    /* Redundant context badge in Tab 2 on iPad hides to keep view row on one single clean line */
+    #timetable-tab-pane .tt-context-clay-badge {
+        display: none !important;
+    }
+
+    #timetable-tab-pane .tt-select-clay-capsule {
+        max-width: 185px !important;
+        min-width: 135px !important;
+        flex: 0 1 185px !important;
+        margin: 0 !important;
+        padding: 2px 8px !important;
+    }
+
+    #timetable-tab-pane .tt-clay-select {
+        font-size: 0.77rem !important;
+        font-weight: 700 !important;
+    }
+
+    /* Actions Container: 2 Dedicated Rows (Row 2 = Build, Row 3 = Export & Clear) */
+    #timetable-tab-pane .toolbar-row-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        flex-wrap: wrap !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+        padding: 0 4px !important;
+    }
+
+    /* Row 2: Construction Tools - Uniform balanced 4-pill shelf */
+    #timetable-tab-pane .toolbar-group-build {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        flex-wrap: nowrap !important;
+        gap: 0.35rem !important;
+        padding-bottom: 0.4rem !important;
+        margin-bottom: 0.15rem !important;
+        border-bottom: 1px dashed rgba(226, 232, 240, 0.8) !important;
+    }
+
+    [data-bs-theme="dark"] #timetable-tab-pane .toolbar-group-build {
+        border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    #timetable-tab-pane .toolbar-group-build .btn {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        padding: 0.32rem 0.4rem !important;
+        font-size: 0.74rem !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        justify-content: center !important;
+    }
+
+    /* Hide dividers between shelves */
+    #timetable-tab-pane .toolbar-divider {
+        display: none !important;
+    }
+
+    /* Row 3: Export & Print on Right, Clear on Left */
+    #timetable-tab-pane .toolbar-group-export {
+        display: inline-flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+        gap: 0.35rem !important;
+        width: auto !important;
+        margin: 0 !important;
+    }
+
+    #timetable-tab-pane .toolbar-group-system {
+        display: inline-flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        margin: 0 !important;
+        margin-inline-start: auto !important;
+        width: auto !important;
+    }
+
+    #timetable-tab-pane .toolbar-group-export .btn,
+    #timetable-tab-pane .toolbar-group-system .btn {
+        padding: 0.32rem 0.65rem !important;
+        font-size: 0.76rem !important;
+        min-height: 33px !important;
+        white-space: nowrap !important;
+    }
+
+    /* --------------------------------------------------
+       3. SUBSTITUTE TAB (iPad)
+       -------------------------------------------------- */
+    #substitute-tab-pane .toolbar-row-view {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 0.5rem !important;
+        width: 100% !important;
+        padding-bottom: 0.45rem !important;
+        margin-bottom: 0.45rem !important;
+    }
+
+    #substitute-tab-pane .toolbar-group-views {
+        display: inline-flex !important;
+        width: auto !important;
+    }
+
+    #substitute-tab-pane .toolbar-row-actions {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.4rem !important;
+        width: 100% !important;
+    }
+
+    #substitute-tab-pane .toolbar-sub-filters {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 0.35rem !important;
+        margin-bottom: 0.2rem !important;
+        border-bottom: 1px dashed rgba(226, 232, 240, 0.9) !important;
+        padding-bottom: 0.35rem !important;
+    }
+
+    #substitute-tab-pane .toolbar-sub-filters .tt-select-clay-capsule {
+        flex: 1 1 0 !important;
+        max-width: 320px !important;
+    }
+
+    #substitute-tab-pane .toolbar-row-actions>div:first-child {
+        order: 2 !important;
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 0.35rem !important;
+    }
+
+    /* --------------------------------------------------
+       4. SUPERVISION TAB (iPad)
+       -------------------------------------------------- */
+    #supervision-tab-pane .toolbar-row-view {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-wrap: nowrap !important;
+        gap: 0.5rem !important;
+        width: 100% !important;
+        padding-bottom: 0.45rem !important;
+        margin-bottom: 0.45rem !important;
+    }
+
+    #supervision-tab-pane .toolbar-group-views {
+        display: inline-flex !important;
+        align-items: center !important;
+        width: auto !important;
+        flex: 0 0 auto !important;
+    }
+
+    #supervision-tab-pane .tt-view-btn-group {
+        display: inline-flex !important;
+        width: auto !important;
+    }
+
+    #supervision-tab-pane .tt-select-clay-capsule {
+        flex: 0 0 auto !important;
+        margin: 0 !important;
+    }
+
+    #supervision-tab-pane .toolbar-row-view>div:last-child {
+        flex: 0 0 auto !important;
+    }
+
+    #supervision-tab-pane .toolbar-row-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        flex-wrap: wrap !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+    }
+
+    /* 4-column balanced KPI Summary Cards */
+    #supervision-tab-pane .supervision-wrapper .row.g-2 {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 0.55rem !important;
+    }
+
+    #supervision-tab-pane .supervision-wrapper .row.g-2>div {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 0 0 100% !important;
+    }
+
+    #supervision-tab-pane .supervision-wrapper .row.g-2>div>div {
+        border-radius: 14px !important;
+        padding: 0.65rem 0.5rem !important;
+    }
+
+    /* --------------------------------------------------
+       5. CLASS MENTORS TAB (iPad)
+       -------------------------------------------------- */
+    #class-mentors-tab-pane .toolbar-row-view {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-wrap: nowrap !important;
+        gap: 0.5rem !important;
+        width: 100% !important;
+        padding-bottom: 0.45rem !important;
+        margin-bottom: 0.45rem !important;
+    }
+
+    #class-mentors-tab-pane .toolbar-group-views {
+        display: inline-flex !important;
+        width: auto !important;
+        flex: 0 0 auto !important;
+    }
+
+    #class-mentors-tab-pane .tt-view-btn-group {
+        display: inline-flex !important;
+        width: auto !important;
+    }
+
+    #class-mentors-tab-pane .toolbar-row-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        flex-wrap: wrap !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+    }
+
+    /* 4-column balanced KPI Summary Cards */
+    #class-mentors-tab-pane .mentors-stats-row {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 0.55rem !important;
+    }
+
+    #class-mentors-tab-pane .mentors-stats-row>div {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 0 0 100% !important;
+    }
+
+    #class-mentors-tab-pane .mentor-stat-clay-card {
+        padding: 0.65rem 0.75rem !important;
+        border-radius: 16px !important;
+    }
+
+    /* --------------------------------------------------
+       6. NISAB TAB (iPad)
+       -------------------------------------------------- */
+    #nisab-tab-pane .toolbar-row-view {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-wrap: nowrap !important;
+        gap: 0.5rem !important;
+        width: 100% !important;
+        padding-bottom: 0.45rem !important;
+        margin-bottom: 0.45rem !important;
+    }
+
+    #nisab-tab-pane .toolbar-row-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        flex-wrap: nowrap !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+    }
+
+    /* --------------------------------------------------
+       7. MILAK TAB (iPad)
+       -------------------------------------------------- */
+    #milak-tab-pane .toolbar-row-view {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 0.5rem !important;
+        width: 100% !important;
+        padding-bottom: 0.45rem !important;
+        margin-bottom: 0.45rem !important;
+    }
+
+    #milak-tab-pane .toolbar-row-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+    }
+
+    #milak-tab-pane .toolbar-row-actions>div {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.35rem !important;
+        width: auto !important;
+    }
+
+    /* --------------------------------------------------
+       8. STATISTICS TAB (iPad)
+       -------------------------------------------------- */
+    #statistics-tab-pane .toolbar-row-view {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 0.5rem !important;
+        width: 100% !important;
+        padding-bottom: 0.45rem !important;
+        margin-bottom: 0.45rem !important;
+        flex-wrap: nowrap !important;
+    }
+
+    #statistics-tab-pane .toolbar-group-views {
+        display: inline-flex !important;
+        align-items: center !important;
+        width: auto !important;
+        flex: 1 1 auto !important;
+    }
+
+    #statistics-tab-pane .tt-view-btn-group {
+        display: inline-flex !important;
+        width: auto !important;
+        gap: 2px !important;
+        padding: 2px !important;
+        flex-wrap: nowrap !important;
+    }
+
+    #statistics-tab-pane .tt-view-btn-group .nav-link {
+        font-size: 0.74rem !important;
+        padding: 0.28rem 0.55rem !important;
+        min-height: 31px !important;
+        white-space: nowrap !important;
+        border-radius: 50px !important;
+    }
+
+    #statistics-tab-pane .toolbar-row-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+    }
+
+    #statistics-tab-pane .toolbar-group-export {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.35rem !important;
+        width: auto !important;
+        max-width: none !important;
+    }
+
+    /* 4-column balanced KPI Summary Cards in Statistics */
+    #statistics-tab-pane .row:has(.mentor-stat-clay-card),
+    #statistics-tab-pane .row[class*="g-2"]:has(.mentor-stat-clay-card) {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 0.55rem !important;
+    }
+
+    #statistics-tab-pane .row:has(.mentor-stat-clay-card)>div {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 0 0 100% !important;
+    }
+
+    #statistics-tab-pane .mentor-stat-clay-card {
+        padding: 0.65rem 0.75rem !important;
+        border-radius: 16px !important;
+    }
+}
+
+/* Mobile Structured Toolbar Layout (<= 767px) */
+@media (max-width: 767px) {
+    .distribution-toolbar-card {
+        padding: 0.65rem 0.65rem !important;
+        border-radius: 18px !important;
+        margin-bottom: 0.65rem !important;
+    }
+
+    /* Hide redundant text labels 'عرض' and 'بناء' on mobile */
+    .toolbar-group-label {
+        display: none !important;
+    }
+
+    .toolbar-divider {
+        display: none !important;
+    }
+
+    /* Row 1: Views & Search */
+    .toolbar-row-view {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.45rem !important;
+        padding-bottom: 0.45rem !important;
+        margin-bottom: 0.45rem !important;
+    }
+
+    /* Search input always on top, full width, sleek pill */
+    .search-panel {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        order: -1 !important;
+        margin-bottom: 0.15rem !important;
+    }
+
+    .search-panel input {
+        height: 36px !important;
+        min-height: 36px !important;
+        font-size: 0.82rem !important;
+        border-radius: 50px !important;
+    }
+
+    /* View Mode buttons: Row 1 (2 equal columns), Row 2 (Full-width Stage Selector) */
+    .toolbar-group-views {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+    }
+
+    .toolbar-group-views .btn,
+    .toolbar-group-views .btn-group {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    .toolbar-group-views .btn {
+        padding: 0.38rem 0.45rem !important;
+        font-size: 0.77rem !important;
+        min-height: 35px !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+    }
+
+    /* Stage Selector spans 100% full width with zero text clipping */
+    .toolbar-group-views .btn-group:last-child,
+    #stageSelectorBtn {
+        grid-column: 1 / -1 !important;
+        width: 100% !important;
+    }
+
+    /* Row 2: Action Buttons */
+    .toolbar-row-actions {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.45rem !important;
+        width: 100% !important;
+    }
+
+    /* Primary Creation Group: Balanced 2-column grid (خشتێ نوی, ماموستا / پول, دابەشکرنا نصابی) */
+    .toolbar-group-build {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+    }
+
+    .toolbar-group-build .btn,
+    .toolbar-group-build .btn-group {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    .toolbar-group-build .btn {
+        padding: 0.38rem 0.45rem !important;
+        font-size: 0.77rem !important;
+        min-height: 35px !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+    }
+
+    /* Secondary Export & Print Group: Perfectly balanced 2-column grid (هیلان و هەور, ئێكسێل / HTML, چاپكرن) */
+    .toolbar-group-export {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+        padding-top: 0.35rem !important;
+        border-top: 1px dashed rgba(226, 232, 240, 0.9) !important;
+    }
+
+    .toolbar-group-export .btn,
+    .toolbar-group-export .btn-group {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    .toolbar-group-export .btn {
+        padding: 0.38rem 0.45rem !important;
+        font-size: 0.76rem !important;
+        min-height: 35px !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+    }
+
+    /* System & Settings Group: Perfectly balanced 2-column grid (رێكخستن, ژێبرن) */
+    .toolbar-group-system {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+        padding-top: 0.35rem !important;
+        border-top: 1px dashed rgba(226, 232, 240, 0.9) !important;
+    }
+
+    .toolbar-group-system .btn,
+    .toolbar-group-system .btn-group {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    .toolbar-group-system .btn {
+        padding: 0.38rem 0.45rem !important;
+        font-size: 0.76rem !important;
+        min-height: 35px !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+    }
+
+    [data-bs-theme="dark"] .toolbar-group-export,
+    [data-bs-theme="dark"] .toolbar-group-system {
+        border-top-color: rgba(255, 255, 255, 0.1) !important;
+    }
+}
+
+/* Timetable Toolbar Dedicated Responsive Mobile Layout (<= 767px) */
+@media (max-width: 767px) {
+
+    /* Container & Toolbar card overflow containment */
+    #timetable-tab-pane {
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+
+    #timetable-tab-pane .distribution-toolbar-card {
+        max-width: 100% !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+    }
+
+    /* 1. Timetable Toolbar Row View (Column flow on mobile) */
+    #timetable-tab-pane .toolbar-row-view {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.45rem !important;
+        padding-bottom: 0.45rem !important;
+        margin-bottom: 0.45rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+    }
+
+    #timetable-tab-pane .toolbar-group-views {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+    }
+
+    /* 2. All 4 View Modes in a Perfect Balanced 2x2 Grid (خشتێ پولا, خشتێ ماموستا / ماستر پولان, ماستر ماموستایان) */
+    #timetable-tab-pane .tt-view-btn-group,
+    #timetable-tab-pane .toolbar-group-views .btn-group,
+    #timetable-tab-pane .toolbar-group-views .btn-group[role="group"],
+    #timetable-tab-pane .btn-group[role="group"] {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        border-radius: 16px !important;
+        padding: 4px !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+        flex-wrap: wrap !important;
+    }
+
+    #timetable-tab-pane .tt-view-btn-group input.btn-check,
+    #timetable-tab-pane .toolbar-group-views input.btn-check {
+        position: absolute !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: none !important;
+    }
+
+    #timetable-tab-pane .tt-view-btn-group label.btn,
+    #timetable-tab-pane .toolbar-group-views label.btn {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        border-radius: 12px !important;
+        font-size: 0.74rem !important;
+        font-weight: 700 !important;
+        padding: 0.42rem 0.25rem !important;
+        min-height: 35px !important;
+        height: auto !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    /* 3. Filter Selector Row: Full width 100% */
+    #timetable-tab-pane .toolbar-row-view>div:last-child {
+        width: 100% !important;
+        display: flex !important;
+    }
+
+    #timetable-tab-pane .tt-select-clay-capsule {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 1 1 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        border-radius: 50px !important;
+    }
+
+    #timetable-tab-pane .tt-clay-select {
+        flex: 1 1 auto !important;
+        width: 100% !important;
+        font-size: 0.82rem !important;
+        font-weight: 700 !important;
+    }
+
+    /* Hide redundant duplicate tab badge on mobile (already selected at top navigation) */
+    #timetable-tab-pane .tt-context-clay-badge {
+        display: none !important;
+    }
+
+    /* 4. Action Buttons Groups */
+    #timetable-tab-pane .toolbar-group-build {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+    }
+
+    #timetable-tab-pane .toolbar-group-build .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        padding: 0.38rem 0.45rem !important;
+        font-size: 0.77rem !important;
+        min-height: 35px !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+    }
+
+    #timetable-tab-pane .toolbar-group-export {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+        padding-top: 0.35rem !important;
+        border-top: 1px dashed rgba(226, 232, 240, 0.9) !important;
+    }
+
+    #timetable-tab-pane .toolbar-group-export .btn-group,
+    #timetable-tab-pane .toolbar-group-export .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    #timetable-tab-pane .toolbar-group-export .btn {
+        padding: 0.38rem 0.45rem !important;
+        font-size: 0.76rem !important;
+        min-height: 35px !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+    }
+
+    /* 5. Clear Timetable: Sleek Full-width Bottom Reset Bar */
+    #timetable-tab-pane .toolbar-group-system {
+        display: block !important;
+        width: 100% !important;
+        padding-top: 0.35rem !important;
+        border-top: 1px dashed rgba(226, 232, 240, 0.9) !important;
+    }
+
+    #timetable-tab-pane #btnClearTimetable {
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 36px !important;
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        border-radius: 50px !important;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.22) !important;
+    }
+
+    [data-bs-theme="dark"] #timetable-tab-pane .toolbar-group-export,
+    [data-bs-theme="dark"] #timetable-tab-pane .toolbar-group-system {
+        border-top-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* ==========================================================
+       SUBSTITUTE FINDER TAB TOOLBAR MOBILE OPTIMIZATION
+       ========================================================== */
+    /* Container & Toolbar card overflow containment */
+    #substitute-tab-pane {
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+
+    #substitute-tab-pane .distribution-toolbar-card {
+        max-width: 100% !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+    }
+
+    /* 1. Row 1: Views & Status Badges */
+    #substitute-tab-pane .toolbar-row-view {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.45rem !important;
+        padding-bottom: 0.45rem !important;
+        margin-bottom: 0.45rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+    }
+
+    #substitute-tab-pane .toolbar-group-views {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+    }
+
+    /* All 3 View Modes visible in ONE single sleek balanced row (Teachers / Classes / Matrix) */
+    #substitute-tab-pane .tt-view-btn-group {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 3px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        border-radius: 16px !important;
+        padding: 3px !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+    }
+
+    #substitute-tab-pane .tt-view-btn-group .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        border-radius: 12px !important;
+        font-size: 0.71rem !important;
+        font-weight: 700 !important;
+        padding: 0.38rem 0.2rem !important;
+        min-height: 34px !important;
+        height: auto !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    #substitute-tab-pane .tt-view-btn-group .btn i {
+        font-size: 0.72rem !important;
+        margin-inline-end: 3px !important;
+    }
+
+    /* Status Badges: Centered, unified pill ribbon */
+    #substitute-tab-pane .toolbar-row-view>div:last-child {
+        width: 100% !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 4px !important;
+        margin: 0 !important;
+    }
+
+    #substitute-tab-pane .tt-context-clay-badge {
+        font-size: 0.72rem !important;
+        padding: 3px 8px !important;
+        height: auto !important;
+        min-height: 28px !important;
+        border-radius: 50px !important;
+    }
+
+    /* 2. Row 2: Action Buttons & Filter Capsules */
+    #substitute-tab-pane .toolbar-row-actions {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.45rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Filters (Teacher & Day Capsules): Placed directly UNDER view/status row in 1 single 2-column line (50% / 50%) */
+    #substitute-tab-pane .toolbar-sub-filters {
+        order: 1 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.35rem !important;
+        margin: 0 !important;
+        padding: 0 0 0.35rem 0 !important;
+        border-top: none !important;
+        border-bottom: 1px dashed rgba(226, 232, 240, 0.9) !important;
+        box-sizing: border-box !important;
+    }
+
+    #substitute-tab-pane .toolbar-sub-filters .tt-select-clay-capsule {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        border-radius: 50px !important;
+        justify-content: space-between !important;
+        box-sizing: border-box !important;
+    }
+
+    #substitute-tab-pane .toolbar-sub-filters .tt-clay-select {
+        flex: 1 1 auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        font-size: 0.74rem !important;
+        font-weight: 700 !important;
+        padding: 2px 22px 2px 4px !important;
+    }
+
+    /* Actions Group Wrapper: Ordered after the filters */
+    #substitute-tab-pane .toolbar-row-actions>div:first-child {
+        order: 2 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        gap: 0.45rem !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Group 1 (Build & Assign - 3 buttons: Row 1 has 2 buttons 50/50, Row 2 has full-width button) */
+    #substitute-tab-pane .toolbar-group-build {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    #substitute-tab-pane .toolbar-group-build .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        padding: 0.38rem 0.45rem !important;
+        font-size: 0.76rem !important;
+        min-height: 35px !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+        border-radius: 12px !important;
+        box-sizing: border-box !important;
+    }
+
+    #substitute-tab-pane .toolbar-group-build .btn:nth-of-type(3) {
+        grid-column: 1 / -1 !important;
+        width: 100% !important;
+    }
+
+    /* Group 2 (Export & Print - 2 buttons: 50% each) */
+    #substitute-tab-pane .toolbar-group-export {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+        padding-top: 0.35rem !important;
+        border-top: 1px dashed rgba(226, 232, 240, 0.9) !important;
+        box-sizing: border-box !important;
+    }
+
+    #substitute-tab-pane .toolbar-group-export .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        padding: 0.38rem 0.45rem !important;
+        font-size: 0.76rem !important;
+        min-height: 35px !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+        border-radius: 12px !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Group 3 (Clear & Reset - Full-width bottom reset bar) */
+    #substitute-tab-pane .toolbar-group-system {
+        display: block !important;
+        width: 100% !important;
+        padding-top: 0.35rem !important;
+        border-top: 1px dashed rgba(226, 232, 240, 0.9) !important;
+        box-sizing: border-box !important;
+    }
+
+    #substitute-tab-pane .toolbar-group-system .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 36px !important;
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        border-radius: 50px !important;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.22) !important;
+    }
+
+    [data-bs-theme="dark"] #substitute-tab-pane .toolbar-group-export,
+    [data-bs-theme="dark"] #substitute-tab-pane .toolbar-group-system,
+    [data-bs-theme="dark"] #substitute-tab-pane .toolbar-sub-filters {
+        border-top-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* ==========================================================
+       SUPERVISION SCHEDULE TAB TOOLBAR MOBILE OPTIMIZATION
+       ========================================================== */
+    /* 1. Row 1: Views (Row 1) & Quota/Teachers Badge (Row 2) in a Balanced 2-Column Grid */
+    #supervision-tab-pane .toolbar-row-view {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.45rem !important;
+        padding-bottom: 0.45rem !important;
+        margin-bottom: 0.45rem !important;
+    }
+
+    #supervision-tab-pane .toolbar-group-views {
+        grid-column: 1 / -1 !important;
+        display: block !important;
+        width: 100% !important;
+    }
+
+    /* Both View Modes Visible Side-by-Side: رۆژانە (50%) & وانە و زەنگ (50%) */
+    #supervision-tab-pane .tt-view-btn-group {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+        border-radius: 16px !important;
+        padding: 4px !important;
+        overflow: visible !important;
+        box-sizing: border-box !important;
+    }
+
+    #supervision-tab-pane .tt-view-btn-group .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        border-radius: 12px !important;
+        font-size: 0.77rem !important;
+        font-weight: 700 !important;
+        padding: 0.42rem 0.35rem !important;
+        min-height: 35px !important;
+        height: auto !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        margin: 0 !important;
+    }
+
+    /* Row 2 in Top Area: Quota Selector (Col 1) & Teachers Count Badge (Col 2) Side-by-Side */
+    #supervision-tab-pane .tt-select-clay-capsule {
+        grid-column: 1 / 2 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        justify-content: space-between !important;
+        margin: 0 !important;
+        border-radius: 50px !important;
+    }
+
+    #supervision-tab-pane .toolbar-row-view>div:last-child {
+        grid-column: 2 / 3 !important;
+        width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+    }
+
+    #supervision-tab-pane .toolbar-row-view>div:last-child .tt-context-clay-badge {
+        width: 100% !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        border-radius: 50px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        font-size: 0.78rem !important;
+        padding: 2px 8px !important;
+    }
+
+    /* 2. Row 2: Action Buttons Groups */
+    #supervision-tab-pane .toolbar-row-actions {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.45rem !important;
+        width: 100% !important;
+    }
+
+    /* Group 1 (Build - 2 buttons: دابەشکرنا زیرەك 50% & دەستنیشانکرن 50%) */
+    #supervision-tab-pane .toolbar-group-build {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+    }
+
+    #supervision-tab-pane .toolbar-group-build .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        padding: 0.38rem 0.45rem !important;
+        font-size: 0.77rem !important;
+        min-height: 35px !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+    }
+
+    /* Group 2 (Export & Print - 2 buttons: HTML 50% & چاپکرن 50%) */
+    #supervision-tab-pane .toolbar-group-export {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+        padding-top: 0.35rem !important;
+        border-top: 1px dashed rgba(226, 232, 240, 0.9) !important;
+    }
+
+    #supervision-tab-pane .toolbar-group-export .btn-group,
+    #supervision-tab-pane .toolbar-group-export .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    #supervision-tab-pane .toolbar-group-export .btn {
+        padding: 0.38rem 0.45rem !important;
+        font-size: 0.76rem !important;
+        min-height: 35px !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+    }
+
+    /* Group 3 (Clear - Full-width bottom reset bar) */
+    #supervision-tab-pane .toolbar-group-system {
+        display: block !important;
+        width: 100% !important;
+        padding-top: 0.35rem !important;
+        border-top: 1px dashed rgba(226, 232, 240, 0.9) !important;
+    }
+
+    #supervision-tab-pane .toolbar-group-system .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 36px !important;
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        border-radius: 50px !important;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.22) !important;
+    }
+
+    /* 3. KPI Summary Cards 2x2 Grid Styling */
+    #supervision-tab-pane .supervision-wrapper .row.g-2>div>div {
+        border-radius: 14px !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    }
+
+    [data-bs-theme="dark"] #supervision-tab-pane .toolbar-group-export,
+    [data-bs-theme="dark"] #supervision-tab-pane .toolbar-group-system {
+        border-top-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* ==========================================================
+       CLASS MENTORS TAB TOOLBAR MOBILE OPTIMIZATION
+       ========================================================== */
+    /* 1. Row 1: Views (Row 1) & Mentors/Status Badges (Row 2) in a Balanced 2-Column Grid */
+    #class-mentors-tab-pane .toolbar-row-view {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.45rem !important;
+        padding-bottom: 0.45rem !important;
+        margin-bottom: 0.45rem !important;
+    }
+
+    #class-mentors-tab-pane .toolbar-group-views {
+        grid-column: 1 / -1 !important;
+        display: block !important;
+        width: 100% !important;
+    }
+
+    /* Both View Modes Visible Side-by-Side: خشتە (50%) & کارت (50%) */
+    #class-mentors-tab-pane .tt-view-btn-group {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+        border-radius: 16px !important;
+        padding: 4px !important;
+        overflow: visible !important;
+        box-sizing: border-box !important;
+    }
+
+    #class-mentors-tab-pane .tt-view-btn-group .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        border-radius: 12px !important;
+        font-size: 0.77rem !important;
+        font-weight: 700 !important;
+        padding: 0.42rem 0.35rem !important;
+        min-height: 35px !important;
+        height: auto !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        margin: 0 !important;
+    }
+
+    /* Row 2 in Top Area: Eligible Mentors (Col 1) & Classes Status Badge (Col 2) Side-by-Side */
+    #class-mentors-tab-pane .toolbar-row-view>.tt-context-clay-badge {
+        grid-column: 1 / 2 !important;
+        width: 100% !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        border-radius: 50px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 4px !important;
+        font-size: 0.76rem !important;
+        padding: 2px 8px !important;
+        margin: 0 !important;
+    }
+
+    #class-mentors-tab-pane .toolbar-row-view>div:last-child {
+        grid-column: 2 / 3 !important;
+        width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+    }
+
+    #class-mentors-tab-pane .toolbar-row-view>div:last-child .tt-context-clay-badge {
+        width: 100% !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        border-radius: 50px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 4px !important;
+        font-size: 0.76rem !important;
+        padding: 2px 8px !important;
+    }
+
+    /* 2. Row 2: Action Buttons Groups */
+    #class-mentors-tab-pane .toolbar-row-actions {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.45rem !important;
+        width: 100% !important;
+    }
+
+    /* Group 1 (Build - 2 buttons: دابەشکرنا زیرەك 50% & مامۆستا 50%) */
+    #class-mentors-tab-pane .toolbar-group-build {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+    }
+
+    #class-mentors-tab-pane .toolbar-group-build .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        padding: 0.38rem 0.45rem !important;
+        font-size: 0.77rem !important;
+        min-height: 35px !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+    }
+
+    /* Group 2 (Export & Print - 2 buttons: HTML 50% & چاپکرن 50%) */
+    #class-mentors-tab-pane .toolbar-group-export {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+        padding-top: 0.35rem !important;
+        border-top: 1px dashed rgba(226, 232, 240, 0.9) !important;
+    }
+
+    #class-mentors-tab-pane .toolbar-group-export .btn-group,
+    #class-mentors-tab-pane .toolbar-group-export .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    #class-mentors-tab-pane .toolbar-group-export .btn {
+        padding: 0.38rem 0.45rem !important;
+        font-size: 0.76rem !important;
+        min-height: 35px !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+    }
+
+    /* Group 3 (Clear - Full-width bottom reset bar) */
+    #class-mentors-tab-pane .toolbar-group-system {
+        display: block !important;
+        width: 100% !important;
+        padding-top: 0.35rem !important;
+        border-top: 1px dashed rgba(226, 232, 240, 0.9) !important;
+    }
+
+    #class-mentors-tab-pane .toolbar-group-system .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 36px !important;
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        border-radius: 50px !important;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.22) !important;
+    }
+
+    /* 3. KPI Statistics Cards (2x2 Grid) */
+    #class-mentors-tab-pane .mentor-stat-clay-card {
+        padding: 0.75rem 0.85rem !important;
+        border-radius: 16px !important;
+    }
+
+    [data-bs-theme="dark"] #class-mentors-tab-pane .toolbar-group-export,
+    [data-bs-theme="dark"] #class-mentors-tab-pane .toolbar-group-system {
+        border-top-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* ==========================================================
+       NISAB TAB TOOLBAR MOBILE OPTIMIZATION
+       ========================================================== */
+    /* 1. Row 1: Badges in a Balanced 2-Column Grid */
+    #nisab-tab-pane .toolbar-row-view {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.45rem !important;
+        padding-bottom: 0.45rem !important;
+        margin-bottom: 0.45rem !important;
+    }
+
+    /* Hide redundant duplicate tab title on mobile */
+    #nisab-tab-pane .toolbar-group-views {
+        display: none !important;
+    }
+
+    /* School Type Badge (Col 1) */
+    #nisab-tab-pane .toolbar-row-view>.tt-context-clay-badge {
+        grid-column: 1 / 2 !important;
+        width: 100% !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        border-radius: 50px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 4px !important;
+        font-size: 0.76rem !important;
+        padding: 2px 8px !important;
+        margin: 0 !important;
+    }
+
+    /* Grades Count Badge (Col 2) */
+    #nisab-tab-pane .toolbar-row-view>div:last-child {
+        grid-column: 2 / 3 !important;
+        width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+    }
+
+    #nisab-tab-pane .toolbar-row-view>div:last-child .tt-context-clay-badge {
+        width: 100% !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        border-radius: 50px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 4px !important;
+        font-size: 0.76rem !important;
+        padding: 2px 8px !important;
+    }
+
+    /* 2. Row 2 & 3: Actions in a 2-Column Grid with Full-width Reset Bar */
+    #nisab-tab-pane .toolbar-row-actions {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+    }
+
+    /* Apply Nisab (Col 1) */
+    #nisab-tab-pane .toolbar-group-build {
+        grid-column: 1 / 2 !important;
+        display: block !important;
+        width: 100% !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    #nisab-tab-pane .toolbar-group-build .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        padding: 0.38rem 0.45rem !important;
+        font-size: 0.77rem !important;
+        min-height: 35px !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+    }
+
+    /* Print (Col 2) */
+    #nisab-tab-pane .toolbar-group-export {
+        grid-column: 2 / 3 !important;
+        display: block !important;
+        width: 100% !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    #nisab-tab-pane .toolbar-group-export .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        padding: 0.38rem 0.45rem !important;
+        font-size: 0.76rem !important;
+        min-height: 35px !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+    }
+
+    /* Clear Nisab (Full-width bottom reset bar) */
+    #nisab-tab-pane .toolbar-group-system {
+        grid-column: 1 / -1 !important;
+        display: block !important;
+        width: 100% !important;
+        padding-top: 0.35rem !important;
+        border-top: 1px dashed rgba(226, 232, 240, 0.9) !important;
+        margin-top: 0.15rem !important;
+    }
+
+    #nisab-tab-pane .toolbar-group-system .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 36px !important;
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        border-radius: 50px !important;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.22) !important;
+    }
+
+    [data-bs-theme="dark"] #nisab-tab-pane .toolbar-group-system {
+        border-top-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* ==========================================================
+       MILAK FORM TAB TOOLBAR MOBILE OPTIMIZATION
+       ========================================================== */
+    /* 1. Row 1: View Toggle (Col 1) & Year Badge (Col 2) Side-by-Side */
+    #milak-tab-pane .toolbar-row-view {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.45rem !important;
+        padding-bottom: 0.45rem !important;
+        margin-bottom: 0.45rem !important;
+    }
+
+    #milak-tab-pane .toolbar-row-view>div:first-child {
+        grid-column: 1 / 2 !important;
+        width: 100% !important;
+        display: flex !important;
+    }
+
+    #milak-tab-pane .toolbar-row-view>div:first-child .btn {
+        width: 100% !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        font-size: 0.77rem !important;
+        font-weight: 700 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+        margin: 0 !important;
+        border-radius: 50px !important;
+    }
+
+    /* Hide redundant duplicate title pill on mobile (already selected at top navigation) */
+    #milak-tab-pane .toolbar-row-view>div:nth-child(2) {
+        display: none !important;
+    }
+
+    /* Year Badge (Col 2) */
+    #milak-tab-pane .toolbar-row-view>div:last-child {
+        grid-column: 2 / 3 !important;
+        width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+    }
+
+    #milak-tab-pane .toolbar-row-view>div:last-child .badge {
+        width: 100% !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        border-radius: 50px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 4px !important;
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
+        padding: 2px 8px !important;
+    }
+
+    /* 2. Row 2 & 3: Export & Print Actions */
+    #milak-tab-pane .toolbar-row-actions {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    #milak-tab-pane .toolbar-row-actions>div {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+    }
+
+    /* Excel (Col 1) */
+    #milak-tab-pane .btn-tb-excel {
+        grid-column: 1 / 2 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        padding: 0.38rem 0.45rem !important;
+        font-size: 0.77rem !important;
+        min-height: 35px !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+    }
+
+    /* HTML (Col 2) */
+    #milak-tab-pane .btn-tb-html {
+        grid-column: 2 / 3 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        padding: 0.38rem 0.45rem !important;
+        font-size: 0.77rem !important;
+        min-height: 35px !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+    }
+
+    /* Print: Full-width bottom bar */
+    #milak-tab-pane .btn-tb-print {
+        grid-column: 1 / -1 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 36px !important;
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        border-radius: 50px !important;
+        margin-top: 0.15rem !important;
+        box-shadow: 0 2px 8px rgba(168, 85, 247, 0.22) !important;
+    }
+
+    /* ==========================================================
+       STATISTICS TAB TOOLBAR MOBILE OPTIMIZATION
+       ========================================================== */
+    /* 1. Row 1: Sub-Tabs Swipeable Ribbon & Badges in a Balanced 2-Column Grid */
+    #statistics-tab-pane .toolbar-row-view {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.45rem !important;
+        padding-bottom: 0.45rem !important;
+        margin-bottom: 0.45rem !important;
+    }
+
+    #statistics-tab-pane .toolbar-group-views {
+        grid-column: 1 / -1 !important;
+        display: block !important;
+        width: 100% !important;
+        overflow: hidden !important;
+    }
+
+    /* 5 Sub-Tabs in a Smooth Native Swipeable Pill Ribbon */
+    #statistics-tab-pane .tt-view-btn-group {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+        gap: 4px !important;
+        width: 100% !important;
+        padding: 3px !important;
+        border-radius: 50px !important;
+        box-sizing: border-box !important;
+    }
+
+    #statistics-tab-pane .tt-view-btn-group::-webkit-scrollbar {
+        display: none !important;
+    }
+
+    #statistics-tab-pane .tt-view-btn-group .nav-item {
+        flex-shrink: 0 !important;
+    }
+
+    #statistics-tab-pane .tt-view-btn-group .nav-link {
+        font-size: 0.76rem !important;
+        font-weight: 700 !important;
+        padding: 0.38rem 0.75rem !important;
+        min-height: 34px !important;
+        white-space: nowrap !important;
+        border-radius: 50px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* Row 2: Progress Ratio (Col 1) & Completion Badge (Col 2) Side-by-Side */
+    #statistics-tab-pane .toolbar-row-view>.tt-context-clay-badge {
+        grid-column: 1 / 2 !important;
+        width: 100% !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        border-radius: 50px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        font-size: 0.78rem !important;
+        margin: 0 !important;
+    }
+
+    #statistics-tab-pane .toolbar-row-view>div:last-child {
+        grid-column: 2 / 3 !important;
+        width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+    }
+
+    #statistics-tab-pane .toolbar-row-view>div:last-child .tt-context-clay-badge {
+        width: 100% !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        border-radius: 50px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        font-size: 0.78rem !important;
+    }
+
+    /* 2. Row 2: Export Group (HTML 50% & چاپکرن 50%) */
+    #statistics-tab-pane .toolbar-row-actions {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    #statistics-tab-pane .toolbar-group-export {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+    }
+
+    #statistics-tab-pane .toolbar-group-export .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        padding: 0.38rem 0.45rem !important;
+        font-size: 0.77rem !important;
+        min-height: 35px !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+    }
+
+    /* 3. Three KPI Metric Cards in a Compact 3-Column Row */
+    #statistics-tab-pane #stats-summary-pane .row.g-3.mb-4 {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 0.35rem !important;
+    }
+
+    #statistics-tab-pane #stats-summary-pane .row.g-3.mb-4>div {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+
+    #statistics-tab-pane .mentor-stat-clay-card {
+        padding: 0.55rem 0.35rem !important;
+        border-radius: 14px !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        gap: 3px !important;
+    }
+
+    #statistics-tab-pane .mentor-stat-clay-card>div:first-child .small {
+        font-size: 0.66rem !important;
+        white-space: nowrap !important;
+    }
+
+    #statistics-tab-pane .mentor-stat-clay-card>div:first-child .fw-bold {
+        font-size: 1.2rem !important;
+        margin-top: 2px !important;
+    }
+
+    #statistics-tab-pane .mentor-stat-icon-badge {
+        width: 30px !important;
+        height: 30px !important;
+        min-width: 30px !important;
+        font-size: 0.8rem !important;
+        margin-top: 2px !important;
+    }
+}
+
+/* 5. Responsive Select Capsules & Filters */
+.toolbar-sub-filters {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    transition: all 0.25s ease;
+}
+
+@media (max-width: 991px) {
+    .toolbar-sub-filters {
+        width: 100% !important;
+        justify-content: flex-start !important;
+        margin-top: 0.25rem !important;
+        padding-top: 0.35rem !important;
+        border-top: 1px dashed rgba(226, 232, 240, 0.8) !important;
+    }
+
+    [data-bs-theme="dark"] .toolbar-sub-filters {
+        border-top-color: rgba(255, 255, 255, 0.1) !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .toolbar-sub-filters {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.45rem !important;
+        width: 100% !important;
+    }
+
+    .toolbar-sub-filters .tt-select-clay-capsule {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        justify-content: space-between !important;
+    }
+
+    .toolbar-sub-filters .tt-clay-select {
+        flex: 1 1 auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+    }
+}
+
+/* 6. Universal Smooth Inertia Touch Scrolling for Tables */
+.table-responsive {
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(99, 102, 241, 0.35) rgba(0, 0, 0, 0.04) !important;
+}
+
+.table-responsive::-webkit-scrollbar {
+    height: 7px !important;
+    width: 7px !important;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border-radius: 10px !important;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, #a5b4fc, #6366f1) !important;
+    border-radius: 10px !important;
+}
+
+[data-bs-theme="dark"] .table-responsive::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.04) !important;
+}
+
+[data-bs-theme="dark"] .table-responsive::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, #4338ca, #6366f1) !important;
+}
+
+/* Mobile Table Cells Compact Padding */
+@media (max-width: 767px) {
+
+    .table td,
+    .table th {
+        padding: 5px 4px !important;
+        font-size: 0.78rem !important;
+    }
+
+    .table .btn-sm {
+        padding: 2px 4px !important;
+        font-size: 0.7rem !important;
+    }
+}
+
+/* 7. Modal Windows Fluid Sizing on Mobile */
+@media (max-width: 576px) {
+    .modal-dialog {
+        margin: 0.5rem !important;
+        max-width: calc(100% - 1rem) !important;
+    }
+
+    .modal-content {
+        border-radius: 18px !important;
+    }
+}
+
+/* ==========================================================================
+   OFFICIAL MINISTRY TABLE FORMAT (خشتێ دابەشکرنا بەهرێن حەفتیانە یێ فەرمی)
+   ========================================================================== */
+.official-doc-container {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06);
+    margin-bottom: 24px;
+    transition: all 0.3s ease;
+}
+
+[data-bs-theme="dark"] .official-doc-container {
+    background: #1e293b;
+    border-color: #334155;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.3);
+}
+
+/* Official Document Header (Exact Match to Ministry Document Table) */
+.official-top-header-table {
+    width: 100%;
+    border: 2px solid #0f172a;
+    border-collapse: collapse;
+    margin-bottom: 4px;
+    background: #ffffff;
+}
+
+[data-bs-theme="dark"] .official-top-header-table {
+    border-color: #94a3b8;
+    background: #0f172a;
+}
+
+.official-top-header-table td {
+    border: none;
+    vertical-align: middle;
+    padding: 1px 4px !important;
+}
+
+.official-staff-line {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.2;
+}
+
+[data-bs-theme="dark"] .official-staff-line {
+    color: #f8fafc;
+}
+
+.official-main-title {
+    font-size: 0.74rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: 0.2px;
+    margin-bottom: 0;
+}
+
+[data-bs-theme="dark"] .official-main-title {
+    color: #f8fafc;
+}
+
+.official-doc-meta {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.2;
+}
+
+[data-bs-theme="dark"] .official-doc-meta {
+    color: #cbd5e1;
+}
+
+.official-school-line {
+    font-size: 0.68rem;
+    color: #0f172a;
+    line-height: 1.2;
+}
+
+[data-bs-theme="dark"] .official-school-line {
+    color: #f8fafc;
+}
+
+.official-header-center {
+    text-align: center;
+    align-items: center;
+    gap: 8px;
+}
+
+.official-main-title-badge {
+    font-size: 1.20rem;
+    font-weight: 900;
+    color: #0f172a;
+    border-bottom: 2px solid #0f172a;
+    padding-bottom: 3px;
+    letter-spacing: 0.5px;
+    display: inline-block;
+}
+
+[data-bs-theme="dark"] .official-main-title-badge {
+    color: #f8fafc;
+    border-bottom-color: #94a3b8;
+}
+
+.official-doc-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #334155;
+    flex-wrap: wrap;
+}
+
+[data-bs-theme="dark"] .official-doc-meta-row {
+    color: #cbd5e1;
+}
+
+.official-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.official-header-left {
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.official-staff-summary-table {
+    border-collapse: collapse;
+    border: 1.5px solid #0f172a;
+    width: 100%;
+    max-width: 220px;
+    font-size: 0.76rem;
+    background: #ffffff;
+    margin-left: 0;
+}
+
+[data-bs-theme="dark"] .official-staff-summary-table {
+    border-color: #94a3b8;
+    background: #1e293b;
+}
+
+.official-staff-summary-table th,
+.official-staff-summary-table td {
+    border: 1px solid #0f172a;
+    padding: 2.5px 6px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+[data-bs-theme="dark"] .official-staff-summary-table th,
+[data-bs-theme="dark"] .official-staff-summary-table td {
+    border-color: #64748b;
+}
+
+.official-staff-summary-table th {
+    background: #f1f5f9;
+    font-weight: 700;
+    text-align: right;
+    color: #0f172a;
+}
+
+[data-bs-theme="dark"] .official-staff-summary-table th {
+    background: #334155;
+    color: #f8fafc;
+}
+
+.official-staff-sum-row {
+    background: #e2e8f0;
+    font-weight: 800;
+}
+
+[data-bs-theme="dark"] .official-staff-sum-row {
+    background: #475569;
+}
+
+/* Official Editable Text Fields */
+.official-editable-field {
+    border-bottom: 1.5px dashed rgba(99, 102, 241, 0.45);
+    padding: 1px 4px;
+    outline: none;
+    display: inline-block;
+    min-width: 25px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+}
+
+.official-editable-field:hover,
+.official-editable-field:focus {
+    background: rgba(99, 102, 241, 0.12);
+    border-bottom-color: #4f46e5;
+}
+
+.official-sub-table td[contenteditable="true"] {
+    outline: none;
+    cursor: text;
+    transition: background 0.15s ease;
+}
+
+.official-sub-table td[contenteditable="true"]:focus {
+    background-color: rgba(99, 102, 241, 0.1) !important;
+    outline: 1.5px solid #6366f1 !important;
+    outline-offset: -1px;
+}
+
+/* Official Ministry Table Structure */
+.table-official-ministry {
+    border: 2px solid #0f172a !important;
+    border-collapse: collapse !important;
+    width: 100% !important;
+    table-layout: auto !important;
+    font-size: 0.82rem !important;
+    margin-bottom: 0 !important;
+}
+
+.official-col-nowrap {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+[data-bs-theme="dark"] .table-official-ministry {
+    border-color: #94a3b8 !important;
+}
+
+.table-official-ministry th,
+.table-official-ministry td {
+    border: 1.2px solid #0f172a !important;
+    padding: 4px 3px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+[data-bs-theme="dark"] .table-official-ministry th,
+[data-bs-theme="dark"] .table-official-ministry td {
+    border-color: #64748b !important;
+}
+
+.table-official-ministry thead th.official-th {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+    font-weight: 800 !important;
+    font-size: 0.84rem !important;
+}
+
+[data-bs-theme="dark"] .table-official-ministry thead th.official-th {
+    background: #334155 !important;
+    color: #f8fafc !important;
+}
+
+/* Class Column Headers */
+.official-class-col-header {
+    min-width: 32px !important;
+    padding: 3px 2px !important;
+    white-space: nowrap !important;
+}
+
+.official-class-combined {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    white-space: nowrap;
+}
+
+.official-grade-num {
+    font-size: 0.78rem !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+}
+
+.official-section-let {
+    font-size: 0.82rem !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+}
+
+/* Alternating Shading for Grade Columns (as in Official PDF) */
+.official-col-white {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+}
+
+.official-col-shaded {
+    background-color: #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+[data-bs-theme="dark"] .official-col-white {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+}
+
+[data-bs-theme="dark"] .official-col-shaded {
+    background-color: #334155 !important;
+    color: #f8fafc !important;
+}
+
+.table-official-ministry tbody tr:hover td {
+    filter: brightness(0.96);
+}
+
+[data-bs-theme="dark"] .table-official-ministry tbody tr:hover td {
+    filter: brightness(1.15);
+}
+
+/* Subject items badge in official table */
+.official-sub-item {
+    font-size: 0.78rem;
+    line-height: 1.35;
+    white-space: nowrap;
+}
+
+.official-sub-item .sub-name {
+    font-weight: 600;
+}
+
+.official-sub-item .sub-count {
+    color: #2563eb;
+}
+
+[data-bs-theme="dark"] .official-sub-item .sub-count {
+    color: #60a5fa;
+}
+
+/* Bottom Official Summary Grid (Page 3 of PDF) */
+.official-bottom-container {
+    margin-top: 18px;
+    border: 2px solid #0f172a;
+    border-radius: 8px;
+    padding: 14px;
+    background: #f8fafc;
+}
+
+[data-bs-theme="dark"] .official-bottom-container {
+    border-color: #94a3b8;
+    background: #0f172a;
+}
+
+.official-bottom-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 12px !important;
+    align-items: flex-start !important;
+    width: 100% !important;
+}
+
+.official-bottom-col-right {
+    flex: 0 0 35% !important;
+    max-width: 35% !important;
+    width: 35% !important;
+}
+
+.official-bottom-col-left {
+    flex: 0 0 65% !important;
+    max-width: 65% !important;
+    width: 65% !important;
+}
+
+.official-sub-main-title {
+    background: #e2e8f0 !important;
+    font-size: 0.90rem !important;
+    font-weight: 900 !important;
+    text-align: center !important;
+    padding: 4px 6px !important;
+    color: #0f172a !important;
+    letter-spacing: 0.5px;
+}
+
+[data-bs-theme="dark"] .official-sub-main-title {
+    background: #334155 !important;
+    color: #f8fafc !important;
+}
+
+.official-sub-table {
+    border: 1.5px solid #0f172a !important;
+    border-collapse: collapse !important;
+    width: 100% !important;
+    font-size: 0.8rem !important;
+}
+
+[data-bs-theme="dark"] .official-sub-table {
+    border-color: #64748b !important;
+}
+
+.official-sub-table th,
+.official-sub-table td {
+    border: 1px solid #0f172a !important;
+    padding: 4px 6px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+[data-bs-theme="dark"] .official-sub-table th,
+[data-bs-theme="dark"] .official-sub-table td {
+    border-color: #64748b !important;
+}
+
+.official-sub-table thead th {
+    background: #e2e8f0 !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+}
+
+[data-bs-theme="dark"] .official-sub-table thead th {
+    background: #334155 !important;
+    color: #f8fafc !important;
+}
+
+.official-leave-table {
+    table-layout: auto !important;
+    font-size: 0.78rem !important;
+}
+
+.official-leave-table th,
+.official-leave-table td {
+    padding: 3px 2px !important;
+}
+
+.official-leave-table td:nth-child(4) {
+    font-size: 0.75rem !important;
+    line-height: 1.25 !important;
+}
+
+.official-reasons-header {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 4px;
+}
+
+[data-bs-theme="dark"] .official-reasons-header {
+    color: #f8fafc;
+}
+
+.official-reasons-box {
+    border: 1.5px solid #0f172a;
+    border-radius: 6px;
+    min-height: 80px;
+    padding: 8px 12px;
+    background: #ffffff;
+    font-size: 0.84rem;
+    line-height: 1.5;
+    outline: none;
+}
+
+[data-bs-theme="dark"] .official-reasons-box {
+    border-color: #64748b;
+    background: #1e293b;
+    color: #f8fafc;
+}
+
+.official-checkbox-box {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    border: 1.8px solid #0f172a;
+    border-radius: 3px;
+    background: #ffffff;
+    vertical-align: middle;
+}
+
+[data-bs-theme="dark"] .official-checkbox-box {
+    border-color: #94a3b8;
+    background: #1e293b;
+}
+
+.official-sign-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px dashed #cbd5e1;
+}
+
+[data-bs-theme="dark"] .official-sign-row {
+    border-top-color: #334155;
+}
+
+.official-th-vertical {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    white-space: nowrap;
+    vertical-align: middle;
+    padding: 6px 3px !important;
+    height: 130px !important;
+    min-height: 130px !important;
+    min-width: 32px !important;
+    font-size: 0.76rem !important;
+    line-height: 1 !important;
+}
+
+/* Print Optimization for Official Ministry Format */
+@media print {
+    @page {
+        size: A4 landscape;
+        margin: 2.5mm 3.5mm 2.5mm 3.5mm !important;
+    }
+
+    html,
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        overflow: visible !important;
+    }
+
+    /* Hide everything except the official document on print */
+    body > *:not(#app):not(.tab-content):not(main):not(.main-container):not(.official-doc-container) {
+        display: none !important;
+    }
+
+    /* Hide all tab panes except the one containing official doc */
+    .tab-pane {
+        display: none !important;
+    }
+
+    /* Show only official-doc-container and its parents */
+    .tab-pane:has(.official-doc-container),
+    .tab-pane.active {
+        display: block !important;
+    }
+
+    /* Override any overflow that prevents page breaking */
+    .table-responsive,
+    #tableContainer,
+    .print-area,
+    .official-table-responsive {
+        overflow: visible !important;
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+        display: block !important;
+        height: auto !important;
+        max-height: none !important;
+    }
+
+    footer,
+    .no-print,
+    .print-footer,
+    .navbar,
+    nav,
+    .distribution-toolbar-card,
+    .nav-tabs,
+    .tab-nav,
+    [role="tablist"] {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .official-doc-container {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        display: block !important;
+    }
+
+    .official-top-header-table {
+        width: 100% !important;
+        border: 2px solid #000000 !important;
+        border-collapse: collapse !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        margin-bottom: 2px !important;
+        /* page-break rules removed to prevent blank first pages */
+    }
+
+    .official-top-header-table td {
+        border: none !important;
+        color: #000000 !important;
+        padding: 1px 4px !important;
+        vertical-align: middle !important;
+    }
+
+    .official-staff-line,
+    .official-school-line {
+        font-size: 0.68rem !important;
+        color: #000000 !important;
+        line-height: 1.15 !important;
+    }
+
+    .official-main-title {
+        font-size: 0.72rem !important;
+        font-weight: 800 !important;
+        color: #000000 !important;
+        margin-bottom: 0 !important;
+        letter-spacing: 0.2px !important;
+    }
+
+    .official-doc-meta {
+        font-size: 0.68rem !important;
+        font-weight: 700 !important;
+        color: #000000 !important;
+        line-height: 1.15 !important;
+    }
+
+    .official-th-vertical {
+        writing-mode: vertical-rl !important;
+        text-orientation: mixed !important;
+        transform: rotate(180deg) !important;
+        white-space: nowrap !important;
+        vertical-align: middle !important;
+        padding: 4px 1px !important;
+        height: 110px !important;
+        min-height: 110px !important;
+        width: 24px !important;
+        min-width: 24px !important;
+        max-width: 26px !important;
+        font-size: 0.68rem !important;
+        line-height: 1 !important;
+    }
+
+    .table-official-ministry {
+        border: 2px solid #000000 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        font-size: 0.66rem !important;
+        table-layout: auto !important;
+    }
+
+    .table-official-ministry thead,
+    thead {
+        display: table-row-group !important;
+    }
+
+    .table-official-ministry tfoot,
+    tfoot {
+        display: table-row-group !important;
+    }
+
+    .official-teacher-tbody,
+    .table-official-ministry tbody,
+    .table-official-ministry tr,
+    tbody,
+    tr {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        break-inside: avoid-page !important;
+    }
+
+    .table-official-ministry th,
+    .table-official-ministry td {
+        border: 1px solid #000000 !important;
+        color: #000000 !important;
+        padding: 1px 1px !important;
+        line-height: 1.1 !important;
+    }
+
+    .table-official-ministry thead th.official-th {
+        background: #e2e8f0 !important;
+        color: #000000 !important;
+        font-size: 0.68rem !important;
+        font-weight: 800 !important;
+    }
+
+    .official-class-col-header {
+        width: 17px !important;
+        min-width: 17px !important;
+        max-width: 20px !important;
+        padding: 1px 0 !important;
+    }
+
+    .official-grade-num {
+        font-size: 0.62rem !important;
+        font-weight: 800 !important;
+        line-height: 1 !important;
+    }
+
+    .official-section-let {
+        font-size: 0.68rem !important;
+        font-weight: 700 !important;
+        line-height: 1 !important;
+    }
+
+    .official-col-shaded {
+        background-color: #cbd5e1 !important;
+        color: #000000 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    .official-col-white {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    .official-sub-item {
+        font-size: 0.66rem !important;
+        line-height: 1.15 !important;
+    }
+
+    .official-bottom-container {
+        border: 2px solid #000000 !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 4px 8px !important;
+        margin-top: 6px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        box-sizing: border-box !important;
+    }
+
+    .official-bottom-grid {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 8px !important;
+        align-items: flex-start !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .official-bottom-col-right {
+        flex: 0 0 35% !important;
+        max-width: 35% !important;
+        width: 35% !important;
+        box-sizing: border-box !important;
+    }
+
+    .official-bottom-col-left {
+        flex: 1 1 auto !important;
+        max-width: calc(65% - 8px) !important;
+        width: calc(65% - 8px) !important;
+        box-sizing: border-box !important;
+    }
+
+    .official-sub-main-title {
+        background-color: #e2e8f0 !important;
+        color: #000000 !important;
+        font-size: 0.74rem !important;
+        font-weight: 800 !important;
+        text-align: center !important;
+        padding: 2px 4px !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    .official-sub-table {
+        border: 1.5px solid #000000 !important;
+        border-collapse: collapse !important;
+        width: 100% !important;
+        font-size: 0.68rem !important;
+        margin-bottom: 0 !important;
+    }
+
+    .official-sub-table thead th {
+        background-color: #f1f5f9 !important;
+        color: #000000 !important;
+        font-weight: 700 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    .official-sub-table th,
+    .official-sub-table td {
+        border: 1px solid #000000 !important;
+        color: #000000 !important;
+        padding: 1.5px 3px !important;
+        line-height: 1.15 !important;
+        text-align: center !important;
+        vertical-align: middle !important;
+    }
+
+    .official-reasons-wrapper {
+        margin-top: 4px !important;
+    }
+
+    .official-reasons-header {
+        font-size: 0.74rem !important;
+        font-weight: 800 !important;
+        color: #000000 !important;
+        margin-bottom: 2px !important;
+    }
+
+    .official-reasons-box {
+        border: 1.2px solid #000000 !important;
+        border-radius: 4px !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        min-height: 38px !important;
+        padding: 3px 6px !important;
+        font-size: 0.70rem !important;
+        line-height: 1.25 !important;
+        box-sizing: border-box !important;
+    }
+
+    .official-sign-row {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        margin-top: 8px !important;
+        padding-top: 6px !important;
+        border-top: 1px dashed #000000 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .official-sign-right {
+        font-size: 0.74rem !important;
+        font-weight: 700 !important;
+        color: #000000 !important;
+    }
+
+    .official-sign-left {
+        font-size: 0.74rem !important;
+        font-weight: 700 !important;
+        color: #000000 !important;
+        text-align: center !important;
+    }
+
+    .official-sign-left .text-muted {
+        color: #333333 !important;
+        font-size: 0.68rem !important;
+    }
+
+    .official-sign-row {
+        margin-top: 4px !important;
+        padding-top: 3px !important;
+    }
+
+    .official-editable-field,
+    .official-editable-text {
+        border-bottom: none !important;
+    }
+}

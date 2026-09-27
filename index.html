@@ -36,327 +36,510 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-    <link rel="stylesheet" href="style.css?v=333">
+    <link rel="stylesheet" href="style.css?v=413">
 </head>
 
 <body data-bs-theme="light">
 
     <div class="container-fluid main-container">
-        <!-- The rest of your application code is here, unchanged -->
-        <div class="card p-2 mb-3 text-center border-0 shadow-sm rounded-4">
-            <h5 class="card-title mb-2 text-primary fw-bold" data-i18n="sub_title"><i
-                    class="fas fa-table me-2"></i>سیسته‌مێ رێكخستنا خشتان</h5>
-            <div class="d-flex flex-wrap align-items-center justify-content-center gap-2 bg-body-tertiary p-2 rounded-pill shadow-sm border mx-auto"
-                style="max-width: 600px;">
-                <!-- Language Globe Icon Dropdown -->
-                <div class="dropdown">
-                    <button class="btn btn-outline-primary btn-sm rounded-circle p-0" type="button"
-                        data-bs-toggle="dropdown" title="Language / زمان"
-                        style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;">
-                        <i class="fas fa-globe fs-6"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4">
-                        <li><a class="dropdown-item" href="#" onclick="changeLanguage('ku_badini')">کوردی (بادینی)</a>
-                        </li>
-                        <li><a class="dropdown-item" href="#" onclick="changeLanguage('ku_sorani')">کوردی (سۆرانی)</a>
-                        </li>
-                        <li><a class="dropdown-item" href="#" onclick="changeLanguage('ar')">العربية</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="changeLanguage('en')">English</a></li>
-                    </ul>
-                </div>
-                <div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" role="switch"
-                        id="themeSwitcher" title="گوهورینا دیمەنی"><label class="form-check-label"
-                        for="themeSwitcher"><i class="fas fa-moon"></i></label></div>
-                <div class="vr mx-1 d-none d-sm-block"></div>
-                <div class="d-flex align-items-center gap-1">
-                    <label class="form-label mb-0 fw-bold small text-nowrap me-1" data-i18n="active_schedule">خشتێ چالاك:</label>
-                    <div class="dropdown d-inline-block" id="scheduleDropdownContainer">
-                        <button class="btn btn-sm dropdown-toggle fw-bold px-3 py-1.5 rounded-pill shadow-sm" type="button"
-                            id="scheduleDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false"
-                            style="background: #ffffff; color: #1e293b; border: 1.5px solid #cbd5e1; min-width: 150px; text-align: right; display: inline-flex; align-items: center; justify-content: space-between; gap: 6px;">
-                            <span><i class="fas fa-calendar-alt text-primary me-1"></i> <span id="activeScheduleLabel">خشتێ سه‌ره‌كی</span></span>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2" id="scheduleDropdownMenu" style="min-width: 240px; z-index: 1060;">
-                        </ul>
+        <!-- Top Header Bar -->
+        <header class="card border-0 shadow-sm rounded-4 px-3 py-2 mb-2 top-header-card no-print">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <!-- Branding / Title (Right in RTL) -->
+                <div class="d-flex align-items-center gap-2.5 app-branding">
+                    <div class="header-app-icon-badge">
+                        <i class="fas fa-table-cells"></i>
                     </div>
-                    <button class="btn btn-outline-secondary btn-sm rounded-circle p-0 ms-1"
-                        onclick="renameActiveSchedule()" data-i18n-title="rename_schedule"
-                        title="گوهورینا ناڤێ خشتێ چالاك"
-                        style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i
-                            class="fas fa-pencil-alt"></i></button>
-                    <button class="btn btn-outline-danger btn-sm rounded-circle p-0 ms-1"
-                        onclick="deleteActiveSchedule()" data-i18n-title="delete_schedule" title="ژێبرنا خشتێ چالاك"
-                        style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;"><i
-                            class="fas fa-trash-alt"></i></button>
+                    <h5 class="mb-0 fw-bold header-app-title" data-i18n="sub_title"
+                        style="color: #1e293b; font-size: 1.15rem;">
+                        سیسته‌مێ رێكخستنا خشتان
+                    </h5>
+                </div>
+
+                <!-- Header Actions (Left in RTL) -->
+                <div class="d-flex align-items-center gap-2 flex-wrap header-controls">
+                    <!-- Schedule Management Group -->
+                    <div class="header-group-schedule d-inline-flex align-items-center gap-1.5">
+                        <!-- Active Schedule Pill Dropdown -->
+                        <div class="dropdown d-inline-block" id="scheduleDropdownContainer">
+                            <button class="btn btn-sm dropdown-toggle fw-bold header-active-schedule-btn" type="button"
+                                id="scheduleDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="header-schedule-icon-badge"><i class="fas fa-calendar-alt"></i></span>
+                                <span id="activeScheduleLabel" class="ms-1 me-1">خشتێ سه‌ره‌كی</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2"
+                                id="scheduleDropdownMenu" style="min-width: 240px; z-index: 1060;">
+                            </ul>
+                        </div>
+
+                        <!-- Rename Active Schedule (Cyan 3D Clay Button) -->
+                        <button class="btn btn-sm header-circle-btn header-circle-rename"
+                            onclick="renameActiveSchedule()" data-i18n-title="rename_schedule"
+                            title="گوهورینا ناڤێ خشتێ چالاك">
+                            <i class="fas fa-pencil-alt"></i>
+                        </button>
+
+                        <!-- Delete Active Schedule (Red 3D Clay Button) -->
+                        <button class="btn btn-sm header-circle-btn header-circle-delete"
+                            onclick="deleteActiveSchedule()" data-i18n-title="delete_schedule"
+                            title="ژێبرنا خشتێ چالاك">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+
+                    <div class="header-divider"></div>
+
+                    <!-- System Controls Group (Language & Theme Switcher) -->
+                    <div class="header-group-system d-inline-flex align-items-center gap-2">
+                        <!-- Language Globe 3D Clay Button -->
+                        <div class="dropdown d-inline-block">
+                            <button class="btn btn-sm header-circle-btn header-circle-lang" type="button"
+                                id="langDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false"
+                                title="Language / زمان">
+                                <i class="fas fa-globe"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2"
+                                style="min-width: 170px; z-index: 1060;">
+                                <li><a class="dropdown-item d-flex align-items-center gap-2 py-2 px-3 rounded-3"
+                                        href="#" onclick="changeLanguage('ku_badini')"><i
+                                            class="fas fa-globe small text-primary"></i><span>کوردی (بادینی)</span></a>
+                                </li>
+                                <li><a class="dropdown-item d-flex align-items-center gap-2 py-2 px-3 rounded-3"
+                                        href="#" onclick="changeLanguage('ku_sorani')"><i
+                                            class="fas fa-globe small text-info"></i><span>کوردی (سۆرانی)</span></a>
+                                </li>
+                                <li><a class="dropdown-item d-flex align-items-center gap-2 py-2 px-3 rounded-3"
+                                        href="#" onclick="changeLanguage('ar')"><i
+                                            class="fas fa-globe small text-success"></i><span>العربية</span></a></li>
+                                <li><a class="dropdown-item d-flex align-items-center gap-2 py-2 px-3 rounded-3"
+                                        href="#" onclick="changeLanguage('en')"><i
+                                            class="fas fa-globe small text-warning"></i><span>English</span></a></li>
+                            </ul>
+                        </div>
+
+                        <!-- Theme Toggle 3D Clay Capsule Switch -->
+                        <div class="header-theme-toggle-wrapper" title="گوهورینا دیمەنی">
+                            <input type="checkbox" class="header-theme-checkbox" id="themeSwitcher" role="switch">
+                            <label class="header-theme-clay-track" for="themeSwitcher">
+                                <span class="theme-knob-clay">
+                                    <i class="fas fa-sun theme-knob-icon-sun"></i>
+                                    <i class="fas fa-moon theme-knob-icon-moon"></i>
+                                </span>
+                                <span class="theme-track-icons">
+                                    <i class="fas fa-sun track-icon-sun"></i>
+                                    <i class="fas fa-moon track-icon-moon"></i>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <hr>
-            <ul class="nav nav-tabs mb-4" id="mainTabs" role="tablist">
+        </header>
+
+        <!-- Main Navigation Tabs Bar -->
+        <nav class="card border-0 shadow-sm rounded-4 px-2 py-2 mb-2 main-tabs-card no-print">
+            <ul class="nav nav-pills custom-main-tabs w-100" id="mainTabs" role="tablist">
                 <!-- 1. دابەشکرنا وانان -->
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="distribution-tab" data-bs-toggle="tab"
-                        data-bs-target="#distribution-tab-pane" type="button" role="tab" data-i18n="tab_distribution"><i
-                            class="fas fa-chalkboard-teacher me-2"></i>دابەشکرنا وانان</button>
+                    <button class="nav-link active tab-distribution" id="distribution-tab" data-bs-toggle="tab"
+                        data-bs-target="#distribution-tab-pane" type="button" role="tab" data-i18n="tab_distribution">
+                        <i class="fas fa-chalkboard-teacher me-1.5"></i><span>دابەشکرنا وانان</span>
+                    </button>
                 </li>
                 <!-- 2. خشتێ حەفتیانە -->
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link text-primary fw-bold" id="timetable-tab" data-bs-toggle="tab"
+                    <button class="nav-link tab-timetable" id="timetable-tab" data-bs-toggle="tab"
                         data-bs-target="#timetable-tab-pane" type="button" role="tab" onclick="initTimetableTab()"
-                        data-i18n="tab_timetable"><i class="fas fa-calendar-alt me-2"></i>خشتێ حەفتیانە</button>
+                        data-i18n="tab_timetable">
+                        <i class="fas fa-calendar-alt me-1.5"></i><span>خشتێ حەفتیانە</span>
+                    </button>
                 </li>
-                <!-- 3. ماموستایێ جهگر -->
+                <!-- 3. ماموستایێن جێگر -->
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link fw-bold" id="substitute-tab" data-bs-toggle="tab"
+                    <button class="nav-link tab-substitute" id="substitute-tab" data-bs-toggle="tab"
                         data-bs-target="#substitute-tab-pane" type="button" role="tab" onclick="initSubstituteTab()"
-                        data-i18n="tab_substitute"><i class="fas fa-user-clock me-2 text-warning"></i>ماموستایێ جهگر</button>
+                        data-i18n="tab_substitute">
+                        <i class="fas fa-user-clock me-1.5"></i><span>ماموستایێن جێگر</span>
+                    </button>
                 </li>
                 <!-- 4. خشتێ چاڤدێریێ -->
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="supervision-tab" data-bs-toggle="tab" data-bs-target="#supervision-tab-pane"
-                        type="button" role="tab" onclick="initSupervisionTab()" data-i18n="tab_supervision"><i
-                            class="fas fa-user-shield me-2 text-warning"></i>خشتێ چاڤدێریێ</button>
+                    <button class="nav-link tab-supervision" id="supervision-tab" data-bs-toggle="tab"
+                        data-bs-target="#supervision-tab-pane" type="button" role="tab" onclick="initSupervisionTab()"
+                        data-i18n="tab_supervision">
+                        <i class="fas fa-user-shield me-1.5"></i><span>خشتێ چاڤدێریێ</span>
+                    </button>
                 </li>
                 <!-- 5. ڕێبەرێن پۆلان -->
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="class-mentors-tab" data-bs-toggle="tab" data-bs-target="#class-mentors-tab-pane"
-                        type="button" role="tab" onclick="initClassMentorsTab()" data-i18n="tab_class_mentors"><i
-                            class="fas fa-user-graduate me-2 text-info"></i>ڕێبەرێن پۆلان</button>
+                    <button class="nav-link tab-mentors" id="class-mentors-tab" data-bs-toggle="tab"
+                        data-bs-target="#class-mentors-tab-pane" type="button" role="tab"
+                        onclick="initClassMentorsTab()" data-i18n="tab_class_mentors">
+                        <i class="fas fa-user-graduate me-1.5"></i><span>ڕێبەرێن پۆلان</span>
+                    </button>
                 </li>
                 <!-- 6. نصاب وانان -->
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="nisab-tab" data-bs-toggle="tab" data-bs-target="#nisab-tab-pane"
-                        type="button" role="tab" data-i18n="tab_nisab"><i class="fas fa-user-clock me-2"></i>نصاب
-                        وانان</button>
+                    <button class="nav-link tab-nisab" id="nisab-tab" data-bs-toggle="tab"
+                        data-bs-target="#nisab-tab-pane" type="button" role="tab" onclick="renderNisabTab()"
+                        data-i18n="tab_nisab">
+                        <i class="fas fa-clock me-1.5"></i><span>نصاب وانان</span>
+                    </button>
                 </li>
                 <!-- 7. فۆڕما ڕێکخستنا میلاکی -->
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="milak-tab" data-bs-toggle="tab" data-bs-target="#milak-tab-pane"
-                        type="button" role="tab" onclick="initMilakTab()" data-i18n="tab_milak"><i
-                            class="fas fa-file-invoice me-2"></i>فۆڕما ڕێکخستنا میلاکی</button>
+                    <button class="nav-link tab-milak" id="milak-tab" data-bs-toggle="tab"
+                        data-bs-target="#milak-tab-pane" type="button" role="tab" onclick="renderMilakTab()"
+                        data-i18n="tab_milak">
+                        <i class="fas fa-file-invoice me-1.5"></i><span>فۆڕما ڕێکخستنا میلاکی</span>
+                    </button>
                 </li>
                 <!-- 8. ئامار و داتا -->
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="statistics-tab" data-bs-toggle="tab"
-                        data-bs-target="#statistics-tab-pane" type="button" role="tab" data-i18n="tab_statistics"><i
-                            class="fas fa-chart-bar me-2"></i>ئامار و داتا</button>
+                    <button class="nav-link tab-statistics" id="statistics-tab" data-bs-toggle="tab"
+                        data-bs-target="#statistics-tab-pane" type="button" role="tab" onclick="renderStatisticsTab()"
+                        data-i18n="tab_statistics">
+                        <i class="fas fa-chart-bar me-1.5"></i><span>ئامار و داتا</span>
+                    </button>
                 </li>
             </ul>
-        </div>
-        <div class="card-body p-2 p-md-3">
+        </nav>
+
+        <div class="card-body p-0">
             <div class="tab-content" id="myTabContent">
                 <!-- Distribution Tab -->
                 <div class="tab-pane fade show active" id="distribution-tab-pane" role="tabpanel">
-                    <div class="d-flex flex-wrap gap-2 justify-content-between my-3 no-print align-items-center">
-                        <div class="control-panel d-flex flex-wrap justify-content-center gap-2 w-100">
-                            <button class="btn btn-primary btn-sm" onclick="openTeacherModal()"
-                                data-i18n="btn_teacher"><i class="fas fa-plus"></i> ماموستا</button>
+                    <!-- Distribution Toolbar Card -->
+                    <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 distribution-toolbar-card no-print">
+                        <!-- Row 1: View, Sort, School Stage, and Search -->
+                        <div
+                            class="d-flex align-items-center justify-content-between flex-wrap gap-2 pb-2 mb-2 border-bottom toolbar-row-view">
+                            <!-- View & Sort & Stage Group (Right in RTL) -->
+                            <div class="d-flex align-items-center gap-2 flex-wrap toolbar-group-views">
+                                <span class="toolbar-group-label ms-1">
+                                    <i class="fas fa-th-large"></i> عرض
+                                </span>
 
-                            <button class="btn btn-warning btn-sm fw-bold shadow-xs text-dark" onclick="applyNisab()"
-                                id="btnAutoDistributeNisabMain" data-i18n="btn_auto_distribute_nisab" data-i18n-title="title_auto_distribute_nisab" title="توزيع تلقائي للحصص وفق النصاب والاختصاص"><i class="fas fa-magic me-1"></i>دابەشکرنا نصابی</button>
+                                <!-- 1. دیمەنێ خشتەی (Electric Blue Dropdown) -->
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-tb-view dropdown-toggle"
+                                        id="tableViewDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false"
+                                        title="گوهورینا ديمەنێ خشتەی">
+                                        <i class="fas fa-eye me-1"></i> <span id="tableViewBtnLabel">ديمەنێ خشتەی</span>
+                                    </button>
+                                    <ul class="dropdown-menu shadow border-0 rounded-4" style="min-width: 230px;">
+                                        <li><a class="dropdown-item py-2 d-flex align-items-center justify-content-between"
+                                                href="javascript:void(0)" onclick="setTableViewMode('detailed')">
+                                                <span><i class="fas fa-table fa-fw me-2 text-info"></i>
+                                                    <strong class="text-info">دیمەنێ وردەکاری</strong></span>
+                                                <span
+                                                    class="badge bg-info-subtle text-info border border-info-subtle rounded-pill">سەرەکی</span>
+                                            </a></li>
+                                        <li>
+                                            <hr class="dropdown-divider my-1">
+                                        </li>
+                                        <li><a class="dropdown-item py-2 d-flex align-items-center justify-content-between"
+                                                href="javascript:void(0)" onclick="setTableViewMode('official')">
+                                                <span><i class="fas fa-file-invoice-dollar fa-fw me-2 text-primary"></i>
+                                                    خشتێ فەرمی (وەزارەت)</span>
+                                                <span
+                                                    class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">فەرمی</span>
+                                            </a></li>
+                                        <li><a class="dropdown-item py-2" href="javascript:void(0)"
+                                                onclick="setTableViewMode('simple')">
+                                                <i class="fas fa-list-alt fa-fw me-2 text-success"></i> دیمەنێ سادە
+                                            </a></li>
+                                        <li><a class="dropdown-item py-2" href="javascript:void(0)"
+                                                onclick="setTableViewMode('ledger')">
+                                                <i class="fas fa-users-cog fa-fw me-2 text-warning"></i> میلاکی گشتی
+                                                (Ledger)
+                                            </a></li>
+                                    </ul>
+                                </div>
 
-                            <!-- School Stage Selector -->
-                            <div class="btn-group">
-                                <button type="button" id="stageSelectorBtn"
-                                    class="btn btn-sm dropdown-toggle fw-bold text-white" data-bs-toggle="dropdown"
-                                    style="background-color: #6366f1; border: 1px solid rgba(255,255,255,0.2);">
-                                    <i class="fas fa-graduation-cap me-1"></i> سه‌ره‌تایی (ابتدائي) ١-٦
-                                </button>
-                                <ul class="dropdown-menu shadow border-0 rounded-3">
-                                    <li><a class="dropdown-item fw-bold py-2" href="#"
-                                            onclick="saveMilakField('schoolType', 'سه‌ره‌تایی 1-6')">سه‌ره‌تایی
-                                            (ابتدائي) ١-٦</a></li>
-                                    <li><a class="dropdown-item fw-bold py-2" href="#"
-                                            onclick="saveMilakField('schoolType', 'ناڤه‌ندی 7-9')">ناڤه‌ندی (متوسط)
-                                            ٧-٩</a></li>
-                                    <li><a class="dropdown-item fw-bold py-2" href="#"
-                                            onclick="saveMilakField('schoolType', 'بنەڕەتی 1-9')">بنەڕەتی (أساسي)
-                                            ١-٩</a></li>
-                                    <li>
-                                        <hr class="dropdown-divider my-1">
-                                    </li>
-                                    <li><a class="dropdown-item fw-bold py-2" href="#"
-                                            onclick="saveMilakField('schoolType', 'ئامادەیی زانستی 10-12')">ئامادەیی زانستی
-                                            (إعدادي علمي) ١٠-١٢</a></li>
-                                    <li><a class="dropdown-item fw-bold py-2" href="#"
-                                            onclick="saveMilakField('schoolType', 'ئامادەیی وێژەیی 10-12')">ئامادەیی وێژەیی
-                                            (إعدادي أدبي) ١٠-١٢</a></li>
-                                    <li><a class="dropdown-item fw-bold py-2 text-primary" href="#"
-                                            onclick="saveMilakField('schoolType', 'ئامادەیی زانستی و وێژەیی 10-12')">ئامادەیی گشتی
-                                            (علمي و أدبي پێکڤە) ١٠-١٢</a></li>
-                                </ul>
+                                <!-- 2. رێزبەندی ماموستایان (Deep Teal Dropdown) -->
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-tb-sort dropdown-toggle"
+                                        data-bs-toggle="dropdown" aria-expanded="false" data-i18n="btn_sort">
+                                        <i class="fas fa-arrow-down-short-wide me-1"></i> رێزبەندی
+                                    </button>
+                                    <ul class="dropdown-menu shadow border-0 rounded-4">
+                                        <li><a class="dropdown-item fw-bold text-primary" href="#"
+                                                onclick="openReorderTeachersModal()"><i
+                                                    class="fas fa-arrows-alt-v fa-fw me-2"></i> رێزبەندیا دستی (تعديل
+                                                المكان)</a></li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        <li><a class="dropdown-item" href="#" onclick="sortDistributionTable('name')"
+                                                data-i18n="sort_name"><i class="fas fa-sort-alpha-down fa-fw me-2"></i>
+                                                رێکخستن بە ناڤ</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="sortDistributionTable('total')"
+                                                data-i18n="sort_total"><i
+                                                    class="fas fa-sort-amount-down fa-fw me-2"></i> رێکخستن بە کۆی</a>
+                                        </li>
+                                        <li><a class="dropdown-item" href="#"
+                                                onclick="sortDistributionTable('certificate')"
+                                                data-i18n="sort_certificate"><i class="fas fa-id-card fa-fw me-2"></i>
+                                                رێکخستن بە بروانامه</a></li>
+                                        <li><a class="dropdown-item" href="#"
+                                                onclick="sortDistributionTable('specialization')"
+                                                data-i18n="sort_specialization"><i class="fas fa-book fa-fw me-2"></i>
+                                                رێکخستن بە بسپور</a></li>
+                                        <li><a class="dropdown-item" href="#"
+                                                onclick="sortDistributionTable('jobTitle')" data-i18n="sort_job"><i
+                                                    class="fas fa-briefcase fa-fw me-2"></i> رێکخستن بە نیشانا کاری</a>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div class="toolbar-divider d-none d-sm-block"></div>
+
+                                <!-- 3. School Stage Selector (Royal Indigo) -->
+                                <div class="btn-group dropdown">
+                                    <button type="button" id="stageSelectorBtn"
+                                        class="btn btn-sm btn-tb-stage dropdown-toggle" data-bs-toggle="dropdown">
+                                        <i class="fas fa-graduation-cap me-1"></i> سه‌ره‌تایی (ابتدائي) ١-٦
+                                    </button>
+                                    <ul class="dropdown-menu shadow border-0 rounded-4">
+                                        <li><a class="dropdown-item fw-bold py-2" href="#"
+                                                onclick="saveMilakField('schoolType', 'سه‌ره‌تایی 1-6')">سه‌ره‌تایی
+                                                (ابتدائي) ١-٦</a></li>
+                                        <li><a class="dropdown-item fw-bold py-2" href="#"
+                                                onclick="saveMilakField('schoolType', 'ناڤه‌ندی 7-9')">ناڤه‌ندی (متوسط)
+                                                ٧-٩</a></li>
+                                        <li><a class="dropdown-item fw-bold py-2" href="#"
+                                                onclick="saveMilakField('schoolType', 'بنەڕەتی 1-9')">بنەڕەتی (أساسي)
+                                                ١-٩</a></li>
+                                        <li>
+                                            <hr class="dropdown-divider my-1">
+                                        </li>
+                                        <li><a class="dropdown-item fw-bold py-2" href="#"
+                                                onclick="saveMilakField('schoolType', 'ئامادەیی زانستی 10-12')">ئامادەیی
+                                                زانستی (إعدادي علمي) ١٠-١٢</a></li>
+                                        <li><a class="dropdown-item fw-bold py-2" href="#"
+                                                onclick="saveMilakField('schoolType', 'ئامادەیی وێژەیی 10-12')">ئامادەیی
+                                                وێژەیی (إعدادي أدبي) ١٠-١٢</a></li>
+                                        <li><a class="dropdown-item fw-bold py-2 text-primary" href="#"
+                                                onclick="saveMilakField('schoolType', 'ئامادەیی زانستی و وێژەیی 10-12')">ئامادەیی
+                                                گشتی (علمي و أدبي پێکڤە) ١٠-١٢</a></li>
+                                    </ul>
+                                </div>
                             </div>
 
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-info btn-sm dropdown-toggle"
-                                    data-bs-toggle="dropdown" data-i18n="btn_class"><i class="fas fa-columns"></i>
-                                    پول</button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#" onclick="addColumn()"
-                                            data-i18n="add_single_column"><i
-                                                class="fas fa-plus fa-fw me-2 text-primary"></i> زیادکرنا پوله‌كێ</a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="#" onclick="addMultipleColumns()"
-                                            data-i18n="add_multiple_columns"><i
-                                                class="fas fa-layer-group fa-fw me-2 text-success"></i> زیادکرنا چه‌ند
-                                            پولان</a></li>
-                                </ul>
-                            </div>
-
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
-                                    data-bs-toggle="dropdown" aria-expanded="false" data-i18n="btn_sort"><i
-                                        class="fas fa-sort me-1"></i> رێکخستن</button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item fw-bold text-primary" href="#"
-                                            onclick="openReorderTeachersModal()"><i
-                                                class="fas fa-arrows-alt-v fa-fw me-2"></i> رێزبەندیا دستی (تعديل
-                                            المكان)</a></li>
-                                    <li>
-                                        <hr class="dropdown-divider">
-                                    </li>
-                                    <li><a class="dropdown-item" href="#" onclick="sortDistributionTable('name')"
-                                            data-i18n="sort_name"><i class="fas fa-sort-alpha-down fa-fw me-2"></i>
-                                            رێکخستن بە ناڤ</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="sortDistributionTable('total')"
-                                            data-i18n="sort_total"><i class="fas fa-sort-amount-down fa-fw me-2"></i>
-                                            رێکخستن بە کۆی</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="sortDistributionTable('certificate')"
-                                            data-i18n="sort_certificate"><i class="fas fa-id-card fa-fw me-2"></i>
-                                            رێکخستن بە بروانامه</a></li>
-                                    <li><a class="dropdown-item" href="#"
-                                            onclick="sortDistributionTable('specialization')"
-                                            data-i18n="sort_specialization"><i class="fas fa-book fa-fw me-2"></i>
-                                            رێکخستن بە بسپور</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="sortDistributionTable('jobTitle')"
-                                            data-i18n="sort_job"><i class="fas fa-briefcase fa-fw me-2"></i> رێکخستن بە
-                                            نیشانا کاری</a></li>
-                                </ul>
-                            </div>
-
-                            <button class="btn btn-success btn-sm" onclick="toggleTableView()"
-                                data-i18n="btn_table_view" title="گوهورینا ديمەنێ خشتەی"><i class="fas fa-eye"></i>
-                                ديمەنێ خشتەی</button>
-                            <button class="btn btn-warning btn-sm" onclick="createSchedule()"
-                                data-i18n="btn_new_schedule"><i class="fas fa-table"></i> خشتێ نوی</button>
-
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-info btn-sm dropdown-toggle"
-                                    data-bs-toggle="dropdown" data-i18n="btn_cloud"><i class="fas fa-cloud"></i> هیلان و
-                                    هەور</button>
-                                <ul class="dropdown-menu">
-                                    <li>
-                                        <h6 class="dropdown-header" data-i18n="header_local">ل سەر كومپیوتەری</h6>
-                                    </li>
-                                    <li><a class="dropdown-item" href="#" onclick="handleSaveLoad('save')"
-                                            data-i18n="save_json"><i
-                                                class="fas fa-file-download fa-fw me-2 text-success"></i> هیلان وه‌ك
-                                            JSON</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="handleSaveLoad('load')"
-                                            data-i18n="load_json"><i
-                                                class="fas fa-file-upload fa-fw me-2 text-warning"></i> ڤه‌گه‌راندن ژ
-                                            JSON</a></li>
-                                    <li>
-                                        <hr class="dropdown-divider">
-                                    </li>
-                                    <li>
-                                        <h6 class="dropdown-header" data-i18n="header_cloud">ل سەر هەورێ (Cloud)</h6>
-                                    </li>
-                                    <li><a class="dropdown-item" href="#" onclick="saveToCloud()"
-                                            data-i18n="save_cloud"><i
-                                                class="fas fa-cloud-upload-alt fa-fw me-2 text-primary"></i> هەڵگرتن لە
-                                            هەور</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="loadFromCloud()"
-                                            data-i18n="load_cloud"><i
-                                                class="fas fa-cloud-download-alt fa-fw me-2 text-info"></i> ڤەگەڕاندن ژ
-                                            هەور</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="resetCloudSync()"
-                                            data-i18n="reset_cloud"><i class="fas fa-unlink fa-fw me-2 text-danger"></i>
-                                            ده‌ستپێكرنا كۆدەکێ نوی</a></li>
-                                </ul>
-                            </div>
-
-                            <button class="btn btn-success btn-sm" onclick="exportToExcel()" data-i18n="btn_excel"
-                                title="هنارتن بۆ ئەكسێل"><i class="fas fa-file-excel"></i> ئەكسێل</button>
-
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-info btn-sm dropdown-toggle"
-                                    data-bs-toggle="dropdown" data-i18n="btn_html"><i class="fas fa-file-code"></i>
-                                    HTML</button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#" onclick="downloadCurrentDistributionHTML()"
-                                            data-i18n="download_current_dist"><i
-                                                class="fas fa-table fa-fw me-2 text-primary"></i> خشتێ دابەشکرنێ</a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="#"
-                                            onclick="downloadComprehensiveDistributionHTML()"
-                                            data-i18n="download_comp_dist"><i
-                                                class="fas fa-user-friends fa-fw me-2 text-success"></i> راپۆرتا
-                                            ماموستایان</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="downloadSimpleDistributionHTML()"
-                                            data-i18n="download_simple_dist"><i
-                                                class="fas fa-th-list fa-fw me-2 text-secondary"></i> دابەشکرنا سادە</a>
-                                    </li>
-                                </ul>
-                            </div>
-
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-primary btn-sm dropdown-toggle"
-                                    data-bs-toggle="dropdown" data-i18n="btn_print"><i class="fas fa-print"></i>
-                                    چاپكرن</button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#" onclick="printAllTables()"
-                                            data-i18n="print_all"><i class="fas fa-print fa-fw me-2"></i> چاپكرنا هەمی
-                                            خشتان</a></li>
-                                    <li>
-                                        <hr class="dropdown-divider">
-                                    </li>
-                                    <li><a class="dropdown-item" href="#" onclick="printDistributionTable()"
-                                            data-i18n="print_current_dist"><i class="fas fa-table fa-fw me-2"></i>
-                                            چاپكرنا دابەشکرنێ ب تنێ</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="printComprehensiveDistribution()"
-                                            data-i18n="print_comp_dist"><i class="fas fa-user-friends fa-fw me-2"></i>
-                                            چاپكرنا راپۆرتا ماموستایان</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="printDistributionSimple()"
-                                            data-i18n="print_simple_dist"><i class="fas fa-th-list fa-fw me-2"></i>
-                                            چاپكرن ب سادەیی</a></li>
-                                </ul>
-                            </div>
-
-                            <button class="btn btn-primary btn-sm" onclick="openSettingsModal()"
-                                data-i18n="btn_settings"><i class="fas fa-cog"></i> رێكخستن</button>
-
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-danger btn-sm dropdown-toggle"
-                                    data-bs-toggle="dropdown" data-i18n="btn_clear_data"><i class="fas fa-eraser"></i>
-                                    ژێبرن</button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#" onclick="clearAllAssignments()"><i
-                                                class="fas fa-eraser fa-fw me-2 text-warning"></i> ڤالاکرنا دابەشکرنا
-                                            بەشان</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="clearAllTeachers()"><i
-                                                class="fas fa-user-slash fa-fw me-2 text-warning"></i> ژێبرنا هەمی
-                                            ماموستایان</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="clearAllColumns()"><i
-                                                class="fas fa-table-cells-large fa-fw me-2 text-warning"></i> ژێبرنا
-                                            هەمی پولان</a></li>
-                                    <li>
-                                        <hr class="dropdown-divider">
-                                    </li>
-                                    <li><a class="dropdown-item" href="#" onclick="clearCurrentScheduleData()"><i
-                                                class="fas fa-trash-alt fa-fw me-2 text-danger"></i> پاقژکرنا ڤی خشتەی ب
-                                            تەمامی</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="deleteAllData()"><i
-                                                class="fas fa-exclamation-triangle fa-fw me-2 text-danger"></i> ژێبرنا
-                                            هەمی داتایێن بەرنامەی</a></li>
-                                </ul>
+                            <!-- Search Input (Left in RTL) -->
+                            <div class="search-panel position-relative flex-grow-1"
+                                style="max-width: 360px; min-width: 200px;">
+                                <i class="fas fa-search position-absolute top-50 translate-middle-y text-muted"
+                                    style="right: 14px; left: auto; z-index: 5;"></i>
+                                <input type="text" id="searchInput"
+                                    class="form-control form-control-sm rounded-pill shadow-none"
+                                    style="padding-right: 36px; padding-left: 14px; min-height: 35px; border: 1.5px solid #cbd5e1; background: #f8fafc; font-size: 0.85rem;"
+                                    data-i18n-placeholder="search_placeholder" placeholder="ل ناڤێ ماموستای بگه‌ره‌...">
                             </div>
                         </div>
-                        <div class="search-panel position-relative shadow-sm w-100 mt-2">
-                            <i class="fas fa-search position-absolute top-50 translate-middle-y text-muted"
-                                style="right: 12px; left: auto; z-index: 5;"></i>
-                            <input type="text" id="searchInput" class="form-control form-control-sm"
-                                style="padding-right: 32px; padding-left: 10px;"
-                                data-i18n-placeholder="search_placeholder" placeholder="ل ناڤێ ماموستای بگه‌ره‌...">
+
+                        <!-- Row 2: Actions / Build, Files, and System Controls -->
+                        <div class="toolbar-row-actions">
+                            <!-- Group 1: بناء (Build & Structure) -->
+                            <div class="toolbar-group toolbar-group-build">
+                                <span class="toolbar-group-label ms-1">
+                                    <i class="fas fa-wand-magic-sparkles"></i> بناء
+                                </span>
+
+                                <!-- 4. خشتێ نوی (Fresh Emerald Green) -->
+                                <button class="btn btn-sm btn-tb-new" onclick="createSchedule()"
+                                    data-i18n="btn_new_schedule">
+                                    <i class="fas fa-plus-circle me-1"></i> خشتێ نوی
+                                </button>
+
+                                <!-- 5. ماموستا (Bright Ocean Cyan) -->
+                                <button class="btn btn-sm btn-tb-teacher" onclick="openTeacherModal()"
+                                    data-i18n="btn_teacher">
+                                    <i class="fas fa-user-plus me-1"></i> ماموستا
+                                </button>
+
+                                <!-- 6. پول (Royal Amethyst Purple Dropdown) -->
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-tb-class dropdown-toggle"
+                                        data-bs-toggle="dropdown" data-i18n="btn_class">
+                                        <i class="fas fa-cubes me-1"></i> پول
+                                    </button>
+                                    <ul class="dropdown-menu shadow border-0 rounded-4">
+                                        <li><a class="dropdown-item" href="#" onclick="addColumn()"
+                                                data-i18n="add_single_column"><i
+                                                    class="fas fa-plus fa-fw me-2 text-primary"></i> زیادکرنا
+                                                پوله‌كێ</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="addMultipleColumns()"
+                                                data-i18n="add_multiple_columns"><i
+                                                    class="fas fa-layer-group fa-fw me-2 text-success"></i> زیادکرنا
+                                                چه‌ند پولان</a></li>
+                                    </ul>
+                                </div>
+
+                                <!-- 7. دابەشکرنا نصابی (Tangerine Flame Orange) -->
+                                <button class="btn btn-sm btn-tb-nisab" onclick="applyNisab()"
+                                    id="btnAutoDistributeNisabMain" data-i18n="btn_auto_distribute_nisab"
+                                    data-i18n-title="title_auto_distribute_nisab"
+                                    title="توزيع تلقائي للحصص وفق النصاب والاختصاص">
+                                    <i class="fas fa-magic me-1"></i> دابەشکرنا نصابی
+                                </button>
+                            </div>
+
+                            <div class="toolbar-divider d-none d-md-block"></div>
+
+                            <!-- Group 2: هیلان و هنارتن (Export & Save) -->
+                            <div class="toolbar-group toolbar-group-export">
+                                <!-- 8. هیلان و هەور (Cobalt Sapphire Blue Dropdown) -->
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-tb-cloud dropdown-toggle"
+                                        data-bs-toggle="dropdown" data-i18n="btn_cloud">
+                                        <i class="fas fa-cloud me-1"></i> هیلان و هەور
+                                    </button>
+                                    <ul class="dropdown-menu shadow border-0 rounded-4">
+                                        <li>
+                                            <h6 class="dropdown-header" data-i18n="header_local">ل سەر كومپیوتەری</h6>
+                                        </li>
+                                        <li><a class="dropdown-item" href="#" onclick="handleSaveLoad('save')"
+                                                data-i18n="save_json"><i
+                                                    class="fas fa-file-download fa-fw me-2 text-success"></i> هیلان وه‌ك
+                                                JSON</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="handleSaveLoad('load')"
+                                                data-i18n="load_json"><i
+                                                    class="fas fa-file-upload fa-fw me-2 text-warning"></i> ڤه‌گه‌راندن
+                                                ژ JSON</a></li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        <li>
+                                            <h6 class="dropdown-header" data-i18n="header_cloud">ل سەر هەورێ (Cloud)
+                                            </h6>
+                                        </li>
+                                        <li><a class="dropdown-item" href="#" onclick="saveToCloud()"
+                                                data-i18n="save_cloud"><i
+                                                    class="fas fa-cloud-upload-alt fa-fw me-2 text-primary"></i> هەڵگرتن
+                                                لە هەور</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="loadFromCloud()"
+                                                data-i18n="load_cloud"><i
+                                                    class="fas fa-cloud-download-alt fa-fw me-2 text-info"></i>
+                                                ڤەگەڕاندن ژ هەور</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="resetCloudSync()"
+                                                data-i18n="reset_cloud"><i
+                                                    class="fas fa-unlink fa-fw me-2 text-danger"></i> ده‌ستپێكرنا كۆدەکێ
+                                                نوی</a></li>
+                                    </ul>
+                                </div>
+
+                                <!-- 9. ئەكسێل (Classic Excel Forest Green) -->
+                                <button class="btn btn-sm btn-tb-excel" onclick="exportToExcel()" data-i18n="btn_excel"
+                                    title="هنارتن بۆ ئەكسێل">
+                                    <i class="fas fa-file-excel me-1"></i> ئەكسێل
+                                </button>
+
+                                <!-- 10. HTML (Warm Golden Honey Amber Dropdown) -->
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-tb-html dropdown-toggle"
+                                        data-bs-toggle="dropdown" data-i18n="btn_html">
+                                        <i class="fas fa-file-code me-1"></i> HTML
+                                    </button>
+                                    <ul class="dropdown-menu shadow border-0 rounded-4">
+                                        <li><a class="dropdown-item" href="#"
+                                                onclick="downloadCurrentDistributionHTML()"
+                                                data-i18n="download_current_dist"><i
+                                                    class="fas fa-table fa-fw me-2 text-primary"></i> خشتێ دابەشکرنێ</a>
+                                        </li>
+                                        <li><a class="dropdown-item" href="#"
+                                                onclick="downloadComprehensiveDistributionHTML()"
+                                                data-i18n="download_comp_dist"><i
+                                                    class="fas fa-user-friends fa-fw me-2 text-success"></i> راپۆرتا
+                                                ماموستایان</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="downloadSimpleDistributionHTML()"
+                                                data-i18n="download_simple_dist"><i
+                                                    class="fas fa-th-list fa-fw me-2 text-secondary"></i> دابەشکرنا
+                                                سادە</a></li>
+                                    </ul>
+                                </div>
+
+                                <!-- 11. چاپكرن (Rich Fuchsia Orchid Dropdown) -->
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-tb-print dropdown-toggle"
+                                        data-bs-toggle="dropdown" data-i18n="btn_print">
+                                        <i class="fas fa-print me-1"></i> چاپكرن
+                                    </button>
+                                    <ul class="dropdown-menu shadow border-0 rounded-4" style="min-width: 250px;">
+                                        <li><a class="dropdown-item fw-bold text-primary py-2 d-flex align-items-center justify-content-between"
+                                                href="javascript:void(0)" onclick="printCurrentView()"
+                                                data-i18n="print_current_view">
+                                                <span><i class="fas fa-eye fa-fw me-2"></i> <strong>چاپكرنا دیمەنێ نوکە
+                                                        (طبع العرض الحالي)</strong></span>
+                                                <span class="badge bg-primary text-white rounded-pill px-2"
+                                                    style="font-size: 0.7rem;">نوکە</span>
+                                            </a></li>
+                                        <li>
+                                            <hr class="dropdown-divider my-1">
+                                        </li>
+                                        <li><a class="dropdown-item py-1.5" href="javascript:void(0)"
+                                                onclick="printAllTables()" data-i18n="print_all"><i
+                                                    class="fas fa-print fa-fw me-2 text-secondary"></i> چاپكرنا هەمی
+                                                خشتان</a></li>
+                                        <li>
+                                            <hr class="dropdown-divider my-1">
+                                        </li>
+                                        <li><a class="dropdown-item py-1.5" href="javascript:void(0)"
+                                                onclick="printDistributionTable()" data-i18n="print_current_dist"><i
+                                                    class="fas fa-table fa-fw me-2 text-info"></i> چاپكرنا دابەشکرنێ ب
+                                                تنێ</a></li>
+                                        <li><a class="dropdown-item py-1.5" href="javascript:void(0)"
+                                                onclick="printComprehensiveDistribution()"
+                                                data-i18n="print_comp_dist"><i
+                                                    class="fas fa-user-friends fa-fw me-2 text-success"></i> چاپكرنا
+                                                راپۆرتا ماموستایان</a></li>
+                                        <li><a class="dropdown-item py-1.5" href="javascript:void(0)"
+                                                onclick="printDistributionSimple()" data-i18n="print_simple_dist"><i
+                                                    class="fas fa-th-list fa-fw me-2 text-warning"></i> چاپكرن ب
+                                                سادەیی</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="toolbar-divider d-none d-md-block"></div>
+
+                            <!-- Group 3: سیستەم و رێکخستن (System & Admin) -->
+                            <div class="toolbar-group toolbar-group-system">
+                                <!-- 12. رێكخستن (Slate Steel Graphite) -->
+                                <button class="btn btn-sm btn-tb-settings" onclick="openSettingsModal()"
+                                    data-i18n="btn_settings">
+                                    <i class="fas fa-cog me-1"></i> رێكخستن
+                                </button>
+
+                                <!-- 13. ژێبرن (Crimson Coral Red Dropdown) -->
+                                <div class="btn-group dropdown">
+                                    <button type="button" class="btn btn-sm btn-tb-delete dropdown-toggle"
+                                        data-bs-toggle="dropdown" data-i18n="btn_clear_data">
+                                        <i class="fas fa-eraser me-1"></i> ژێبرن
+                                    </button>
+                                    <ul class="dropdown-menu shadow border-0 rounded-4">
+                                        <li><a class="dropdown-item" href="#" onclick="clearAllAssignments()"><i
+                                                    class="fas fa-eraser fa-fw me-2 text-warning"></i> ڤالاکرنا
+                                                دابەشکرنا بەشان</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="clearAllTeachers()"><i
+                                                    class="fas fa-user-slash fa-fw me-2 text-warning"></i> ژێبرنا هەمی
+                                                ماموستایان</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="clearAllColumns()"><i
+                                                    class="fas fa-table-cells-large fa-fw me-2 text-warning"></i> ژێبرنا
+                                                هەمی پولان</a></li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        <li><a class="dropdown-item" href="#" onclick="clearCurrentScheduleData()"><i
+                                                    class="fas fa-trash-alt fa-fw me-2 text-danger"></i> پاقژکرنا ڤی
+                                                خشتەی ب تەمامی</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="deleteAllData()"><i
+                                                    class="fas fa-exclamation-triangle fa-fw me-2 text-danger"></i>
+                                                ژێبرنا هەمی داتایێن بەرنامەی</a></li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="print-area">
@@ -386,132 +569,190 @@
                 </div>
                 <!-- Timetable Tab -->
                 <div class="tab-pane fade" id="timetable-tab-pane" role="tabpanel">
-                    <div class="timetable-toolbar-wrapper card border-0 shadow-sm rounded-4 p-2.5 mb-3 bg-white">
-                        <!-- Tier 1: Views & Selector Group -->
-                        <div class="tt-toolbar-tier1 d-flex justify-content-between align-items-center flex-wrap gap-2 pb-2 mb-2 border-bottom">
-                            <!-- Navigation & View Buttons -->
-                            <div class="tt-view-btn-group shadow-xs" role="group">
-                                <input type="radio" class="btn-check" name="ttViewMode" id="btnViewClass" value="class"
-                                    checked onchange="changeTimetableView()">
-                                <label class="btn btn-outline-primary fw-bold" for="btnViewClass"
-                                    data-i18n="btn_view_class" data-i18n-title="title_class_tt" title="خشتێ پولا"><i
-                                        class="fas fa-chalkboard me-1"></i>خشتێ پولا</label>
+                    <!-- Timetable Toolbar Card -->
+                    <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 distribution-toolbar-card no-print">
+                        <!-- Row 1: Views & Selector -->
+                        <div
+                            class="d-flex align-items-center justify-content-between flex-wrap gap-2 pb-2 mb-2 border-bottom toolbar-row-view">
+                            <!-- View Modes Group (Right in RTL) -->
+                            <div class="d-flex align-items-center gap-2 flex-wrap toolbar-group-views">
+                                <span class="toolbar-group-label ms-1">
+                                    <i class="fas fa-th-large"></i> عرض
+                                </span>
 
-                                <input type="radio" class="btn-check" name="ttViewMode" id="btnViewTeacher"
-                                    value="teacher" onchange="changeTimetableView()">
-                                <label class="btn btn-outline-primary fw-bold" for="btnViewTeacher"
-                                    data-i18n="btn_view_teacher" data-i18n-title="title_teacher_tt" title="خشتێ ماموستا"><i
-                                        class="fas fa-user-tie me-1"></i>خشتێ ماموستا</label>
+                                <div class="tt-view-btn-group btn-group p-0.5 rounded-pill" role="group">
+                                    <input type="radio" class="btn-check" name="ttViewMode" id="btnViewClass"
+                                        value="class" checked onchange="changeTimetableView()">
+                                    <label class="btn btn-sm rounded-pill px-3 fw-bold" for="btnViewClass"
+                                        data-i18n="btn_view_class" data-i18n-title="title_class_tt" title="خشتێ پولا"><i
+                                            class="fas fa-chalkboard me-1"></i>خشتێ پولا</label>
 
-                                <input type="radio" class="btn-check" name="ttViewMode" id="btnViewMaster"
-                                    value="master" onchange="changeTimetableView()">
-                                <label class="btn btn-outline-primary fw-bold" for="btnViewMaster"
-                                    data-i18n="btn_view_master_class" data-i18n-title="title_master_class_tt" title="ماستر پولان"><i
-                                        class="fas fa-border-all me-1"></i>ماستر پولان</label>
+                                    <input type="radio" class="btn-check" name="ttViewMode" id="btnViewTeacher"
+                                        value="teacher" onchange="changeTimetableView()">
+                                    <label class="btn btn-sm rounded-pill px-3 fw-bold" for="btnViewTeacher"
+                                        data-i18n="btn_view_teacher" data-i18n-title="title_teacher_tt"
+                                        title="خشتێ ماموستا"><i class="fas fa-user-tie me-1"></i>خشتێ ماموستا</label>
 
-                                <input type="radio" class="btn-check" name="ttViewMode" id="btnViewMasterTeacher"
-                                    value="master_teacher" onchange="changeTimetableView()">
-                                <label class="btn btn-outline-primary fw-bold" for="btnViewMasterTeacher"
-                                    data-i18n="btn_view_master_teacher" data-i18n-title="title_master_teacher_tt" title="ماستر ماموستایان"><i
-                                        class="fas fa-users me-1"></i>ماستر ماموستایان</label>
+                                    <input type="radio" class="btn-check" name="ttViewMode" id="btnViewMaster"
+                                        value="master" onchange="changeTimetableView()">
+                                    <label class="btn btn-sm rounded-pill px-3 fw-bold" for="btnViewMaster"
+                                        data-i18n="btn_view_master_class" data-i18n-title="title_master_class_tt"
+                                        title="ماستر پولان"><i class="fas fa-border-all me-1"></i>ماستر پولان</label>
+
+                                    <input type="radio" class="btn-check" name="ttViewMode" id="btnViewMasterTeacher"
+                                        value="master_teacher" onchange="changeTimetableView()">
+                                    <label class="btn btn-sm rounded-pill px-3 fw-bold" for="btnViewMasterTeacher"
+                                        data-i18n="btn_view_master_teacher" data-i18n-title="title_master_teacher_tt"
+                                        title="ماستر ماموستایان"><i class="fas fa-users me-1"></i>ماستر
+                                        ماموستایان</label>
+                                </div>
                             </div>
 
-                            <!-- Selector Filter -->
-                            <div class="tt-select-wrapper d-inline-flex align-items-center">
-                                <select id="timetableClassSelect" class="form-select form-select-sm rounded-pill fw-bold"
-                                    style="min-width: 150px; max-width: 240px;" onchange="renderTimetableGrid()"></select>
-                                <select id="timetableTeacherSelect" class="form-select form-select-sm rounded-pill fw-bold d-none"
-                                    style="min-width: 150px; max-width: 240px;" onchange="renderTimetableGrid()"></select>
+                            <!-- Selector Filter & Context Badge (Left in RTL) -->
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <div class="tt-select-clay-capsule">
+                                    <div class="tt-select-icon-badge">
+                                        <i class="fas fa-filter"></i>
+                                    </div>
+                                    <select id="timetableClassSelect" class="tt-clay-select"
+                                        onchange="renderTimetableGrid()"></select>
+                                    <select id="timetableTeacherSelect" class="tt-clay-select d-none"
+                                        onchange="renderTimetableGrid()"></select>
+                                    <div class="tt-select-arrow-badge">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </div>
+                                </div>
+
+                                <div class="tt-context-clay-badge d-none d-sm-inline-flex align-items-center">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <span data-i18n="tab_timetable">خشتێ حەفتیانە</span>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Tier 2: Action Buttons Tray -->
-                        <div class="tt-toolbar-tier2 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                            <div class="d-flex align-items-center gap-2 tt-status-badge">
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1.5 fw-bold">
-                                    <i class="fas fa-calendar-alt me-1"></i><span data-i18n="tab_timetable">خشتێ حەفتیانە</span>
+                        <!-- Row 2: Actions Bar & Delete/Clear Button -->
+                        <div class="toolbar-row-actions">
+                            <!-- Group 1: بناء / توليد وتعديل (Build & Generate) -->
+                            <div class="toolbar-group toolbar-group-build">
+                                <span class="toolbar-group-label ms-1">
+                                    <i class="fas fa-wand-magic-sparkles"></i> بناء
                                 </span>
+
+                                <!-- ئۆتۆماتیکی (Orange) -->
+                                <button id="btnAutoDistribute" class="btn btn-sm btn-tb-nisab"
+                                    onclick="autoDistributeTimetable()" data-i18n="btn_auto_distribute">
+                                    <i class="fas fa-magic me-1"></i> ئۆتۆماتیکی
+                                </button>
+
+                                <!-- دەستکاریکرنا ب دەستی (Blue/Cyan) -->
+                                <button id="btnManualEditTimetable" class="btn btn-sm btn-tb-teacher"
+                                    onclick="openManualTimetableEditorModal()" data-i18n="btn_manual_edit_tt">
+                                    <i class="fas fa-edit me-1"></i> دەستکاریکرنا ب دەستی
+                                </button>
+
+                                <!-- قفل و سنوردارکرنا بابەتان (Navy Blue) -->
+                                <button id="btnSubjectRestrictions" class="btn btn-sm btn-tb-cloud"
+                                    onclick="openSubjectRestrictionsModal()" data-i18n="btn_subject_restrictions">
+                                    <i class="fas fa-lock me-1"></i> قفل و سنوردارکرنا بابەتان
+                                </button>
+
+                                <!-- پشکنینا خشتەی (Emerald Green) -->
+                                <button id="btnValidateSchedule" class="btn btn-sm btn-tb-new"
+                                    onclick="showScheduleValidationModal()" data-i18n="btn_validate_schedule">
+                                    <i class="fas fa-clipboard-check me-1"></i> پشکنینا خشتەی
+                                </button>
                             </div>
 
-                            <div class="d-flex gap-1.5 flex-wrap align-items-center tt-actions-tray">
-                                <button id="btnAutoDistribute" class="btn btn-warning btn-sm rounded-pill fw-bold px-3 text-dark shadow-xs"
-                                    onclick="autoDistributeTimetable()" data-i18n="btn_auto_distribute"><i
-                                        class="fas fa-magic me-1"></i>ئۆتۆماتیکی</button>
-                                <button id="btnSubjectRestrictions" class="btn btn-dark btn-sm rounded-pill fw-bold text-white shadow-xs"
-                                    onclick="openSubjectRestrictionsModal()" data-i18n="btn_subject_restrictions"><i
-                                        class="fas fa-lock me-1 text-warning"></i>قفل و سنوردارکرنا بابەتان</button>
-                                <button id="btnManualEditTimetable" class="btn btn-secondary btn-sm rounded-pill fw-bold shadow-xs"
-                                    onclick="openManualTimetableEditorModal()" data-i18n="btn_manual_edit_tt"><i
-                                        class="fas fa-edit me-1"></i>دەستکاریکرنا ب دەستی</button>
-                                <button id="btnValidateSchedule" class="btn btn-info btn-sm rounded-pill fw-bold text-white shadow-xs"
-                                    onclick="showScheduleValidationModal()" data-i18n="btn_validate_schedule"><i
-                                        class="fas fa-clipboard-check me-1"></i>پشکنینا خشتەی</button>
-                                <button id="btnClearTimetable" class="btn btn-outline-danger btn-sm rounded-pill fw-bold px-2.5"
-                                    onclick="clearClassTimetable()" data-i18n="btn_clear_tt"><i
-                                        class="fas fa-trash-alt me-1"></i>ڤالا بكه</button>
-                                <div class="btn-group btn-group-sm">
-                                    <button type="button" class="btn btn-success btn-sm rounded-pill dropdown-toggle fw-bold px-2.5 shadow-xs"
-                                        data-bs-toggle="dropdown" data-i18n="btn_html"><i
-                                            class="fas fa-file-code me-1"></i>HTML</button>
-                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
-                                        <li><a class="dropdown-item py-1.5" href="#" onclick="downloadCurrentTimetableHTML()"
+                            <div class="toolbar-divider d-none d-md-block"></div>
+
+                            <!-- Group 2: تصدير وطباعة (Export & Print) -->
+                            <div class="toolbar-group toolbar-group-export">
+                                <!-- HTML (Mint Green Dropdown) -->
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-tb-html dropdown-toggle"
+                                        data-bs-toggle="dropdown" data-i18n="btn_html">
+                                        <i class="fas fa-file-code me-1"></i> HTML
+                                    </button>
+                                    <ul class="dropdown-menu shadow border-0 rounded-4">
+                                        <li><a class="dropdown-item" href="#" onclick="downloadCurrentTimetableHTML()"
                                                 data-i18n="download_current_tt"><i
                                                     class="fas fa-eye fa-fw me-2 text-primary"></i>دیمەنێ نها</a></li>
                                         <li>
                                             <hr class="dropdown-divider my-1">
                                         </li>
-                                        <li><a class="dropdown-item py-1.5" href="#" onclick="promptMasterHtmlDownload('class')"
+                                        <li><a class="dropdown-item" href="#"
+                                                onclick="promptMasterHtmlDownload('class')"
                                                 data-i18n="download_master_class_tt"><i
-                                                    class="fas fa-border-all fa-fw me-2 text-danger"></i>خشتێ گشتی پولان</a>
-                                        </li>
-                                        <li><a class="dropdown-item py-1.5" href="#" onclick="promptMasterHtmlDownload('teacher')"
+                                                    class="fas fa-border-all fa-fw me-2 text-danger"></i>خشتێ گشتی
+                                                پولان</a></li>
+                                        <li><a class="dropdown-item" href="#"
+                                                onclick="promptMasterHtmlDownload('teacher')"
                                                 data-i18n="download_master_teacher_tt"><i
                                                     class="fas fa-users fa-fw me-2 text-warning"></i>خشتێ گشتی
                                                 ماموستایان</a></li>
                                         <li>
                                             <hr class="dropdown-divider my-1">
                                         </li>
-                                        <li><a class="dropdown-item py-1.5" href="#" onclick="downloadSubstituteHTML('current')"><i
+                                        <li><a class="dropdown-item" href="#"
+                                                onclick="downloadSubstituteHTML('current')"><i
                                                     class="fas fa-user-clock fa-fw me-2 text-info"></i>خشتێ جهگران (HTML
-                                                البدلاء - العرض الحالي)</a></li>
+                                                البدلاء)</a></li>
                                     </ul>
                                 </div>
-                                <div class="btn-group btn-group-sm">
-                                    <button type="button" class="btn btn-primary btn-sm rounded-pill dropdown-toggle fw-bold px-2.5 shadow-xs"
-                                        data-bs-toggle="dropdown" data-i18n="btn_print"><i
-                                            class="fas fa-print me-1"></i>چاپکرن</button>
-                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
-                                        <li><a class="dropdown-item py-1.5" href="javascript:void(0)" onclick="printCurrentTimetableView()"
-                                                data-i18n="print_current_tt"><i class="fas fa-eye fa-fw me-2"></i>چاپکرنا
-                                                دیمەنێ نها (الحالي)</a></li>
+
+                                <!-- چاپکرن (Lavender Purple Dropdown) -->
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-tb-print dropdown-toggle"
+                                        data-bs-toggle="dropdown" data-i18n="btn_print">
+                                        <i class="fas fa-print me-1"></i> چاپکرن
+                                    </button>
+                                    <ul class="dropdown-menu shadow border-0 rounded-4">
+                                        <li><a class="dropdown-item" href="javascript:void(0)"
+                                                onclick="printCurrentTimetableView()" data-i18n="print_current_tt"><i
+                                                    class="fas fa-eye fa-fw me-2 text-primary"></i>چاپکرنا دیمەنێ نها
+                                                (الحالي)</a></li>
                                         <li>
                                             <hr class="dropdown-divider my-1">
                                         </li>
-                                        <li><a class="dropdown-item py-1.5" href="javascript:void(0)" onclick="promptPrintOptions('class')"
-                                                data-i18n="print_all_class_tt"><i
+                                        <li><a class="dropdown-item" href="javascript:void(0)"
+                                                onclick="promptPrintOptions('class')" data-i18n="print_all_class_tt"><i
                                                     class="fas fa-layer-group fa-fw me-2 text-success"></i>هەمی خشتەیێن
                                                 پولان (للصفوف)</a></li>
-                                        <li><a class="dropdown-item py-1.5" href="javascript:void(0)" onclick="promptPrintOptions('teacher')"
+                                        <li><a class="dropdown-item" href="javascript:void(0)"
+                                                onclick="promptPrintOptions('teacher')"
                                                 data-i18n="print_all_teacher_tt"><i
-                                                    class="fas fa-user-tie fa-fw me-2 text-primary"></i>هەمی خشتەیێن
+                                                    class="fas fa-user-tie fa-fw me-2 text-info"></i>هەمی خشتەیێن
                                                 ماموستایان (فرداً فرداً)</a></li>
-                                        <li><a class="dropdown-item py-1.5" href="javascript:void(0)" onclick="promptMasterPrintOptions('teacher')"
+                                        <li><a class="dropdown-item" href="javascript:void(0)"
+                                                onclick="promptMasterPrintOptions('teacher')"
                                                 data-i18n="print_master_teacher_tt"><i
-                                                    class="fas fa-users fa-fw me-2 text-warning"></i>خشتێ گشتی ماموستایان
-                                                (أفقي/عامودي)</a></li>
-                                        <li><a class="dropdown-item py-1.5" href="javascript:void(0)" onclick="promptMasterPrintOptions('class')"
+                                                    class="fas fa-users fa-fw me-2 text-warning"></i>خشتێ گشتی
+                                                ماموستایان (أفقي/عامودي)</a></li>
+                                        <li><a class="dropdown-item" href="javascript:void(0)"
+                                                onclick="promptMasterPrintOptions('class')"
                                                 data-i18n="print_master_class_tt"><i
                                                     class="fas fa-border-all fa-fw me-2 text-danger"></i>خشتێ گشتی پولان
                                                 (أفقي/عامودي)</a></li>
                                         <li>
                                             <hr class="dropdown-divider my-1">
                                         </li>
-                                        <li><a class="dropdown-item py-1.5" href="javascript:void(0)"
+                                        <li><a class="dropdown-item" href="javascript:void(0)"
                                                 onclick="printDailySubstitutionReport('current')"><i
-                                                    class="fas fa-user-clock fa-fw me-2 text-info"></i>خشتێ جهگران (طباعة
-                                                البدلاء - العرض الحالي)</a></li>
+                                                    class="fas fa-user-clock fa-fw me-2 text-secondary"></i>خشتێ جهگران
+                                                (طباعة البدلاء)</a></li>
                                     </ul>
                                 </div>
+                            </div>
+
+                            <div class="toolbar-divider d-none d-md-block"></div>
+
+                            <!-- Group 3: تفريغ وإلغاء (Clear & Reset) -->
+                            <div class="toolbar-group toolbar-group-system">
+                                <!-- ڤالا بكه (Red) -->
+                                <button id="btnClearTimetable" class="btn btn-sm btn-tb-delete"
+                                    onclick="clearClassTimetable()" data-i18n="btn_clear_tt">
+                                    <i class="fas fa-trash-alt me-1"></i> ڤالا بكه
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -543,12 +784,13 @@
                 </div>
             </div>
         </div>
-        <footer class="bg-light border-top py-3 mt-4">
+        <footer class="bg-light border-top py-3 mt-4 no-print">
             <div class="container-fluid text-center small text-muted">
                 <div data-i18n="footer_rights">هه‌می ماف پاراستینه‌</div>
                 <div data-i18n="footer_dev">ئه‌ڤ وێبسایتە هاتیه دروستکرن ژ لای ماموستا: طاهر محمود محمد</div>
                 <div class="mt-2"><span data-i18n="footer_contact">تێبینی، ڕه‌خنه‌ یان پەیوەندی بکە:</span>
-                    <strong>07503727069</strong></div>
+                    <strong>07503727069</strong>
+                </div>
                 <div class="mt-2">
                     <a href="https://wa.me/9647503727069" target="_blank" class="text-success text-decoration-none mx-2"
                         title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
@@ -913,7 +1155,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="excel_template.js"></script>
 
-    <script src="app.js?v=334"></script>
+    <script src="app.js?v=365"></script>
 </body>
 
 </html>
